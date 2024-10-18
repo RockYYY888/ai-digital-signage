@@ -10,13 +10,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        
         .interactive-button {
             margin-top: 20px;
         }
+        
         .feature-card:hover {
             transform: scale(1.05);
             transition: transform 0.3s;
         }
+        
         .scroll-top-btn {
             position: fixed;
             bottom: 20px;
@@ -31,6 +37,15 @@
             font-size: 24px;
             cursor: pointer;
         }
+
+        ul {
+            padding-left: 1em;
+        }
+
+        h2, h3, h4 {
+            margin-top: 1.5em;
+        }
+        
     </style>
 </head>
 <body>
@@ -45,12 +60,13 @@
                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
                     <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about-us">About Us</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <header class="hero-section text-light d-flex align-items-center" style="background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('hero-background.jpg') no-repeat center center/cover; height: 50vh;">
+    <header class="hero-section text-light d-flex align-items-center justify-content-center" style="background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('hero-background.jpg') no-repeat center center/cover; height: 50vh;">
         <div class="container text-center">
             <h1 class="display-4">AI-Powered Digital Signage</h1>
             <p class="lead">Delivering real-time, targeted advertisements using AI technologies.</p>
@@ -62,6 +78,23 @@
         <div class="container">
             <h2 class="text-center mb-4">About the Project</h2>
             <p class="text-center">In the modern advertising landscape, digital signage is a powerful tool for delivering personalized advertisements. Our system uses AI to analyze data, gain insights, and deliver engaging content based on consumer demographics, behavior, and preferences. By leveraging Computer Vision and Large Language Models (LLMs), we create a real-time interactive and adaptive advertisement experience.</p>
+            
+            <h3 class="text-center mt-4">Project Overview</h3>
+            <ul class="list-unstyled">
+                <li><strong>Project Title:</strong> AI-Powered Digital Signage for Targeted and Personalized Advertisement</li>
+                <li><strong>Key Features:</strong>
+                    <ul>
+                        <li>Personalized Advertising</li>
+                        <li>Real-time Data Analysis</li>
+                        <li>Dynamic Feedback Mechanism</li>
+                        <li>Comprehensive Analytics Dashboard</li>
+                    </ul>
+                </li>
+                <li><strong>Purpose:</strong> Providing businesses with a cutting-edge tool for delivering targeted and personalized advertising, increasing advertising efficiency through personalized content, improving user experience, and reducing costs by delivering targeted ads to the right audience at the right time, thereby increasing customer engagement and driving sales.</li>
+                <li><strong>Why We Are Doing This:</strong>
+                    <p>With the rapid advancement of technology and changing consumer behavior, traditional advertising methods are becoming less effective. Businesses need smarter, more personalized advertising solutions to stay relevant in the digital age. Our solution leverages artificial intelligence and data analytics to revolutionize how businesses communicate with their customers, providing timely and relevant information.</p>
+                    <p>As AI and big data technologies continue to evolve, personalized advertising is becoming increasingly feasible. This not only offers a competitive advantage in a crowded market through unique and efficient advertising services, but also enhances customer satisfaction, fosters loyalty, and strengthens brand image through targeted advertising.</p></li>
+            </ul>
         </div>
     </section>
 
@@ -100,6 +133,20 @@
         </div>
     </section>
 
+    <section id="product-image" class="section py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4">Project Image</h2>
+            <div class="row justify-content-center text-center">
+                <div class="col-md-8">
+                    <div class="card shadow-sm mb-4 feature-card">
+                        <img src="path/to/your/product-image.jpg" class="img-fluid" alt="Product Image" style="max-width: 100%; height: auto;">
+                        <p class="mt-3">This image shows our AI-powered digital signage system designed for targeted and personalized advertising. The advanced technology built into this product enables real-time data analysis and interactive feedback, enhancing the advertising experience for businesses and consumers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="tasks" class="section py-5 bg-light">
         <div class="container">
             <h2 class="text-center mb-4">Tasks & Deliverables</h2>
@@ -111,6 +158,57 @@
                 <li class="list-group-item">Conduct rigorous testing and validation of AI models</li>
                 <li class="list-group-item">Deliver a working prototype with technical documentation</li>
             </ul>
+        </div>
+    </section>
+
+    <section id="about-us" class="section py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">About Us</h2>
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <p class="text-center">We are a dedicated team of AI enthusiasts focused on leveraging cutting-edge technologies to revolutionize the advertising landscape.</p>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h4 class="text-center">Team Information</h4>
+                            <ul class="list-unstyled text-center">
+                                <li><strong>Team Name:</strong> Team202406</li>
+                                <li><strong>Supervisor Name:</strong> Kian Ming Lim</li>
+                                <li><strong>Supervisor Contact:</strong> <a href="mailto:kian-ming.lim@nottingham.edu.cn">kian-ming.lim@nottingham.edu.cn</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member1-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Yiwei Li">
+                            <h5>Yiwei Li</h5>
+                            <p>Role: Team Leader<br>Email: <a href="mailto:scyyl30@nottingham.edu.cn">scyyl30@nottingham.edu.cn</a></p>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member2-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Xinna Su">
+                            <h5>Xinna Su</h5>
+                            <p>Role: Developer<br>Email: <a href="mailto:scyxs4@nottingham.edu.cn">scyxs4@nottingham.edu.cn</a></p>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member3-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Zhitong Guo">
+                            <h5>Zhitong Guo</h5>
+                            <p>Role: Developer<br>Email: <a href="mailto:scyzg4@nottingham.edu.cn">scyzg4@nottingham.edu.cn</a></p>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member4-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Zelin Xia">
+                            <h5>Zelin Xia</h5>
+                            <p>Role: QA Engineer<br>Email: <a href="mailto:scyzx5@nottingham.edu.cn">scyzx5@nottingham.edu.cn</a></p>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member5-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Ang Li">
+                            <h5>Ang Li</h5>
+                            <p>Role: Designer<br>Email: <a href="mailto:scyal8@nottingham.edu.cn">scyal8@nottingham.edu.cn</a></p>
+                        </div>
+                        <div class="col-md-4 text-center mb-4">
+                            <img src="path/to/member6-photo.jpg" class="img-fluid rounded-circle mb-2" alt="Yuyang Zhang">
+                            <h5>Yuyang Zhang</h5>
+                            <p>Role: Data Scientist<br>Email: <a href="mailto:scyyz26@nottingham.edu.cn">scyyz26@nottingham.edu.cn</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -144,5 +242,85 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
+    <section id="timeline" class="section py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4">Project Timeline</h2>
+            <ul class="timeline">
+                <li class="timeline-event">
+                    <div class="timeline-event-body">
+                        <h5 class="timeline-event-date">2024-10-07</h5>
+                        <h5 class="timeline-event-title">Project Bid</h5>
+                        <p class="timeline-event-description">The project was presented and bid on October 7th, 2024.</p>
+                    </div>
+                </li>
+                <li class="timeline-event">
+                    <div class="timeline-event-body">
+                        <h5 class="timeline-event-date">2024-10-14</h5>
+                        <h5 class="timeline-event-title">Meeting with Supervisor</h5>
+                        <p class="timeline-event-description">The team met with the supervisor to discuss the project's framework and important considerations.</p>
+                    </div>
+                </li>
+                <li class="timeline-event">
+                    <div class="timeline-event-body">
+                        <h5 class="timeline-event-date">2024-10-17</h5>
+                        <h5 class="timeline-event-title">Submission of Safety Forms</h5>
+                        <p class="timeline-event-description">All relevant safety forms for the project were submitted on October 17th, 2024.</p>
+                    </div>
+                </li>
+                <li class="timeline-event">
+                    <div class="timeline-event-body">
+                        <h5 class="timeline-event-date">2024-10-18</h5>
+                        <h5 class="timeline-event-title">Initial Website Construction</h5>
+                        <p class="timeline-event-description">The initial construction of the project website began on October 18th, 2024.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+    
+    <style>
+        .timeline {
+            list-style: none;
+            padding: 0;
+        }
+    
+        .timeline-event {
+            position: relative;
+            padding: 20px 0;
+            margin: 0;
+            border-left: 2px solid #007bff;
+        }
+    
+        .timeline-event-body {
+            margin-left: 20px;
+        }
+    
+        .timeline-event-date {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+    
+        .timeline-event-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    
+        .timeline-event-description {
+            font-size: 1rem;
+        }
+    
+        .timeline-event:before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -6px;
+            width: 12px;
+            height: 12px;
+            background-color: #007bff;
+            border-radius: 50%;
+        }
+    </style>
+    
 </body>
 </html>
