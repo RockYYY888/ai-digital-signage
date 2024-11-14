@@ -22,12 +22,7 @@ race_mapping = {
     'indian': 3,
     'others_hispanic_latino_middle_eastern': 4
 }
-emotion_mapping = {
-    0:"Angry",
-    1:"Happy",
-    2:"Sad",
-    3:"Neutral",
-}
+
 # initial size: 200 * 200
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -40,9 +35,9 @@ transform = transforms.Compose([
 def age_group(age):
     if age < 17:
         return 0
-    elif age < 31:
+    elif age < 36:
         return 1
-    elif age < 56:
+    elif age < 51:
         return 2
     else:
         return 3
@@ -50,11 +45,11 @@ def age_group(age):
 
 def age_group_transform(age_group):
     if age_group == 0 or 1:
-        return "17-30"
+        return "17-35"
     elif age_group == 2:
-        return "30-55"
+        return "35-50"
     else:
-        return "55+"
+        return "50+"
 
 
 class UTKFaceDataset(Dataset):
