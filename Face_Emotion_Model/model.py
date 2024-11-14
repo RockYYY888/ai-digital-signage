@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from UTKFaceDataset import *
 from torch.utils.data import Dataset, DataLoader, random_split, Subset
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda:0')
 batch_size = 72
 csv_file = 'utk_dataset_metadata.csv'
 img_dir = 'UTKFace'
@@ -24,23 +24,6 @@ train_transforms = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
-transform2 = transforms.Compose([
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(10),
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5],
-                         std=[0.5])
-])
-
-val_transform2 = transforms.Compose([
-    transforms.Resize(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-])
-train_dir = 'fer2013/train'
-val_dir = 'fer2013/test'
 
 dataset = UTKFaceDataset(
     csv_file=csv_file,
@@ -60,16 +43,11 @@ train_indices, val_indices = random_split(
     range(total_size), [train_size, val_size],
     generator=torch.Generator().manual_seed(42)
 )
-train_dataset2 = datasets.ImageFolder(root=train_dir, transform=transform2)
-val_dataset2 = datasets.ImageFolder(root=val_dir, transform=val_transform2)
 
 train_dataset = Subset(UTKFaceDataset(csv_file=csv_file, img_dir=img_dir, transform=train_transforms,
                                       gender_mapping=gender_mapping, race_mapping=race_mapping), train_indices)
 val_dataset = Subset(UTKFaceDataset(csv_file=csv_file, img_dir=img_dir, transform=transform,
                                     gender_mapping=gender_mapping, race_mapping=race_mapping), val_indices)
-
-train_loader2 = DataLoader(train_dataset2, batch_size=batch_size, shuffle=True)
-val_loader2 = DataLoader(val_dataset2, batch_size=batch_size, shuffle=False)
 
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -90,7 +68,6 @@ class FaceAttributeModel(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(512, num_age_classes)  # 输出年龄类别数
         )
-
 
         self.gender_head = nn.Sequential(
             nn.Linear(num_features, 256),
@@ -115,34 +92,20 @@ class FaceAttributeModel(nn.Module):
         return {'age': age_output, 'gender': gender_output, 'race': race_output}
 
 #########################################################################
-class EmotionClassifier(nn.Module):
-    def __init__(self, num_classes=4):
-        super(EmotionClassifier, self).__init__()
-        self.base_model = models.resnet18(pretrained=True)
-        num_features = self.base_model.fc.in_features
-        self.base_model.fc = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(num_features, num_classes)  # 修改最后一层
-        )
-        
-
-    def forward(self, x):
-        return self.base_model(x)
 
 
 num_age_classes = 4
 num_gender_classes = len(gender_mapping)
 num_race_classes = len(race_mapping)
-num_classes = 4  # class of the emotion
-model2 = EmotionClassifier(num_classes=num_classes)
+
 model = FaceAttributeModel(num_age_classes, num_gender_classes, num_race_classes)
 model = model.to(device)
-model2 = model.to(device)
+
 
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
-optimizer2 = optim.Adam(model2.parameters(), lr=0.001, weight_decay=1e-4)
+
 
 def train(model, dataloader, criterion, optimizer, epoch, print_freq=100):
     model.train()
@@ -195,28 +158,7 @@ def train(model, dataloader, criterion, optimizer, epoch, print_freq=100):
 
     return epoch_loss
 
-def train2(model2, dataloader, criterion, optimizer2, epoch, print_freq=100):
-    model2.train()
-    running_loss = 0.0
-    total_samples = 0
-    for batch_idx, (images, labels) in enumerate(dataloader):
-        images, labels = images.to(device), labels.to(device)
-        optimizer2.zero_grad()
 
-        outputs = model2(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer2.step()
-
-        running_loss += loss.item() * images.size(0)
-        total_samples += images.size(0)
-
-        if (batch_idx + 1) % print_freq == 0:
-            print(f'Epoch [{epoch+1}], Batch [{batch_idx+1}/{len(dataloader)}], Loss: {loss.item():.4f}')
-    
-    epoch_loss = running_loss / total_samples
-    print(f'Epoch [{epoch+1}] Training Loss: {epoch_loss:.4f}')
-    return epoch_loss
 
 def validate(model, dataloader, criterion):
     model.eval()
@@ -259,20 +201,6 @@ def validate(model, dataloader, criterion):
 
     return epoch_loss, age_acc, gender_acc, race_acc
 
-def validate2(model2, dataloader, criterion):
-    model2.eval()
-    running_loss = 0.0
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for images, labels in dataloader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model2(images)
-            loss = criterion(outputs, labels)
-            running_loss += loss.item() * images.size(0)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
 
 def predict(model, image_path, transform=transform):
     model.eval()
@@ -302,19 +230,7 @@ def predict(model, image_path, transform=transform):
     # print(f'Predicted Race: {race_label}')
     return age_label, gender_label, race_label
 
-def predict2(model2, image_path, transform2=val_transform2):
-    model2.eval()
-    if type(image_path) == str:
-        image2 = Image.open(image_path).convert('L')
-        image2 = transform2(image2).unsqueeze(0).to(device)
-    else:
-        image2 = transform2(image_path).unsqueeze(0).to(device)
 
-    with torch.no_grad():
-        outputs = model2(image2)
-        _, emo_pred = torch.max(outputs, 1)
-        return emo_pred.item()
-    
 if __name__ == '__main__':
     num_epochs = 50
     best_val_acc = 0.0  # Initialize best validation accuracy
