@@ -43,7 +43,7 @@ def generate_input_text(product_name, race, age_range, gender, tone):
 def build_messages(input_text):
     """Build the messages list for the input text."""
     return [
-        {"role": "system", "content": "You are an advertising expert.And you will give me a content of ads that satisfied my needs"},
+        {"role": "system", "content": "You are an advertising expert. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."},
         {"role": "user", "content": input_text}
     ]
 
