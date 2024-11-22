@@ -1064,6 +1064,7 @@ def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural
 # Main program
 if __name__ == "__main__":
     model_name = "meta-llama/Llama-3.2-1B-Instruct"
+
     try:
         tokenizer, model = load_model_and_tokenizer(model_name)
     except RuntimeError as e:
@@ -1074,9 +1075,23 @@ if __name__ == "__main__":
     detect_faces_from_webcam()
     age_range, gender, race, emotion = data_store.combined_prediction
 
-    product_name = "laundrydetergent"  # Define the product name
-    input_str = f"{product_name}, {race}, {age_range}, {gender}"
-    ad_text = generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', verbose=False)
-    print("**Advertisement Message:**")
-    print(ad_text)
-    print(data_store.combined_prediction)
+ # Get product names based on gender, age and ethnicity
+    try:
+        product_list = advertisements[gender][age_range][race]
+        product_name = random.choice(product_list)
+    except KeyError:
+        print("No valid product name found for the given criteria.")
+        exit()
+
+    if product_name:
+        input_str = f"{product_name}, {race}, {age_range}, {gender}"
+        ad_text = generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', verbose=False)
+        
+        if ad_text:
+            print("**Advertisement Message:**")
+            print(ad_text)
+        else:
+            print("Failed to generate advertisement text.")
+
+
+
