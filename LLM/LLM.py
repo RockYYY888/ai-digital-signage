@@ -73,26 +73,18 @@ def extract_ad_text(response):
         ad_text = response.strip()
     return ad_text or "No valid advertisement text found."
 
-def generate_ad_with_thinking(model, tokenizer, input_str, tone='exciting', max_new_tokens=60, verbose=False):
+def generate_ad_with_thinking(model, tokenizer, input_str, max_new_tokens=60, verbose=False):
     """Generate an ad with simulated thinking."""
-    thoughts = [
-        "Considering the appealing factors for the target audience.",
-        "Determining the most effective tone and style for this demographic.",
-        "Ensuring the ad contains emotional triggers and a memorable tagline."
-    ]
-    simulate_thinking(thoughts, verbose=verbose)
+    simulate_thinking(verbose=verbose)  # Simulate thought process with optional output
+    parsed_info = parse_input(input_str)
+    if parsed_info is None:
+        return "Invalid input provided."
+    product_name, race, age_range, gender = parsed_info
+    input_text = generate_input_text(product_name, race, age_range, gender)
+    response = generate_response(model, tokenizer, input_text, max_new_tokens)
+    ad_text = extract_ad_text(response)
+    return ad_text
 
-    try:
-        product_name, race, age_range, gender = parse_input(input_str)
-    except ValueError as e:
-        return str(e)
-
-    input_text = generate_input_text(product_name, race, age_range, gender, tone)
-    messages = build_messages(input_text)
-
-    response = generate_response(model, tokenizer, messages, max_new_tokens)
-
-    return extract_ad_text(response)
 
 # Main program
 if __name__ == "__main__":
