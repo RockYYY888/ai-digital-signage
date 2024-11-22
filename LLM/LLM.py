@@ -273,8 +273,13 @@ if __name__ == "__main__":
         print(e)
         exit()
 
-    input_str = "KFC, Asian, 17-35, male"
-    ad_text = generate_ad_with_thinking(model, tokenizer, input_str, tone='exciting', verbose=True)
+    # Detect the faces and related information
+    detect_faces_from_webcam()
+    age_range, gender, race, emotion = data_store.combined_prediction
 
+    product_name = "laundrydetergent"  # Define the product name
+    input_str = f"{product_name}, {race}, {age_range}, {gender}"
+    ad_text = generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', verbose=False)
     print("**Advertisement Message:**")
     print(ad_text)
+    print(data_store.combined_prediction)
