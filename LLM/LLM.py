@@ -249,17 +249,19 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
     )
 
 
-def generate_ad_with_thinking(model, tokenizer, input_str, max_new_tokens=60, verbose=False):
-    """Generate an ad with simulated thinking."""
-    simulate_thinking(verbose=verbose)  # Simulate thought process with optional output
-    parsed_info = parse_input(input_str)
-    if parsed_info is None:
-        return "Invalid input provided."
-    product_name, race, age_range, gender = parsed_info
-    input_text = generate_input_text(product_name, race, age_range, gender)
-    response = generate_response(model, tokenizer, input_text, max_new_tokens)
-    ad_text = extract_ad_text(response)
-    return ad_text
+def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', max_new_tokens=60, verbose=False):
+    """Generate an ad using additional context."""
+    thoughts = [
+        "Considering the appealing factors for the target audience.",
+        "Determining the most effective tone and style for this demographic.",
+        "Ensuring the ad contains emotional triggers and a memorable tagline."
+    ]
+    simulate_thinking(thoughts, verbose=verbose)
+    
+    try:
+        product_name, race, age_range, gender = parse_input(input_str)
+    except ValueError as e:
+        return str(e)
 
 
 # Main program
