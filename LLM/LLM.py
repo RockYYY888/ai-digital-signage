@@ -1046,11 +1046,19 @@ def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural
         "Ensuring the ad contains emotional triggers and a memorable tagline."
     ]
     simulate_thinking(thoughts, verbose=verbose)
-    
+
     try:
         product_name, race, age_range, gender = parse_input(input_str)
     except ValueError as e:
         return str(e)
+
+    context = get_relevant_background(product_name)
+    input_text = generate_input_text_with_context(product_name, gender, age_range, race, tone, context, emotion)
+    messages = build_messages(input_text)
+
+    response = generate_response(model, tokenizer, messages, max_new_tokens)
+
+    return extract_ad_text(response)
 
 
 # Main program
