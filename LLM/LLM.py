@@ -115,6 +115,121 @@ BACKGROUND_INFO = [
     "Laundry detergent is an essential household product that keeps clothes clean, fresh, and free of dirt, stains, and odors. Whether for everyday laundry or tackling stubborn stains, a high-quality detergent helps preserve the life and appearance of your clothes.",
 ]
 
+def get_relevant_background(product_name):
+    """Get relevant background information based on the product name. Can be expanded to more complex logic."""
+# Assuming a simple matching mechanism, select background information based on the product name
+    if "ice cream" in product_name.lower():
+        return [BACKGROUND_INFO[0]]
+    elif "KFC" in product_name.lower():
+        return [BACKGROUND_INFO[1]]
+    elif "nikeshoes" in product_name.lower():
+        return [BACKGROUND_INFO[2]]
+    elif "Pepsi" in product_name.lower():
+        return [BACKGROUND_INFO[3]]
+    elif "phone" in product_name.lower():
+        return [BACKGROUND_INFO[4]]
+    elif "pumashoes" in product_name.lower():
+        return [BACKGROUND_INFO[5]]
+    elif "soda" in product_name.lower():
+        return [BACKGROUND_INFO[6]]
+    elif "sunglasses" in product_name.lower():
+        return [BACKGROUND_INFO[7]]
+    elif "trolley" in product_name.lower():
+        return [BACKGROUND_INFO[8]]
+    elif "uniqlo" in product_name.lower():
+        return [BACKGROUND_INFO[9]]
+    elif "applewatch" in product_name.lower():
+        return [BACKGROUND_INFO[10]]
+    elif "man-suit" in product_name.lower():
+        return [BACKGROUND_INFO[11]]
+    elif "man-glasses" in product_name.lower():
+        return [BACKGROUND_INFO[12]]
+    elif "man-pants" in product_name.lower():
+        return [BACKGROUND_INFO[13]]
+    elif "man-leathershoes" in product_name.lower():
+        return [BACKGROUND_INFO[14]]
+    elif "man-sportscar" in product_name.lower():
+        return [BACKGROUND_INFO[15]]
+    elif "man-GTA5" in product_name.lower():
+        return [BACKGROUND_INFO[16]]
+    elif "man-switch" in product_name.lower():
+        return [BACKGROUND_INFO[17]]
+    elif "massagegun" in product_name.lower():
+        return [BACKGROUND_INFO[18]]
+    elif "wine" in product_name.lower():
+        return [BACKGROUND_INFO[19]]
+    elif "man-albumenpowder" in product_name.lower():
+        return [BACKGROUND_INFO[20]]
+    elif "man-treadmill" in product_name.lower():
+        return [BACKGROUND_INFO[21]]
+    elif "essentials" in product_name.lower():
+        return [BACKGROUND_INFO[22]]
+    elif "watch" in product_name.lower():
+        return [BACKGROUND_INFO[23]]
+    elif "toilrtries" in product_name.lower():
+        return [BACKGROUND_INFO[24]]
+    elif "perfume" in product_name.lower():
+        return [BACKGROUND_INFO[25]]
+    elif "shoes" in product_name.lower():
+        return [BACKGROUND_INFO[26]]
+    elif "curise" in product_name.lower():
+        return [BACKGROUND_INFO[27]]
+    elif "massagechair" in product_name.lower():
+        return [BACKGROUND_INFO[28]]
+    elif "medicalequipment" in product_name.lower():
+        return [BACKGROUND_INFO[29]]
+    elif "electronichealthbracelet" in product_name.lower():
+        return [BACKGROUND_INFO[30]]
+    elif "healthcareproducts" in product_name.lower():
+        return [BACKGROUND_INFO[31]]
+    elif "foundation" in product_name.lower():
+        return [BACKGROUND_INFO[32]]
+    elif "lipstick" in product_name.lower():
+        return [BACKGROUND_INFO[33]]
+    elif "bodycream" in product_name.lower():
+        return [BACKGROUND_INFO[31]]
+    elif "popmart" in product_name.lower():
+        return [BACKGROUND_INFO[34]]
+    elif "bag" in product_name.lower():
+        return [BACKGROUND_INFO[35]]
+    elif "dress" in product_name.lower():
+        return [BACKGROUND_INFO[36]]
+    elif "eyeshadow" in product_name.lower():
+        return [BACKGROUND_INFO[37]]
+    elif "instax" in product_name.lower():
+        return [BACKGROUND_INFO[38]]
+    elif "starbucks" in product_name.lower():
+        return [BACKGROUND_INFO[39]]
+    elif "lululemon" in product_name.lower():
+        return [BACKGROUND_INFO[40]]
+    elif "heels" in product_name.lower():
+        return [BACKGROUND_INFO[41]]
+    elif "skincareproducts" in product_name.lower():
+        return [BACKGROUND_INFO[42]]
+    elif "mac" in product_name.lower():
+        return [BACKGROUND_INFO[43]]
+    elif "jewelry" in product_name.lower():
+        return [BACKGROUND_INFO[44]]
+    elif "womanvitamin" in product_name.lower():
+        return [BACKGROUND_INFO[45]]
+    elif "watches" in product_name.lower():
+        return [BACKGROUND_INFO[46]]
+    elif "hermes" in product_name.lower():
+        return [BACKGROUND_INFO[47]]
+    elif "clhighheels" in product_name.lower():
+        return [BACKGROUND_INFO[48]]
+    elif "travel" in product_name.lower():
+        return [BACKGROUND_INFO[49]]
+    elif "ikea" in product_name.lower():
+        return [BACKGROUND_INFO[50]]
+    elif "organicvegetables" in product_name.lower():
+        return [BACKGROUND_INFO[51]]
+    elif "laundrydetergent" in product_name.lower():
+        return [BACKGROUND_INFO[52]]
+    else:
+        return []
+
+
 def extract_ad_text(response):
     """Extract ad text from the response."""
     start_idx = response.find('"') + 1
