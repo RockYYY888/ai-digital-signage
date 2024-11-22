@@ -230,15 +230,24 @@ def get_relevant_background(product_name):
         return []
 
 
-def extract_ad_text(response):
-    """Extract ad text from the response."""
-    start_idx = response.find('"') + 1
-    end_idx = response.rfind('"')
-    if start_idx > 0 and end_idx > start_idx:
-        ad_text = response[start_idx:end_idx]
-    else:
-        ad_text = response.strip()
-    return ad_text or "No valid advertisement text found."
+def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
+    """Generate the input text for the prompt, including background context."""
+    # Combine background information into text, considering the potential impact of emotion on tone
+    context_text = " ".join(context)
+    
+    # Simple mapping logic: can be made more complex, for example, by altering tone based on specific emotions or accentuating features
+    if emotion == "Sad":
+        tone = "compassionate"  # For instance, assuming a different advertising tone under this emotion
+    
+    return (
+        f"Here are some background information: {context_text}\n\n"
+        f"Create a compelling advertisement for our product, '{product_name}'. "
+        f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
+        f"The advertisement should be in a {tone} tone, highlight unique features, "
+        f"and create an emotional appeal. Include a catchy tagline. "
+        f"Limit the response to 20-60 words, enclosed in quotes."
+    )
+
 
 def generate_ad_with_thinking(model, tokenizer, input_str, max_new_tokens=60, verbose=False):
     """Generate an ad with simulated thinking."""
