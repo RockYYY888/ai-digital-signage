@@ -17,16 +17,10 @@ def load_model_and_tokenizer(model_name):
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
-def simulate_thinking(verbose=False):
-    """Simulate the thought process."""
-    thoughts = [
-        "What are the key elements needed for this ad?",
-        "Who is the target audience and what specifically appeals to them?",
-        "What is the tone and style that will be most effective for this demographic?"
-    ]
-    selected_thoughts = random.sample(thoughts, 2)
+def simulate_thinking(thoughts, verbose=False):
+    """Simulate the thought process for each thought item."""
     if verbose:
-        for thought in selected_thoughts:
+        for thought in thoughts:
             print(f"Thinking: {thought}")
 
 def parse_input(input_str):
