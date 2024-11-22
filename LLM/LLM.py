@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from model import *
 from yolov8 import *
 import data_store 
+import random
 
 def load_model_and_tokenizer(model_name):
     """Load the model and tokenizer."""
@@ -56,6 +57,16 @@ def generate_response(model, tokenizer, messages, max_new_tokens=60):
     outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
+
+def extract_ad_text(response):
+    """Extract ad text from the response."""
+    start_idx = response.find('"') + 1
+    end_idx = response.rfind('"')
+    if start_idx > 0 and end_idx > start_idx:
+        ad_text = response[start_idx:end_idx]
+    else:
+        ad_text = response.strip()
+    return ad_text or "No valid advertisement text found."
 
 BACKGROUND_INFO = [
     "Ice cream is a beloved frozen dessert made from dairy or plant-based milks with added sweeteners and flavorings to give it a smooth, creamy, rich taste. It is a versatile treat that comes in different flavors and can be enjoyed in cones, cups, or as part of creative desserts.",
