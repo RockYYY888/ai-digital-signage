@@ -28,10 +28,13 @@ def simulate_thinking(verbose=False):
 
 def parse_input(input_str):
     """Parse input string into its components."""
-    parts = [part.strip() for part in input_str.split(',')]
-    if len(parts) < 4:
-        raise ValueError("Input must contain product name, race, age range, and gender")
-    return parts[0], parts[1], parts[2], parts[3]
+    try:
+        parts = [part.strip() for part in input_str.split(',')]
+        product_name, race, age_range, gender = parts
+        return product_name, race, age_range, gender
+    except Exception as e:
+        print(f"Error parsing input string: {e}")
+        return None
 
 def generate_input_text(product_name, race, age_range, gender, tone):
     """Generate the input text for the prompt."""
