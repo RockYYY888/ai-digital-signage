@@ -1,15 +1,22 @@
 import threading
 from datetime import datetime
 import cv2
+import threading
+from threading import Event
 import time
 from ultralytics import YOLO
 from model import *
 from PIL import Image
 import os
+import data_store
 # 初始化全局变量
 cap = cv2.VideoCapture(1)
 face_detector = YOLO("yolov8l-face.pt", verbose=False)
 desired_size = (224, 224)
+detection_done_event = Event()
+llm_done_event = Event()
+detection_done_event.set() 
+llm_done_event.clear()  
 
 # 全局变量控制检测的时间间隔
 last_detection_time = time.time()
@@ -43,17 +50,19 @@ def detect_faces_from_webcam():
 
             cv2.imshow("Webcam - Press ESC to Exit", frame)
 
+            # 等待检测完成信号
+            detection_done_event.wait()
+
+            # 开始检测
             current_time = time.time()
             if current_time - last_detection_time >= detection_interval:
+                print("[YOLO] Waiting for LLM to process the last result...")
                 last_detection_time = current_time
+                llm_done_event.wait()  
+                llm_done_event.clear() 
 
-                # 前3秒用于特征提取
-                if current_time - last_detection_time < 3:
-                    threading.Thread(target=process_frame, args=(frame.copy(),)).start()
+                threading.Thread(target=process_frame, args=(frame.copy(),)).start()
 
-                # 后2秒用于情绪分析
-                elif current_time - last_detection_time < 5:
-                    threading.Thread(target=process_frame_for_emotion, args=(frame.copy(),)).start()
 
             if cv2.waitKey(1) & 0xFF == 27:
                 print("Exiting...")
@@ -64,17 +73,35 @@ def detect_faces_from_webcam():
         cv2.destroyAllWindows()
 
 
+def llm_processing():
+    global llm_done_event
+
+    while True:
+        # 等待检测完成信号
+        llm_done_event.wait()
+
+        # 模拟 LLM 处理
+        combined_prediction = data_store.combined_prediction
+        print(f"LLM is processing: {combined_prediction}")
+        time.sleep(2)  # 模拟处理时间
+
+        # LLM 处理完成后清除信号
+        llm_done_event.clear()
 
 def process_frame(initial_frame):
     # 不要在这里使用 cap，避免线程间冲突
+    global detection_done_event, llm_done_event
+    detection_done_event.clear()
     results = face_detector(initial_frame, conf=0.86)
     if len(results) == 0:
         print("No face detected.")
+        detection_done_event.set()
         return
 
     for result in results:
         if len(result.boxes.xyxy) == 0:
             print("[Info] No face detected at this timestamp.")
+            detection_done_event.set()
             continue
         print("[Info] Face detected and processing.")
         
@@ -93,6 +120,15 @@ def process_frame(initial_frame):
         emotion_pred = predict2(model_emotion, pil_image)
         emotion_label = emotion_mapping.get(emotion_pred, "Unkonwn")
         combined_prediction = (age_label, gender_label, emotion_label)
+
+        data_store.combined_prediction = combined_prediction
+        llm_done_event.set()  # 让 LLM 知道可以处理了
+
+        # 等待 LLM 处理完成
+        llm_done_event.wait()
+
+        # 恢复检测信号
+        detection_done_event.set()
 
         # 确保 faces 文件夹存在
         os.makedirs("faces", exist_ok=True)
@@ -127,10 +163,13 @@ def process_frame(initial_frame):
             prediction2 = predict2(model_emotion, new_pil_image)
             emotion_name = emotion_mapping.get(prediction2, "Unknown") 
             combined_prediction = (*prediction, emotion_name)
+            data_store.combined_prediction = combined_prediction
             print(f"Predicted Demographics: {combined_prediction}")
             break  # 只处理一张人脸
 
-        return  # 处理完当前人脸后返回，等待下一次检测
+        return
+    
+      # 处理完当前人脸后返回，等待下一次检测
 
 def process_frame_for_emotion(initial_frame):
     results = face_detector(initial_frame, conf=0.86)
@@ -156,6 +195,7 @@ def process_frame_for_emotion(initial_frame):
         # 只进行一次情绪检测
 
 if __name__ == '__main__':
+    threading.Thread(target=llm_processing, daemon=True).start()
     detect_faces_from_webcam()
 
 
