@@ -1063,7 +1063,7 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
     simulate_thinking(thoughts)
 
     try:
-        race, age_range, gender, emotion = parse_input(input_str)
+        age_range, gender, race, emotion = parse_input(input_str)
         product_name = get_product_name(race.lower(), age_range, gender)
     except ValueError as e:
         print(e)
@@ -1080,7 +1080,7 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
         print("**Advertising Information:**")
         print(ad_text)
     else:
-        print("Failed to generate ad text。")
+        print("Failed to generate ad text.")
 
 
 def generate_target_text(input_str, emotion="happy", tone='Natural'):
@@ -1088,12 +1088,12 @@ def generate_target_text(input_str, emotion="happy", tone='Natural'):
     generate_ad_with_context(input_str, emotion, tone)
 
 
-# Load the model when the server starts
+# 服务器启动时加载模型
 load_model_and_tokenizer()
 
 if __name__ == "__main__":
     # Manual input for race, age range, gender, emotion
-    input_str = "Asian, 17-30, male, happy"
+    input_str = "17-30, male, Asian, happy"
 
     # Call the generator_llm_context
     generate_target_text(input_str)
