@@ -4,17 +4,20 @@ from yolov8 import *
 import data_store 
 import random
 
-def load_model_and_tokenizer(model_name):
-    """Load the model and tokenizer."""
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(model_name)
+# Load the model and tokenizer globally
+model_name = "meta-llama/Llama-3.2-1B-Instruct"
+tokenizer = None
+model = None
 
+def load_model_and_tokenizer():
+    """Load the model and tokenizer."""
+    global tokenizer, model
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token_id = tokenizer.eos_token_id
             model.config.pad_token_id = tokenizer.pad_token_id
-
-        return tokenizer, model
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
@@ -28,14 +31,31 @@ def parse_input(input_str):
     """Parse input string into its components."""
     parts = [part.strip() for part in input_str.split(',')]
     if len(parts) < 4:
-        raise ValueError("Input must contain product name, race, age range, and gender")
+        raise ValueError("Input must contain race, age range, gender, and emotion")
     return parts[0], parts[1], parts[2], parts[3]
 
-def generate_input_text(product_name, race, age_range, gender, tone):
-    """Generate the input text for the prompt."""
+def get_product_name(race, age_range, gender):
+    """Select a product name based on the demographics."""
+    try:
+        product_list = advertisements[gender][age_range][race]
+        if product_list:
+            return random.choice(product_list)
+        else:
+            raise ValueError("No products found for the given demographics.")
+    except KeyError:
+        raise ValueError("Invalid demographic information provided.")
+
+
+def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
+    """Generate the input text for the prompt, including background context."""
+    context_text = " ".join(context)
+    if emotion.lower() == "sad":
+        tone = "compassionate"
+    
     return (
+        f"Here are some background information: {context_text}\n\n"
         f"Create a compelling advertisement for our product, '{product_name}'. "
-        f"Target Audience: {race} {gender} aged {age_range}. "
+        f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlight unique features, "
         f"and create an emotional appeal. Include a catchy tagline. "
         f"Limit the response to 20-60 words, enclosed in quotes."
@@ -48,9 +68,8 @@ def build_messages(input_text):
         {"role": "user", "content": input_text}
     ]
 
-def generate_response(model, tokenizer, messages, max_new_tokens=60):
+def generate_response(messages, max_new_tokens=60):
     """Generate a response for the input text using messages format."""
-    # Flatten messages to create a single input text for the model
     input_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
 
     inputs = tokenizer(input_text, return_tensors="pt")
@@ -1021,12 +1040,9 @@ def get_relevant_background(product_name):
 
 def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
-    # Combine background information into text, considering the potential impact of emotion on tone
     context_text = " ".join(context)
-    
-    # Simple mapping logic: can be made more complex, for example, by altering tone based on specific emotions or accentuating features
     if emotion == "Sad":
-        tone = "compassionate"  # For instance, assuming a different advertising tone under this emotion
+        tone = "compassionate"
     
     return (
         f"Here are some background information: {context_text}\n\n"
@@ -1037,61 +1053,49 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
         f"Limit the response to 20-60 words, enclosed in quotes."
     )
 
-
-def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', max_new_tokens=60, verbose=False):
+def generate_ad_with_context(input_str, emotion, tone='Natural'):
     """Generate an ad using additional context."""
     thoughts = [
         "Considering the appealing factors for the target audience.",
         "Determining the most effective tone and style for this demographic.",
         "Ensuring the ad contains emotional triggers and a memorable tagline."
     ]
-    simulate_thinking(thoughts, verbose=verbose)
+    simulate_thinking(thoughts)
 
     try:
-        product_name, race, age_range, gender = parse_input(input_str)
+        race, age_range, gender, emotion = parse_input(input_str)
+        product_name = get_product_name(race.lower(), age_range, gender)
     except ValueError as e:
-        return str(e)
+        print(e)
+        return
 
     context = get_relevant_background(product_name)
-    input_text = generate_input_text_with_context(product_name, gender, age_range, race, tone, context, emotion)
+    input_text = generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion)
     messages = build_messages(input_text)
 
-    response = generate_response(model, tokenizer, messages, max_new_tokens)
+    response = generate_response(messages)
+    ad_text = extract_ad_text(response)
 
-    return extract_ad_text(response)
+    if ad_text:
+        print("**Advertising Information:**")
+        print(ad_text)
+    else:
+        print("Failed to generate ad text。")
 
 
-# Main program
+def generate_target_text(input_str, emotion="happy", tone='Natural'):
+    """Generate an advertisement based on the provided input."""
+    generate_ad_with_context(input_str, emotion, tone)
+
+
+# Load the model when the server starts
+load_model_and_tokenizer()
+
 if __name__ == "__main__":
-    model_name = "meta-llama/Llama-3.2-1B-Instruct"
+    # Manual input for race, age range, gender, emotion
+    input_str = "Asian, 17-30, male, happy"
 
-    try:
-        tokenizer, model = load_model_and_tokenizer(model_name)
-    except RuntimeError as e:
-        print(e)
-        exit()
-
-    # Detect the faces and related information
-    detect_faces_from_webcam()
-    age_range, gender, race, emotion = data_store.combined_prediction
-
- # Get product names based on gender, age and ethnicity
-    try:
-        product_list = advertisements[gender][age_range][race]
-        product_name = random.choice(product_list)
-    except KeyError:
-        print("No valid product name found for the given criteria.")
-        exit()
-
-    if product_name:
-        input_str = f"{product_name}, {race}, {age_range}, {gender}"
-        ad_text = generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', verbose=False)
-        
-        if ad_text:
-            print("**Advertisement Message:**")
-            print(ad_text)
-        else:
-            print("Failed to generate advertisement text.")
-
+    # Call the generator_llm_context
+    generate_target_text(input_str)
 
 
