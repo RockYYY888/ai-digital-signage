@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-#from model import *
-#from yolov8 import *
-#import data_store 
+# from model import *
+# from yolov8 import *
+# import data_store
 import random
 
 # Load the model and tokenizer globally
@@ -920,7 +920,7 @@ BACKGROUND_INFO = [
 def get_relevant_background(product_name):
     """Get relevant background information based on the product name. Can be expanded to more complex logic."""
 # Assuming a simple matching mechanism, select background information based on the product name
-    if "icecream" in product_name.lower():
+    if "ice cream" in product_name.lower():
         return [BACKGROUND_INFO[0]]
     elif "KFC" in product_name.lower():
         return [BACKGROUND_INFO[1]]
@@ -942,27 +942,27 @@ def get_relevant_background(product_name):
         return [BACKGROUND_INFO[9]]
     elif "applewatch" in product_name.lower():
         return [BACKGROUND_INFO[10]]
-    elif "suit" in product_name.lower():
+    elif "man-suit" in product_name.lower():
         return [BACKGROUND_INFO[11]]
-    elif "glasses" in product_name.lower():
+    elif "man-glasses" in product_name.lower():
         return [BACKGROUND_INFO[12]]
-    elif "pants" in product_name.lower():
+    elif "man-pants" in product_name.lower():
         return [BACKGROUND_INFO[13]]
-    elif "leathershoes" in product_name.lower():
+    elif "man-leathershoes" in product_name.lower():
         return [BACKGROUND_INFO[14]]
-    elif "sportscar" in product_name.lower():
+    elif "man-sportscar" in product_name.lower():
         return [BACKGROUND_INFO[15]]
-    elif "GTA5" in product_name.lower():
+    elif "man-GTA5" in product_name.lower():
         return [BACKGROUND_INFO[16]]
-    elif "switch" in product_name.lower():
+    elif "man-switch" in product_name.lower():
         return [BACKGROUND_INFO[17]]
     elif "massagegun" in product_name.lower():
         return [BACKGROUND_INFO[18]]
     elif "wine" in product_name.lower():
         return [BACKGROUND_INFO[19]]
-    elif "albumenpowder" in product_name.lower():
+    elif "man-albumenpowder" in product_name.lower():
         return [BACKGROUND_INFO[20]]
-    elif "treadmill" in product_name.lower():
+    elif "man-treadmill" in product_name.lower():
         return [BACKGROUND_INFO[21]]
     elif "essentials" in product_name.lower():
         return [BACKGROUND_INFO[22]]
@@ -1044,7 +1044,7 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
         f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlight unique features, "
         f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 60 words, enclosed in quotes."
+        f"Limit the response to 20-60 words, enclosed in quotes."
         f"Just print advertisement once, no more other information."
     )
 
@@ -1073,8 +1073,6 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
 
     if ad_text:
         print("**Advertising Information:**")
-        print(f"{product_name}: {context}")
-
         print(ad_text)
     else:
         print("Failed to generate ad text.")
@@ -1094,5 +1092,3 @@ if __name__ == "__main__":
 
     # Call the generator_llm_context
     generate_target_text(input_str)
-
-
