@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-# from model import *
-# from yolov8 import *
-# import data_store
+from model import *
+from yolov8 import *
+import data_store 
 import random
 
 # Load the model and tokenizer globally
@@ -27,6 +27,13 @@ def simulate_thinking(thoughts, verbose=False):
         for thought in thoughts:
             print(f"Thinking: {thought}")
 
+def parse_input(input_str):
+    """Parse input string into its components."""
+    parts = [part.strip() for part in input_str.split(',')]
+    if len(parts) < 4:
+        raise ValueError("Input must contain race, age range, gender, and emotion")
+    return parts[0], parts[1], parts[2], parts[3]
+
 def get_product_name(race, age_range, gender):
     """Select a product name based on the demographics."""
     try:
@@ -51,7 +58,8 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
         f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlight unique features, "
         f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 20-60 words, enclosed in quotes."
+        f"Limit the response to 60 words, enclosed in quotes."
+        f"Just print advertisement once, no more other information."
     )
 
 def build_messages(input_text):
@@ -61,7 +69,7 @@ def build_messages(input_text):
         {"role": "user", "content": input_text}
     ]
 
-def generate_response(messages, max_new_tokens=60):
+def generate_response(messages, max_new_tokens=120):
     """Generate a response for the input text using messages format."""
     input_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
 
@@ -941,27 +949,27 @@ def get_relevant_background(product_name):
         return [BACKGROUND_INFO[9]]
     elif "applewatch" in product_name.lower():
         return [BACKGROUND_INFO[10]]
-    elif "man-suit" in product_name.lower():
+    elif "suit" in product_name.lower():
         return [BACKGROUND_INFO[11]]
-    elif "man-glasses" in product_name.lower():
+    elif "glasses" in product_name.lower():
         return [BACKGROUND_INFO[12]]
-    elif "man-pants" in product_name.lower():
+    elif "pants" in product_name.lower():
         return [BACKGROUND_INFO[13]]
-    elif "man-leathershoes" in product_name.lower():
+    elif "leathershoes" in product_name.lower():
         return [BACKGROUND_INFO[14]]
-    elif "man-sportscar" in product_name.lower():
+    elif "sportscar" in product_name.lower():
         return [BACKGROUND_INFO[15]]
-    elif "man-GTA5" in product_name.lower():
+    elif "GTA5" in product_name.lower():
         return [BACKGROUND_INFO[16]]
-    elif "man-switch" in product_name.lower():
+    elif "switch" in product_name.lower():
         return [BACKGROUND_INFO[17]]
     elif "massagegun" in product_name.lower():
         return [BACKGROUND_INFO[18]]
     elif "wine" in product_name.lower():
         return [BACKGROUND_INFO[19]]
-    elif "man-albumenpowder" in product_name.lower():
+    elif "albumenpowder" in product_name.lower():
         return [BACKGROUND_INFO[20]]
-    elif "man-treadmill" in product_name.lower():
+    elif "treadmill" in product_name.lower():
         return [BACKGROUND_INFO[21]]
     elif "essentials" in product_name.lower():
         return [BACKGROUND_INFO[22]]
@@ -1043,7 +1051,8 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
         f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlight unique features, "
         f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 20-60 words, enclosed in quotes."
+        f"Limit the response to 60 words, enclosed in quotes."
+        f"Just print advertisement once, no more other information."
     )
 
 def generate_ad_with_context(input_str, emotion, tone='Natural'):
@@ -1056,7 +1065,7 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
     simulate_thinking(thoughts)
 
     try:
-        age_range, gender, race, emotion = input_str
+        age_range, gender, race, emotion = parse_input(input_str)
         product_name = get_product_name(race.lower(), age_range, gender)
     except ValueError as e:
         print(e)
@@ -1071,6 +1080,8 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
 
     if ad_text:
         print("**Advertising Information:**")
+        print(f"{product_name}: {context}")
+
         print(ad_text)
     else:
         print("Failed to generate ad text.")
@@ -1081,7 +1092,7 @@ def generate_target_text(input_str, emotion="happy", tone='Natural'):
     generate_ad_with_context(input_str, emotion, tone)
 
 
-# 服务器启动时加载模型
+# Load the model when the server starts
 load_model_and_tokenizer()
 
 if __name__ == "__main__":
