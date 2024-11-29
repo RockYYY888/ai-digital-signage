@@ -920,7 +920,7 @@ BACKGROUND_INFO = [
 def get_relevant_background(product_name):
     """Get relevant background information based on the product name. Can be expanded to more complex logic."""
 # Assuming a simple matching mechanism, select background information based on the product name
-    if "ice cream" in product_name.lower():
+    if "icecream" in product_name.lower():
         return [BACKGROUND_INFO[0]]
     elif "KFC" in product_name.lower():
         return [BACKGROUND_INFO[1]]
