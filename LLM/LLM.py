@@ -1072,9 +1072,12 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
     ad_text = extract_ad_text(response)
 
     if ad_text:
-        print("**Advertising Information:**")
+        
         print(f"{product_name}: {context}")
+        print("")
 
+
+        print("**Advertising Information:**")
         print(ad_text)
     else:
         print("Failed to generate ad text.")
