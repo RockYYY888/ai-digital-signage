@@ -942,27 +942,27 @@ def get_relevant_background(product_name):
         return [BACKGROUND_INFO[9]]
     elif "applewatch" in product_name.lower():
         return [BACKGROUND_INFO[10]]
-    elif "man-suit" in product_name.lower():
+    elif "suit" in product_name.lower():
         return [BACKGROUND_INFO[11]]
-    elif "man-glasses" in product_name.lower():
+    elif "glasses" in product_name.lower():
         return [BACKGROUND_INFO[12]]
-    elif "man-pants" in product_name.lower():
+    elif "pants" in product_name.lower():
         return [BACKGROUND_INFO[13]]
-    elif "man-leathershoes" in product_name.lower():
+    elif "leathershoes" in product_name.lower():
         return [BACKGROUND_INFO[14]]
-    elif "man-sportscar" in product_name.lower():
+    elif "sportscar" in product_name.lower():
         return [BACKGROUND_INFO[15]]
-    elif "man-GTA5" in product_name.lower():
+    elif "GTA5" in product_name.lower():
         return [BACKGROUND_INFO[16]]
-    elif "man-switch" in product_name.lower():
+    elif "switch" in product_name.lower():
         return [BACKGROUND_INFO[17]]
     elif "massagegun" in product_name.lower():
         return [BACKGROUND_INFO[18]]
     elif "wine" in product_name.lower():
         return [BACKGROUND_INFO[19]]
-    elif "man-albumenpowder" in product_name.lower():
+    elif "albumenpowder" in product_name.lower():
         return [BACKGROUND_INFO[20]]
-    elif "man-treadmill" in product_name.lower():
+    elif "treadmill" in product_name.lower():
         return [BACKGROUND_INFO[21]]
     elif "essentials" in product_name.lower():
         return [BACKGROUND_INFO[22]]
