@@ -1090,7 +1090,7 @@ load_model_and_tokenizer()
 
 if __name__ == "__main__":
     # Manual input for race, age range, gender, emotion
-    input_str = "17-30, male, Asian, happy"
+    input_str = ["17-30", "male", "Asian", "happy"]
 
     # Call the generator_llm_context
     generate_target_text(input_str)
