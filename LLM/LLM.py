@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from model import *
-from yolov8 import *
-import data_store 
+#from model import *
+#from yolov8 import *
+#import data_store 
 import random
 
 # Load the model and tokenizer globally
@@ -26,13 +26,6 @@ def simulate_thinking(thoughts, verbose=False):
     if verbose:
         for thought in thoughts:
             print(f"Thinking: {thought}")
-
-def parse_input(input_str):
-    """Parse input string into its components."""
-    parts = [part.strip() for part in input_str.split(',')]
-    if len(parts) < 4:
-        raise ValueError("Input must contain race, age range, gender, and emotion")
-    return parts[0], parts[1], parts[2], parts[3]
 
 def get_product_name(race, age_range, gender):
     """Select a product name based on the demographics."""
@@ -927,7 +920,7 @@ BACKGROUND_INFO = [
 def get_relevant_background(product_name):
     """Get relevant background information based on the product name. Can be expanded to more complex logic."""
 # Assuming a simple matching mechanism, select background information based on the product name
-    if "ice cream" in product_name.lower():
+    if "icecream" in product_name.lower():
         return [BACKGROUND_INFO[0]]
     elif "KFC" in product_name.lower():
         return [BACKGROUND_INFO[1]]
@@ -1065,7 +1058,7 @@ def generate_ad_with_context(input_str, emotion, tone='Natural'):
     simulate_thinking(thoughts)
 
     try:
-        age_range, gender, race, emotion = parse_input(input_str)
+        age_range, gender, race, emotion = input_str
         product_name = get_product_name(race.lower(), age_range, gender)
     except ValueError as e:
         print(e)
