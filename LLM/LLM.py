@@ -55,13 +55,13 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
         tone = "neutral"  # fallback option if the emotion is not recognized
     
     return (
-        f"You must abide by the following rule:Your output only has the final advertising words output by the model,Print the advertisement only once, no need to print other information"
-        f"Here are some background information: {context_text}\n\n"
+        f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
+        f"Here is some background information: {context_text}\n\n"
         f"Create a compelling advertisement for our product, '{product_name}'. "
         f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
-        f"The advertisement should be in a {tone} tone, highlight unique features, "
-        f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 60 words, enclosed in quotes."
+        f"The advertisement should be in a {tone} tone, highlighting unique features. "
+        f"Provide the final advertisement content only, without any additional information. "
+        f"Enclose the advertisement text in quotation marks."
     )
 
 def build_messages(input_text):
