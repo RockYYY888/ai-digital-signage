@@ -998,45 +998,45 @@ def get_relevant_background(product_name):
     elif "lipstick" in product_name.lower():
         return [BACKGROUND_INFO[33]]
     elif "bodycream" in product_name.lower():
-        return [BACKGROUND_INFO[31]]
-    elif "popmart" in product_name.lower():
         return [BACKGROUND_INFO[34]]
-    elif "bag" in product_name.lower():
+    elif "popmart" in product_name.lower():
         return [BACKGROUND_INFO[35]]
-    elif "dress" in product_name.lower():
+    elif "bag" in product_name.lower():
         return [BACKGROUND_INFO[36]]
-    elif "eyeshadow" in product_name.lower():
+    elif "dress" in product_name.lower():
         return [BACKGROUND_INFO[37]]
-    elif "instax" in product_name.lower():
+    elif "eyeshadow" in product_name.lower():
         return [BACKGROUND_INFO[38]]
-    elif "starbucks" in product_name.lower():
+    elif "instax" in product_name.lower():
         return [BACKGROUND_INFO[39]]
-    elif "lululemon" in product_name.lower():
+    elif "starbucks" in product_name.lower():
         return [BACKGROUND_INFO[40]]
-    elif "heels" in product_name.lower():
+    elif "lululemon" in product_name.lower():
         return [BACKGROUND_INFO[41]]
-    elif "skincareproducts" in product_name.lower():
+    elif "heels" in product_name.lower():
         return [BACKGROUND_INFO[42]]
-    elif "mac" in product_name.lower():
+    elif "skincareproducts" in product_name.lower():
         return [BACKGROUND_INFO[43]]
-    elif "jewelry" in product_name.lower():
+    elif "mac" in product_name.lower():
         return [BACKGROUND_INFO[44]]
-    elif "womanvitamin" in product_name.lower():
+    elif "jewelry" in product_name.lower():
         return [BACKGROUND_INFO[45]]
-    elif "watches" in product_name.lower():
+    elif "womanvitamin" in product_name.lower():
         return [BACKGROUND_INFO[46]]
-    elif "hermes" in product_name.lower():
+    elif "watches" in product_name.lower():
         return [BACKGROUND_INFO[47]]
-    elif "clhighheels" in product_name.lower():
+    elif "hermes" in product_name.lower():
         return [BACKGROUND_INFO[48]]
-    elif "travel" in product_name.lower():
+    elif "clhighheels" in product_name.lower():
         return [BACKGROUND_INFO[49]]
-    elif "ikea" in product_name.lower():
+    elif "travel" in product_name.lower():
         return [BACKGROUND_INFO[50]]
-    elif "organicvegetables" in product_name.lower():
+    elif "ikea" in product_name.lower():
         return [BACKGROUND_INFO[51]]
-    elif "laundrydetergent" in product_name.lower():
+    elif "organicvegetables" in product_name.lower():
         return [BACKGROUND_INFO[52]]
+    elif "laundrydetergent" in product_name.lower():
+        return [BACKGROUND_INFO[53]]
     else:
         return []
 
@@ -1085,7 +1085,7 @@ load_model_and_tokenizer()
 
 if __name__ == "__main__":
     # Manual input for race, age range, gender, emotion
-    input_str = "17-30, male, Asian, happy"
+    input_str = ('17-30', 'female', 'asian', 'happy')  
 
     # Call the generator_llm_context
     generate_target_text(input_str)
