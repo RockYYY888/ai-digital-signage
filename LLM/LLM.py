@@ -1,39 +1,62 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from model import *
-from yolov8 import *
-import data_store 
+# from model import *
+# from yolov8 import *
+# import data_store
 import random
 
-def load_model_and_tokenizer(model_name):
-    """Load the model and tokenizer."""
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(model_name)
+# Load the model and tokenizer globally
+model_name = "meta-llama/Llama-3.2-1B-Instruct"
+tokenizer = None
+model = None
 
+def load_model_and_tokenizer():
+    """Load the model and tokenizer."""
+    global tokenizer, model
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token_id = tokenizer.eos_token_id
             model.config.pad_token_id = tokenizer.pad_token_id
-
-        return tokenizer, model
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
 
-def parse_input(input_str):
-    """Parse input string into its components."""
-    parts = [part.strip() for part in input_str.split(',')]
-    if len(parts) < 4:
-        raise ValueError("Input must contain product name, race, age range, and gender")
-    return parts[0], parts[1], parts[2], parts[3]
+def get_product_name(race, age_range, gender):
+    """Select a product name based on the demographics."""
+    try:
+        product_list = advertisements[gender][age_range][race]
+        if product_list:
+            return random.choice(product_list)
+        else:
+            raise ValueError("No products found for the given demographics.")
+    except KeyError:
+        raise ValueError("Invalid demographic information provided.")
 
-def generate_input_text(product_name, race, age_range, gender, tone):
-    """Generate the input text for the prompt."""
+
+def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
+    """Generate the input text for the prompt, including background context."""
+    context_text = " ".join(context)
+   # Define tone based on emotion
+    if emotion.lower() == "sad":
+        tone = "compassionate"
+    elif emotion.lower() == "angry":
+        tone = "aggressive"
+    elif emotion.lower() == "happy":
+        tone = "joyful"
+    elif emotion.lower() == "neutral":
+        tone = "natural"  # or you can choose a default tone here if needed
+    else:
+        tone = "neutral"  # fallback option if the emotion is not recognized
+    
     return (
+        f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
+        f"Here is some background information: {context_text}\n\n"
         f"Create a compelling advertisement for our product, '{product_name}'. "
-        f"Target Audience: {race} {gender} aged {age_range}. "
-        f"The advertisement should be in a {tone} tone, highlight unique features, "
-        f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 20-60 words, enclosed in quotes."
+        f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
+        f"The advertisement should be in a {tone} tone, highlighting unique features. "
+        f"Provide the final advertisement content only, without any additional information. "
+        f"Enclose the advertisement text in quotation marks."
     )
 
 def build_messages(input_text):
@@ -43,9 +66,8 @@ def build_messages(input_text):
         {"role": "user", "content": input_text}
     ]
 
-def generate_response(model, tokenizer, messages, max_new_tokens=60):
+def generate_response(messages, max_new_tokens=120):
     """Generate a response for the input text using messages format."""
-    # Flatten messages to create a single input text for the model
     input_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
 
     inputs = tokenizer(input_text, return_tensors="pt")
@@ -902,13 +924,13 @@ BACKGROUND_INFO = [
 def get_relevant_background(product_name):
     """Get relevant background information based on the product name. Can be expanded to more complex logic."""
 # Assuming a simple matching mechanism, select background information based on the product name
-    if "ice cream" in product_name.lower():
+    if "icecream" in product_name.lower():
         return [BACKGROUND_INFO[0]]
-    elif "KFC" in product_name.lower():
+    elif "kfc" in product_name.lower():
         return [BACKGROUND_INFO[1]]
     elif "nikeshoes" in product_name.lower():
         return [BACKGROUND_INFO[2]]
-    elif "Pepsi" in product_name.lower():
+    elif "pepsi" in product_name.lower():
         return [BACKGROUND_INFO[3]]
     elif "phone" in product_name.lower():
         return [BACKGROUND_INFO[4]]
@@ -924,27 +946,27 @@ def get_relevant_background(product_name):
         return [BACKGROUND_INFO[9]]
     elif "applewatch" in product_name.lower():
         return [BACKGROUND_INFO[10]]
-    elif "man-suit" in product_name.lower():
+    elif "suit" in product_name.lower():
         return [BACKGROUND_INFO[11]]
-    elif "man-glasses" in product_name.lower():
+    elif "glasses" in product_name.lower():
         return [BACKGROUND_INFO[12]]
-    elif "man-pants" in product_name.lower():
+    elif "pants" in product_name.lower():
         return [BACKGROUND_INFO[13]]
-    elif "man-leathershoes" in product_name.lower():
+    elif "leathershoes" in product_name.lower():
         return [BACKGROUND_INFO[14]]
-    elif "man-sportscar" in product_name.lower():
+    elif "sportscar" in product_name.lower():
         return [BACKGROUND_INFO[15]]
-    elif "man-GTA5" in product_name.lower():
+    elif "gta5" in product_name.lower():
         return [BACKGROUND_INFO[16]]
-    elif "man-switch" in product_name.lower():
+    elif "switch" in product_name.lower():
         return [BACKGROUND_INFO[17]]
     elif "massagegun" in product_name.lower():
         return [BACKGROUND_INFO[18]]
     elif "wine" in product_name.lower():
         return [BACKGROUND_INFO[19]]
-    elif "man-albumenpowder" in product_name.lower():
+    elif "albumenpowder" in product_name.lower():
         return [BACKGROUND_INFO[20]]
-    elif "man-treadmill" in product_name.lower():
+    elif "treadmill" in product_name.lower():
         return [BACKGROUND_INFO[21]]
     elif "essentials" in product_name.lower():
         return [BACKGROUND_INFO[22]]
@@ -971,115 +993,86 @@ def get_relevant_background(product_name):
     elif "lipstick" in product_name.lower():
         return [BACKGROUND_INFO[33]]
     elif "bodycream" in product_name.lower():
-        return [BACKGROUND_INFO[31]]
-    elif "popmart" in product_name.lower():
         return [BACKGROUND_INFO[34]]
-    elif "bag" in product_name.lower():
+    elif "popmart" in product_name.lower():
         return [BACKGROUND_INFO[35]]
-    elif "dress" in product_name.lower():
+    elif "bag" in product_name.lower():
         return [BACKGROUND_INFO[36]]
-    elif "eyeshadow" in product_name.lower():
+    elif "dress" in product_name.lower():
         return [BACKGROUND_INFO[37]]
-    elif "instax" in product_name.lower():
+    elif "eyeshadow" in product_name.lower():
         return [BACKGROUND_INFO[38]]
-    elif "starbucks" in product_name.lower():
+    elif "instax" in product_name.lower():
         return [BACKGROUND_INFO[39]]
-    elif "lululemon" in product_name.lower():
+    elif "starbucks" in product_name.lower():
         return [BACKGROUND_INFO[40]]
-    elif "heels" in product_name.lower():
+    elif "lululemon" in product_name.lower():
         return [BACKGROUND_INFO[41]]
-    elif "skincareproducts" in product_name.lower():
+    elif "heels" in product_name.lower():
         return [BACKGROUND_INFO[42]]
-    elif "mac" in product_name.lower():
+    elif "skincareproducts" in product_name.lower():
         return [BACKGROUND_INFO[43]]
-    elif "jewelry" in product_name.lower():
+    elif "mac" in product_name.lower():
         return [BACKGROUND_INFO[44]]
-    elif "womanvitamin" in product_name.lower():
+    elif "jewelry" in product_name.lower():
         return [BACKGROUND_INFO[45]]
-    elif "watches" in product_name.lower():
+    elif "womanvitamin" in product_name.lower():
         return [BACKGROUND_INFO[46]]
-    elif "hermes" in product_name.lower():
+    elif "watches" in product_name.lower():
         return [BACKGROUND_INFO[47]]
-    elif "clhighheels" in product_name.lower():
+    elif "hermes" in product_name.lower():
         return [BACKGROUND_INFO[48]]
-    elif "travel" in product_name.lower():
+    elif "clhighheels" in product_name.lower():
         return [BACKGROUND_INFO[49]]
-    elif "ikea" in product_name.lower():
+    elif "travel" in product_name.lower():
         return [BACKGROUND_INFO[50]]
-    elif "organicvegetables" in product_name.lower():
+    elif "ikea" in product_name.lower():
         return [BACKGROUND_INFO[51]]
-    elif "laundrydetergent" in product_name.lower():
+    elif "organicvegetables" in product_name.lower():
         return [BACKGROUND_INFO[52]]
+    elif "laundrydetergent" in product_name.lower():
+        return [BACKGROUND_INFO[53]]
     else:
         return []
 
-
-def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
-    """Generate the input text for the prompt, including background context."""
-    # Combine background information into text, considering the potential impact of emotion on tone
-    context_text = " ".join(context)
-    
-    # Simple mapping logic: can be made more complex, for example, by altering tone based on specific emotions or accentuating features
-    if emotion == "Sad":
-        tone = "compassionate"  # For instance, assuming a different advertising tone under this emotion
-    
-    return (
-        f"Here are some background information: {context_text}\n\n"
-        f"Create a compelling advertisement for our product, '{product_name}'. "
-        f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
-        f"The advertisement should be in a {tone} tone, highlight unique features, "
-        f"and create an emotional appeal. Include a catchy tagline. "
-        f"Limit the response to 20-60 words, enclosed in quotes."
-    )
-
-
-def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', max_new_tokens=60, verbose=False):
+def generate_ad_with_context(input_str, emotion, tone='Natural'):
     """Generate an ad using additional context."""
     try:
-        product_name, race, age_range, gender = parse_input(input_str)
+        age_range, gender, race, emotion = input_str
+        product_name = get_product_name(race.lower(), age_range, gender)
     except ValueError as e:
-        return str(e)
+        print(e)
+        return
 
     context = get_relevant_background(product_name)
-    input_text = generate_input_text_with_context(product_name, gender, age_range, race, tone, context, emotion)
+    input_text = generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion)
     messages = build_messages(input_text)
 
-    response = generate_response(model, tokenizer, messages, max_new_tokens)
+    response = generate_response(messages)
+    ad_text = extract_ad_text(response)
 
-    return extract_ad_text(response)
+    if ad_text:
+
+        print("**Advertising Information:**")
+        print(f"{product_name}: {context}")
+        print("")
+        print("**Personalized Advertising message:**")
+        print(ad_text)
+    else:
+        print("Failed to generate ad text.")
 
 
-# Main program
+def generate_target_text(input_str, emotion="happy", tone='Natural'):
+    """Generate an advertisement based on the provided input."""
+    generate_ad_with_context(input_str, emotion, tone)
+
+
+# Load the model when the server starts
+load_model_and_tokenizer()
+
 if __name__ == "__main__":
-    model_name = "meta-llama/Llama-3.2-1B-Instruct"
+    # Manual input for race, age range, gender, emotion
+    input_str = ('17-30', 'female', 'asian', 'happy')  
 
-    try:
-        tokenizer, model = load_model_and_tokenizer(model_name)
-    except RuntimeError as e:
-        print(e)
-        exit()
-
-    # Detect the faces and related information
-    detect_faces_from_webcam()
-    age_range, gender, race, emotion = data_store.combined_prediction
-
- # Get product names based on gender, age and ethnicity
-    try:
-        product_list = advertisements[gender][age_range][race]
-        product_name = random.choice(product_list)
-    except KeyError:
-        print("No valid product name found for the given criteria.")
-        exit()
-
-    if product_name:
-        input_str = f"{product_name}, {race}, {age_range}, {gender}"
-        ad_text = generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', verbose=False)
-        
-        if ad_text:
-            print("**Advertisement Message:**")
-            print(ad_text)
-        else:
-            print("Failed to generate advertisement text.")
-
-
-
+    # Call the generator_llm_context
+    generate_target_text(input_str)
