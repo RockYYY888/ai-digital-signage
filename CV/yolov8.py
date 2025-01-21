@@ -76,8 +76,18 @@ def process_frame(initial_frame):
     global model_event, text_generation_done_event
     model_event.clear()
 
+    # Perform histogram equalization (optional)
+    frame_gray = cv2.cvtColor(initial_frame, cv2.COLOR_BGR2GRAY)
+    frame_eq = cv2.equalizeHist(frame_gray)
+    frame_eq = cv2.cvtColor(frame_eq, cv2.COLOR_GRAY2BGR)  # Convert back to BGR
+    # Apply Gamma Correction (optional)
+    gamma = 1.2  # Adjust gamma for lighting correction
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255 for i in range(256)]).astype("uint8")
+    frame_eq = cv2.LUT(frame_eq, table)
+
     # Perform face detection
-    results = face_detector(initial_frame, conf=0.86)
+    results = face_detector(frame_eq, conf=0.86)
     if len(results) == 0:
         print("[Info] No face detected at this timestamp.")
         model_event.set()  # Signal that the frame can be processed again
