@@ -18,11 +18,6 @@ def load_model_and_tokenizer(model_name):
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
-def simulate_thinking(thoughts, verbose=False):
-    """Simulate the thought process for each thought item."""
-    if verbose:
-        for thought in thoughts:
-            print(f"Thinking: {thought}")
 
 def parse_input(input_str):
     """Parse input string into its components."""
@@ -1040,13 +1035,6 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
 
 def generate_ad_with_context(model, tokenizer, input_str, emotion, tone='Natural', max_new_tokens=60, verbose=False):
     """Generate an ad using additional context."""
-    thoughts = [
-        "Considering the appealing factors for the target audience.",
-        "Determining the most effective tone and style for this demographic.",
-        "Ensuring the ad contains emotional triggers and a memorable tagline."
-    ]
-    simulate_thinking(thoughts, verbose=verbose)
-
     try:
         product_name, race, age_range, gender = parse_input(input_str)
     except ValueError as e:
