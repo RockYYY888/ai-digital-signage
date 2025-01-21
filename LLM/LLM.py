@@ -71,10 +71,13 @@ def build_messages(input_text):
 
 def generate_response(messages, max_new_tokens=120):
     """Generate a response for the input text using messages format."""
-    input_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
+    # By using 'apply_chat_template':
+    # 1. Automatically add bos_token at the beginning of the entire conversation and eos_token at the end
+    # 2. apply_chat_template() will correctly insert delimiters based on the role of the message.
+    # e.g. : [INST] and [/INST] are for user messages, <<SYS>> and <</SYS>> are for system messages.
+    inputs = tokenizer.apply_chat_template(messages, return_tensors="pt") 
 
-    inputs = tokenizer(input_text, return_tensors="pt")
-    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
+    outputs = model.generate(inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
 
