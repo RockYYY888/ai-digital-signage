@@ -11,6 +11,7 @@ from UTKFaceDataset import *
 from torch.utils.data import Dataset, DataLoader, random_split, Subset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 batch_size = 72
 csv_file = 'utk_dataset_metadata.csv'
 img_dir = 'UTKFace'
@@ -339,7 +340,7 @@ if __name__ == '__main__':
 
     # NOTICE: num_epochs is an accumulative value, represents for total number of epochs
     for epoch in range(start_epoch, num_epochs):
-        train_loss = train(model, train_loader, criterion, optimizer, epoch, print_freq=100)
+        train_loss = train(model, train_loader, criterion, optimizer, epoch, print_freq=1)
         val_loss, age_acc, gender_acc, race_acc = validate(model, val_loader, criterion)
 
         # Calculate average validation accuracy

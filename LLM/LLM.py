@@ -35,6 +35,7 @@ def get_product_name(demographics):
 
 
 
+
 def generate_input_text_with_context(demographics, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
     context_text = " ".join(context)
@@ -1037,6 +1038,7 @@ def get_relevant_background(product_name):
     else:
         return []
 
+
 def generate_ad_with_context(input_data, emotion, tone='Natural'):
     """Generate an ad using additional context."""
     try:
@@ -1050,7 +1052,7 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
     except ValueError as e:
         print(e)
         return
-
+      
     context = get_relevant_background(demographics['product_name'])
     input_text = generate_input_text_with_context(demographics, tone, context, emotion)
     messages = build_messages(input_text)
@@ -1068,7 +1070,6 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
         print("Failed to generate ad text.")
 
 
-
 def generate_target_text(input_str, emotion="happy", tone='Natural'):
     """Generate an advertisement based on the provided input."""
     generate_ad_with_context(input_str, emotion, tone)
@@ -1083,3 +1084,4 @@ if __name__ == "__main__":
 
     # Call the generator_llm_context
     generate_target_text(input_str)
+
