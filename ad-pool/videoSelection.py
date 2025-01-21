@@ -1,13 +1,8 @@
 import os
-import mysql.connector
+import sqlite3
 
 # Database configuration
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'zyy123456',  
-    'database': 'advertisements'
-}
+db_file = os.path.join(os.path.dirname(__file__), 'advertisements.db')
 
 def get_targeted_videos_with_ads(age_group, gender, ethnicity):
     """
@@ -22,7 +17,7 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
         list of tuples: Each tuple contains ad_content and ad_description.
     """
     # Initialize connection
-    connection = mysql.connector.connect(**db_config)
+    connection = sqlite3.connect(db_file)
     cursor = connection.cursor()
 
     # SQL query
@@ -31,9 +26,9 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
         FROM demographics AS d
         INNER JOIN ads AS a
         ON d.demographics_id = a.demographics_id
-        WHERE d.gender = %s
-        AND d.age_group = %s
-        AND d.ethnicity = %s
+        WHERE d.gender = ?
+        AND d.age_group = ?
+        AND d.ethnicity = ?
         ORDER BY a.ad_content ASC;
     """
 
@@ -43,22 +38,38 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
         cursor.execute(query, (gender, age_group, ethnicity))
         results = cursor.fetchall()
         video_ads_list = [(row[0], row[1]) for row in results]  # Extract ad content and description into tuples
-    except mysql.connector.Error as err:
+    except sqlite3.Error as err:
         print(f"Error: {err}")
     finally:
         # Close connection
         if 'cursor' in locals():
             cursor.close()
-        if 'connection' in locals() and connection.is_connected():
+        if 'connection' in locals():
             connection.close()
 
     return video_ads_list
 
 # Example usage
 if __name__ == "__main__":
+    # Single line input
+    user_input = input("Enter age_group, gender, ethnicity: ").strip()
+
+    # Parse the input
+    try:
+        # Remove parentheses and split by commas
+        user_input = user_input.strip("()")
+        age_group, gender, ethnicity = [x.strip().strip("'\"") for x in user_input.split(',')]
+    except ValueError:
+        print("Invalid input format. Please enter values in the format: ('age_group', 'gender', 'ethnicity')")
+        exit()
+
     # Fetch the list of targeted videos with ads
-    targeted_videos_with_ads = get_targeted_videos_with_ads('17-35', 'Male', 'Asian')
+    targeted_videos_with_ads = get_targeted_videos_with_ads(age_group, gender, ethnicity)
     
     # Print the results as a Python list
-    print("Targeted videos with advertisements:")
-    print(targeted_videos_with_ads)
+    print("\nTargeted videos with advertisements:")
+    if targeted_videos_with_ads:
+        for ad_content, ad_description in targeted_videos_with_ads:
+            print(f"{ad_content},{ad_description}")
+    else:
+        print("No ads found for the given demographic information.")
