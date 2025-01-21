@@ -22,10 +22,10 @@ def load_model_and_tokenizer():
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
 
-def get_product_name(race, age_range, gender):
+def get_product_name(demographics):
     """Select a product name based on the demographics."""
     try:
-        product_list = advertisements[gender][age_range][race]
+        product_list = advertisements[demographics['gender']][demographics['age_range']][demographics['race']]
         if product_list:
             return random.choice(product_list)
         else:
@@ -34,10 +34,11 @@ def get_product_name(race, age_range, gender):
         raise ValueError("Invalid demographic information provided.")
 
 
-def generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion):
+
+def generate_input_text_with_context(demographics, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
     context_text = " ".join(context)
-   # Define tone based on emotion
+    # Define tone based on emotion
     if emotion.lower() == "sad":
         tone = "compassionate"
     elif emotion.lower() == "angry":
@@ -45,19 +46,20 @@ def generate_input_text_with_context(product_name, race, age_range, gender, tone
     elif emotion.lower() == "happy":
         tone = "joyful"
     elif emotion.lower() == "neutral":
-        tone = "natural"  # or you can choose a default tone here if needed
+        tone = "natural"
     else:
         tone = "neutral"  # fallback option if the emotion is not recognized
     
     return (
         f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
         f"Here is some background information: {context_text}\n\n"
-        f"Create a compelling advertisement for our product, '{product_name}'. "
-        f"Target Audience: {race} {gender} aged {age_range}, feeling {emotion}. "
+        f"Create a compelling advertisement for our product, '{demographics['product_name']}'. "
+        f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlighting unique features. "
         f"Provide the final advertisement content only, without any additional information. "
         f"Enclose the advertisement text in quotation marks."
     )
+
 
 def build_messages(input_text):
     """Build the messages list for the input text."""
@@ -1035,31 +1037,36 @@ def get_relevant_background(product_name):
     else:
         return []
 
-def generate_ad_with_context(input_str, emotion, tone='Natural'):
+def generate_ad_with_context(input_data, emotion, tone='Natural'):
     """Generate an ad using additional context."""
     try:
-        age_range, gender, race, emotion = input_str
-        product_name = get_product_name(race.lower(), age_range, gender)
+        demographics = {
+            'age_range': input_data[0],
+            'gender': input_data[1],
+            'race': input_data[2],
+            'emotion': emotion
+        }
+        demographics['product_name'] = get_product_name(demographics)
     except ValueError as e:
         print(e)
         return
 
-    context = get_relevant_background(product_name)
-    input_text = generate_input_text_with_context(product_name, race, age_range, gender, tone, context, emotion)
+    context = get_relevant_background(demographics['product_name'])
+    input_text = generate_input_text_with_context(demographics, tone, context, emotion)
     messages = build_messages(input_text)
 
     response = generate_response(messages)
     ad_text = extract_ad_text(response)
 
     if ad_text:
-
         print("**Advertising Information:**")
-        print(f"{product_name}: {context}")
+        print(f"{demographics['product_name']}: {context}")
         print("")
         print("**Personalized Advertising message:**")
         print(ad_text)
     else:
         print("Failed to generate ad text.")
+
 
 
 def generate_target_text(input_str, emotion="happy", tone='Natural'):
