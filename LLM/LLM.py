@@ -15,9 +15,21 @@ def load_model_and_tokenizer():
     try:
         tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
         model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+
+        # Ensure pad_token_id is set
         if tokenizer.pad_token_id is None:
-            tokenizer.pad_token_id = tokenizer.eos_token_id
-            model.config.pad_token_id = tokenizer.pad_token_id
+            # Ensure pad_token_id and eos_token_id are distinct by using 'add_special_tokens' method.
+            tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+
+        tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids('[PAD]')
+        model.config.pad_token_id = tokenizer.pad_token_id
+        
+            # Ensure eos_token_id is set
+        if tokenizer.eos_token_id is None:
+            tokenizer.add_special_tokens({'eos_token': '[EOS]'})
+
+        tokenizer.eos_token_id = tokenizer.convert_tokens_to_ids('[EOS]')
+        model.config.eos_token_id = tokenizer.eos_token_id
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
@@ -71,10 +83,18 @@ def build_messages(input_text):
 
 def generate_response(messages, max_new_tokens=120):
     """Generate a response for the input text using messages format."""
-    input_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
+    #------------------
+    # By using 'apply_chat_template':
+    # 1. Automatically add bos_token at the beginning of the entire conversation and eos_token at the end
+    # 2. apply_chat_template() will correctly insert delimiters based on the role of the message.
+    # e.g. : [INST] and [/INST] are for user messages, <<SYS>> and <</SYS>> are for system messages.
+    #------------------
+    inputs = tokenizer.apply_chat_template(messages, return_tensors="pt") 
 
-    inputs = tokenizer(input_text, return_tensors="pt")
-    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
+    outputs = model.generate(inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
+
+    # This is a decoded output: 
+    # For skip_special_tokens=True, this will ensure that any special tokens are omitted from the generated output
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
 
