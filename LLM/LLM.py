@@ -34,7 +34,7 @@ def load_model_and_tokenizer():
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
 
-def generate_input_text_with_context(demographics, tone, context, emotion):
+def generate_input_text_with_context(product,demographics, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
     context_text = " ".join(context)
     # Define tone based on emotion
@@ -52,7 +52,7 @@ def generate_input_text_with_context(demographics, tone, context, emotion):
     return (
         f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
         f"Here is some background information: {context_text}\n\n"
-        #f"Create a compelling advertisement for our product, '{demographics['product_name']}'. "
+        f"Create a compelling advertisement for our product, '{product}'. "
         f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}. "
         f"The advertisement should be in a {tone} tone, highlighting unique features. "
         f"Provide the final advertisement content only, without any additional information. "
@@ -114,7 +114,7 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
     if targeted_videos: 
 
         random_video = random.choice(targeted_videos)
-        print(f"Randomly selected video: {random_video}")
+        # print(f"Randomly selected video: {random_video}")
  
         # access the video file name:
         random_video_file = random_video[0]
@@ -122,18 +122,21 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
 
         # access the video description:
         random_video_description = random_video[1]
-        #print(f"Randomly selected video description: {random_video_description}") 
+        # print(f"Randomly selected video description: {random_video_description}") 
 
         # access the video weight:
         random_video_weight = random_video[2]
-        #print(f"Randomly selected video weight: {random_video_weight}") 
+        # print(f"Randomly selected video weight: {random_video_weight}") 
+
+        # access the name of product:
+        random_product_name = random_video[3]
+        # print(f"Product name: {random_product_name}") 
 
         # comment all print statements to improve code readability, uncomment them when testing.
-        #TODO: Add one more tuple: Product_name to complete 'generate_input_text_with_context'.
     else:
         print("No ads found.")
     
-    input_text = generate_input_text_with_context(demographics, tone, random_video_description, emotion)
+    input_text = generate_input_text_with_context(random_product_name,demographics, tone, random_video_description, emotion)
     messages = build_messages(input_text)
 
     response = generate_response(messages)
@@ -141,7 +144,7 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
 
     if ad_text:
         print("**Advertising Information:**")
-        print(f"{random_video_description}")
+        print(f"{random_product_name}:{random_video_description}")
         print("")
         print("**Personalized Advertising message:**")
         print(ad_text)
@@ -159,7 +162,7 @@ load_model_and_tokenizer()
 
 if __name__ == "__main__":
     # Manual input for race, age range, gender, emotion
-    input_str = ('17-35', 'Male', 'Asian', 'happy')  
+    input_str = ('17-35', 'Male', 'Asian', 'sad')  
 
     # Call the generator_llm_context
     generate_target_text(input_str)
