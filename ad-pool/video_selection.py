@@ -6,7 +6,7 @@ db_file = os.path.join(os.path.dirname(__file__), 'advertisements.db')
 
 def get_targeted_videos_with_ads(age_group, gender, ethnicity):
     """
-    Retrieve a list of advertisement content, descriptions, and weights based on demographic information.
+    Retrieve a list of advertisement content, descriptions, weights, and product names based on demographic information. 
 
     Parameters:
         age_group (str): Age group.
@@ -14,7 +14,7 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
         ethnicity (str): Ethnicity.
 
     Returns:
-        list of tuples: Each tuple contains ad_content, ad_description, and weight.
+        list of tuples: Each tuple contains ad_content, ad_description, weight, and product_name.
     """
     # Initialize connection
     connection = sqlite3.connect(db_file)
@@ -22,7 +22,7 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
 
     # SQL query
     query = """
-        SELECT a.ad_content, a.ad_description, a.weight
+        SELECT a.ad_content, a.ad_description, a.weight, a.product_name
         FROM demographics AS d
         INNER JOIN ads AS a
         ON d.demographics_id = a.demographics_id
@@ -37,7 +37,7 @@ def get_targeted_videos_with_ads(age_group, gender, ethnicity):
     try:
         cursor.execute(query, (gender, age_group, ethnicity))
         results = cursor.fetchall()
-        video_ads_list = [(row[0], row[1], row[2]) for row in results]  # Extract ad content, description, and weight
+        video_ads_list = [(row[0], row[1], row[2], row[3]) for row in results]  # Extract ad content, description, and weight
     except sqlite3.Error as err:
         print(f"Error: {err}")
     finally:
@@ -67,5 +67,7 @@ if __name__ == "__main__":
     targeted_videos_with_ads = get_targeted_videos_with_ads(age_group, gender, ethnicity)
     
     # Print the results in the desired format
-    print("\nTargeted videos with advertisements:")
-    print(targeted_videos_with_ads if targeted_videos_with_ads else "No ads found for the given demographic information.")
+    if targeted_videos_with_ads:
+        print(targeted_videos_with_ads)  # This will output the list of tuples as you requested
+    else:
+        print("No ads found for the given demographic information.")
