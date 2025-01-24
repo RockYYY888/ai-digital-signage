@@ -13,8 +13,8 @@ def load_model_and_tokenizer():
     """Load the model and tokenizer."""
     global tokenizer, model
     try:
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
-        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
 
         # Ensure pad_token_id is set
         if tokenizer.pad_token_id is None:
