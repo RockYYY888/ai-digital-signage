@@ -45,7 +45,7 @@ def load_model_and_tokenizer():
 
 def generate_input_text_with_context(product,demographics, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
-    tone = emotion_tone_map.get(emotion.lower())
+    tone = emotion_tone_map.get(emotion.lower(), "professional")
     context_text = " ".join(context)
     
     return (
