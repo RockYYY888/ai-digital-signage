@@ -9,6 +9,15 @@ model_name = "meta-llama/Llama-3.2-1B-Instruct"
 tokenizer = None
 model = None
 
+# Create a emotion -> tone map
+emotion_tone_map = {
+    "sad": "empathetic and comforting",
+    "angry": "assertive yet respectful",
+    "happy": "energetic and enthusiastic",
+    "neutral": "professional and trustworthy"
+}
+
+
 def load_model_and_tokenizer():
     """Load the model and tokenizer."""
     global tokenizer, model
@@ -36,18 +45,8 @@ def load_model_and_tokenizer():
 
 def generate_input_text_with_context(product,demographics, tone, context, emotion):
     """Generate the input text for the prompt, including background context."""
+    tone = emotion_tone_map.get(emotion.lower())
     context_text = " ".join(context)
-    # Define tone based on emotion
-    if emotion.lower() == "sad":
-        tone = "compassionate"
-    elif emotion.lower() == "angry":
-        tone = "aggressive"
-    elif emotion.lower() == "happy":
-        tone = "joyful"
-    elif emotion.lower() == "neutral":
-        tone = "natural"
-    else:
-        tone = "neutral"  # fallback option if the emotion is not recognized
     
     return (
         f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
