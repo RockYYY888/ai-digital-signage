@@ -49,12 +49,12 @@ def generate_input_text_with_context(product,demographics, tone, context, emotio
     context_text = " ".join(context)
     
     return (
-        f"Your task is to produce a creative advertisement text strictly between 20-50 words. "
+        f"Your task is to produce a creative advertisement text strictly between 20-50 words.\n"
         f"Here is some background information: {context_text}\n\n"
-        f"Create a compelling advertisement for our product, '{product}'. "
-        f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}. "
-        f"The advertisement should be in a {tone} tone, highlighting unique features. "
-        f"Provide the final advertisement content only, without any additional information. "
+        f"Create a compelling advertisement for our product, '{product}'.\n"
+        f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}.\n"
+        f"The advertisement should be in a {tone} tone, highlighting unique features.\n"
+        f"Provide the final advertisement content only, without any additional information.\n"
         f"Enclose the advertisement text in quotation marks."
     )
 
@@ -165,4 +165,3 @@ if __name__ == "__main__":
 
     # Call the generator_llm_context
     generate_target_text(input_str)
-
