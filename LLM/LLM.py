@@ -17,6 +17,17 @@ emotion_tone_map = {
     "neutral": "professional and trustworthy"
 }
 
+GENERATION_PARAMS = {
+"max_new_tokens": 100,     
+"min_new_tokens": 30,
+"temperature": 0.5,        # Reduce randomness
+"top_p": 0.85,             # Reduce the sampling range
+"repetition_penalty": 1.5, # Enhance repetition penalty
+"do_sample": True,
+"num_beams": 4,            # Increase beam search width
+"length_penalty": 1.0,     # Neutral length control
+"no_repeat_ngram_size": 3  # Added prevention of 3-gram repetition
+}
 
 def load_model_and_tokenizer():
     """Load the model and tokenizer."""
@@ -67,7 +78,7 @@ def build_messages(input_text):
         {"role": "user", "content": input_text}
     ]
 
-def generate_response(messages, max_new_tokens=120):
+def generate_response(messages):
     """Generate a response for the input text using messages format."""
     #------------------
     # By using 'apply_chat_template':
@@ -77,7 +88,12 @@ def generate_response(messages, max_new_tokens=120):
     #------------------
     inputs = tokenizer.apply_chat_template(messages, return_tensors="pt") 
 
-    outputs = model.generate(inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id)
+    outputs = model.generate(
+        inputs, 
+        **GENERATION_PARAMS,
+        pad_token_id=tokenizer.pad_token_id,
+        eos_token_id=tokenizer.eos_token_id
+        )
 
     # This is a decoded output: 
     # For skip_special_tokens=True, this will ensure that any special tokens are omitted from the generated output
