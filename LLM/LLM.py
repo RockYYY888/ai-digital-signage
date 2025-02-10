@@ -3,6 +3,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 # from yolov8 import *
 from video_selection import *
 import random
+import re
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
@@ -66,7 +67,7 @@ def generate_input_text_with_context(product,demographics, tone, context, emotio
         f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}.\n"
         f"The advertisement should be in a {tone} tone, highlighting unique features.\n"
         f"Provide the final advertisement content only, without any additional information.\n"
-        f"Enclose the advertisement text in quotation marks."
+        f"Strictly provide ONLY the advertisement content within double quotes, without any additional text."
     )
 
 
@@ -74,8 +75,9 @@ def build_messages(input_text):
     """Build the messages list for the input text."""
     #TODO: Try different content for system and user, although the output is good now, make it better 
     return [
-        {"role": "system", "content": "You are an advertising expert. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."},
-        {"role": "user", "content": input_text}
+        {"role": "system", "content": "You are a senior copywriter at a multinational advertising agency. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."},
+        {"role": "user", "content": input_text},
+        {"role": "assistant", "content": "You are a senior copywriter at a multinational advertising agency."}
     ]
 
 def generate_response(messages):
@@ -88,16 +90,25 @@ def generate_response(messages):
     #------------------
     inputs = tokenizer.apply_chat_template(messages, return_tensors="pt") 
 
+    # print(f"{inputs}")
+
     outputs = model.generate(
         inputs, 
         **GENERATION_PARAMS,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id
         )
+    
 
     # This is a decoded output: 
     # For skip_special_tokens=True, this will ensure that any special tokens are omitted from the generated output
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = tokenizer.decode(
+        outputs[0], 
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=True)
+
+    # print(f"{response}")
+
     return response
 
 def extract_ad_text(response):
@@ -155,7 +166,11 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
     messages = build_messages(input_text)
 
     response = generate_response(messages)
+
+    # print(f"{response}") # examine the output format
+
     ad_text = extract_ad_text(response)
+
 
     if ad_text:
         print("**Advertising Information:**")
