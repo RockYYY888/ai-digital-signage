@@ -54,29 +54,28 @@ def load_model_and_tokenizer():
     except Exception as e:
         raise RuntimeError(f"Error loading model or tokenizer: {e}")
 
+    
 
-def generate_input_text_with_context(product,demographics, tone, context, emotion):
-    """Generate the input text for the prompt, including background context."""
+def build_messages(demographics, product, context, emotion):
+    """Build the messages list for the input text."""
     tone = emotion_tone_map.get(emotion.lower(), "professional")
     context_text = " ".join(context)
-    
-    return (
-        f"Your task is to produce a creative advertisement text strictly between 20-50 words.\n"
+
+    system_prompt = "You are a senior copywriter at a multinational advertising agency. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."
+
+    user_prompt = (
+        "Your task is to produce a creative advertisement text strictly between 20-50 words.\n"
         f"Here is some background information: {context_text}\n\n"
         f"Create a compelling advertisement for our product, '{product}'.\n"
         f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {emotion}.\n"
         f"The advertisement should be in a {tone} tone, highlighting unique features.\n"
-        f"Provide the final advertisement content only, without any additional information.\n"
-        f"Strictly provide ONLY the advertisement content within double quotes, without any additional text."
+        "Provide the final advertisement content only, without any additional information.\n"
+        "Strictly provide ONLY the advertisement content within double quotes, without any additional text."
     )
-
-
-def build_messages(input_text):
-    """Build the messages list for the input text."""
-    #TODO: Try different content for system and user, although the output is good now, make it better 
+        
     return [
-        {"role": "system", "content": "You are a senior copywriter at a multinational advertising agency. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."},
-        {"role": "user", "content": input_text},
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
         {"role": "assistant", "content": "You are a senior copywriter at a multinational advertising agency."}
     ]
 
@@ -162,8 +161,12 @@ def generate_ad_with_context(input_data, emotion, tone='Natural'):
     else:
         print("No ads found.")
     
-    input_text = generate_input_text_with_context(random_product_name,demographics, tone, random_video_description, emotion)
-    messages = build_messages(input_text)
+    messages = build_messages(
+        demographics=demographics,
+        product=random_product_name,
+        context=random_video_description,
+        emotion=emotion,
+    )
 
     response = generate_response(messages)
 
