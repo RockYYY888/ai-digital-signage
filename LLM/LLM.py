@@ -4,6 +4,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from video_selection import *
 import random
 import re
+from functools import lru_cache
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
@@ -30,6 +31,8 @@ GENERATION_PARAMS = {
 "no_repeat_ngram_size": 3  # Added prevention of 3-gram repetition
 }
 
+"""When calling repeatedly with the same parameters, the cached value is returned directly to avoid repeated calculations"""
+@lru_cache(maxsize=1)      
 def load_model_and_tokenizer():
     """Load the model and tokenizer."""
     global tokenizer, model
