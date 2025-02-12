@@ -48,7 +48,7 @@ def load_model_and_tokenizer():
         tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids('[PAD]')
         model.config.pad_token_id = tokenizer.pad_token_id
         
-            # Ensure eos_token_id is set
+        # Ensure eos_token_id is set
         if tokenizer.eos_token_id is None:
             tokenizer.add_special_tokens({'eos_token': '[EOS]'})
 
@@ -120,6 +120,8 @@ def extract_ad_text(response):
     end_idx = response.rfind('"')
     if start_idx > 0 and end_idx > start_idx:
         ad_text = response[start_idx:end_idx]
+        if ad_text.endswith('"'):
+            ad_text = ad_text[:-1]
     else:
         ad_text = response.strip()
     return ad_text or "No valid advertisement text found."
