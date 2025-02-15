@@ -21,9 +21,9 @@ class AdvertisementGenerator:
     }
 
     GENERATION_PARAMS = {
-    "max_new_tokens": 60,  # Reduced for shorter outputs
+    "max_new_tokens": 120,  # Reduced for shorter outputs
     "min_new_tokens": 30,
-    "temperature": 0.6,  # Slightly increased for more creativity
+    "temperature": 0.4,  # Slightly increased for more creativity
     "top_p": 0.9,  # Slightly increased
     "repetition_penalty": 1.2, # Increased to reduce repetition
     "do_sample": True,
@@ -86,7 +86,7 @@ class AdvertisementGenerator:
         return [
             {"role": "system", "content": self.build_system_prompt()},
             {"role": "user", "content": self.build_user_prompt(demographics, product, context)},
-            {"role": "assistant", "content": "You are a senior copywriter at a multinational advertising agency."}
+            #{"role": "assistant", "content": "You are a senior copywriter at a multinational advertising agency."}
         ] 
 
     def generate_ad_text(self, messages):
@@ -109,6 +109,13 @@ class AdvertisementGenerator:
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id
             )
+            """
+            raw_output = self.tokenizer.decode(
+                outputs[0],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True
+            )
+            print("【Original model output】:\n", raw_output)"""
           
             return self.process_output(outputs)
           
