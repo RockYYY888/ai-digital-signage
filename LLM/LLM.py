@@ -21,16 +21,16 @@ class AdvertisementGenerator:
     }
 
     GENERATION_PARAMS = {
-        "max_new_tokens": 100,
-        "min_new_tokens": 30,
-        "temperature": 0.5,
-        "top_p": 0.85,
-        "repetition_penalty": 1.5,
-        "do_sample": True,
-        "num_beams": 4,
-        "length_penalty": 1.0,
-        "no_repeat_ngram_size": 3
-    }
+    "max_new_tokens": 60,  # Reduced for shorter outputs
+    "min_new_tokens": 30,
+    "temperature": 0.6,  # Slightly increased for more creativity
+    "top_p": 0.9,  # Slightly increased
+    "repetition_penalty": 1.2, # Increased to reduce repetition
+    "do_sample": True,
+    "num_beams": 4, 
+    "length_penalty": 1.0,
+    "no_repeat_ngram_size": 3
+}
 
     def __init__(self):
         self.tokenizer = None
