@@ -143,7 +143,7 @@ def generate_target_text_in_yolo(predictions):
     # Simulate generating text (e.g., advertising text or any other processing)
     print("Generating advertisement text...")  # This should be your actual text generation logic
     # Simulate a delay in text generation
-    generate_target_text(predictions)  # Call your actual LLM function here
+    pipeline.generate_advertisement(predictions)  # Call your actual LLM function here
     # After generation is complete, signal that text generation is done
     text_generation_done_event.set()
 
