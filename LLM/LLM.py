@@ -1,5 +1,5 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from video_selection import *
+from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
