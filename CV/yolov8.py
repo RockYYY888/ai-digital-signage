@@ -6,6 +6,7 @@ from model import *
 from PIL import Image
 import os
 from LLM.LLM import *
+import queue
 
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
@@ -61,7 +62,7 @@ def detect_faces_from_webcam():
                 last_detection_time = current_time
                 # Wait until the previous detection and text generation are complete
                 if model_event.is_set():
-                    threading.Thread(target=process_frame_for_face_attributes, args=(frame.copy(),)).start()
+                    threading.Thread(target=process_frame, args=(frame.copy(),)).start()
 
             if cv2.waitKey(1) & 0xFF == 27:
                 print("Exiting...")
@@ -71,7 +72,7 @@ def detect_faces_from_webcam():
         cv2.destroyAllWindows()
 
 # Frame processing function
-def process_frame_for_face_attributes(initial_frame):
+def process_frame(initial_frame):
     global model_event, text_generation_done_event
     model_event.clear()
 
@@ -113,10 +114,10 @@ def process_frame_for_face_attributes(initial_frame):
     pil_image = Image.fromarray(cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB))
 
     # Predict demographic features (age, gender, race)
-    age_label, gender_label, race_label = predict_face_attributes(model_demographic, pil_image, transform, device)
+    age_label, gender_label, race_label = predict(model_demographic, pil_image)
 
     # Predict emotion
-    emotion_pred = predict_emotion(model_emotion, pil_image)
+    emotion_pred = predict2(model_emotion, pil_image)
     emotion_label = emotion_mapping.get(emotion_pred, "Unknown")
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
 
