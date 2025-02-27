@@ -1,5 +1,5 @@
 import time
-from data_interface import prediction_queue
+from data_integration.data_interface import prediction_queue
 
 last_prediction = None
 

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, Response
 import time
 import json
-from data_generator import get_data_stream
+from data_integration.data_generator import get_data_stream
 
 app = Flask(__name__,
           template_folder='templates',
