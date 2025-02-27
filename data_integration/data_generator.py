@@ -14,6 +14,3 @@ def generate_test_input():
 def get_data_stream():
     while True:
         yield generate_test_input()
-        time.sleep(3)  # Keep the original interval
-
-

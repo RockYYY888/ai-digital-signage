@@ -7,13 +7,13 @@ import numpy as np
 import os
 import pandas as pd
 from torch.utils.data import DataLoader
-from UTKFaceDataset import *
+from CV.UTKFaceDataset import *
 from torch.utils.data import Dataset, DataLoader, random_split, Subset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 batch_size = 72
-csv_file = 'utk_dataset_metadata.csv'
+csv_file = 'CV/utk_dataset_metadata.csv'
 img_dir = 'UTKFace'
 
 # data augmentation
@@ -40,8 +40,8 @@ val_transform2 = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
 ])
-train_dir = 'fer2013/train'
-val_dir = 'fer2013/test'
+train_dir = 'CV/fer2013/train'
+val_dir = 'CV/fer2013/test'
 
 dataset = UTKFaceDataset(
     csv_file=csv_file,
@@ -317,8 +317,8 @@ if __name__ == '__main__':
     best_val_acc = 0.0  # Initialize best validation accuracy
     start_epoch = 0  # Starting epoch
 
-    last_checkpoint = 'best_face_attribute_model.pth'
-    best_model_path = 'best_face_attribute_model.pth'
+    last_checkpoint = 'CV/best_face_attribute_model.pth'
+    best_model_path = 'CV/best_face_attribute_model.pth'
 
     if os.path.exists(last_checkpoint):
         print('Loading checkpoint...')
