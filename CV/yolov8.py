@@ -7,6 +7,9 @@ from PIL import Image
 import os
 from LLM.LLM import *
 import queue
+import threading
+from data_integration.server import *
+from data_integration.data_interface import prediction_queue
 
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
@@ -126,6 +129,10 @@ def process_frame(initial_frame):
 
     # Print the prediction
     print(f"Predicted Demographics: {combined_prediction}")
+    print("Put combined_prediction into queue:", combined_prediction)
+
+    # Put the prediction into the queue for data_interface build
+    prediction_queue.put(combined_prediction)
 
 
     # Start a new thread for generating the advertisement text or further processing
@@ -136,10 +143,16 @@ def process_frame(initial_frame):
     # Allow further detection
     model_event.set()  # Signal that this frame is done processing
 
+def connect_local_subscreen():
+    server_thread = threading.Thread(target=app.run, kwargs={'threaded': True, 'port': 5000})
+    server_thread.daemon = True  # Set as a daemon thread
+    server_thread.start()
+
 # Function to handle the text generation and notify completion
 def generate_target_text_in_yolo(predictions):
     global text_generation_done_event
     text_generation_done_event.clear()
+    connect_local_subscreen()
     # Simulate generating text (e.g., advertising text or any other processing)
     print("Generating advertisement text...")  # This should be your actual text generation logic
     # Simulate a delay in text generation
