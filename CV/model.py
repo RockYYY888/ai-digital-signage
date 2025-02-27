@@ -89,7 +89,7 @@ class FaceAttributeModel(nn.Module):
             nn.Linear(num_features, 512),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(512, num_age_classes)  # 输出年龄类别数
+            nn.Linear(512, num_age_classes)  #output age
         )
 
 
@@ -97,14 +97,14 @@ class FaceAttributeModel(nn.Module):
             nn.Linear(num_features, 256),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(256, num_gender_classes)  # 输出性别类别数
+            nn.Linear(256, num_gender_classes)  #output gender
         )
 
         self.race_head = nn.Sequential(
             nn.Linear(num_features, 256),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(256, num_race_classes)  # 输出种族类别数
+            nn.Linear(256, num_race_classes)  # output race
         )
 
     def forward(self, x):
@@ -115,7 +115,6 @@ class FaceAttributeModel(nn.Module):
         race_output = self.race_head(shared_features)
         return {'age': age_output, 'gender': gender_output, 'race': race_output}
 
-#########################################################################
 class EmotionClassifier(nn.Module):
     def __init__(self, num_classes=4):
         super(EmotionClassifier, self).__init__()
@@ -123,7 +122,7 @@ class EmotionClassifier(nn.Module):
         num_features = self.base_model.fc.in_features
         self.base_model.fc = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(num_features, num_classes)  # 修改最后一层
+            nn.Linear(num_features, num_classes)  
         )
         
 
@@ -134,7 +133,7 @@ class EmotionClassifier(nn.Module):
 num_age_classes = 4
 num_gender_classes = len(gender_mapping)
 num_race_classes = len(race_mapping)
-num_classes = 4  # class of the emotion
+num_classes = 4  
 model2 = EmotionClassifier(num_classes=num_classes)
 model = FaceAttributeModel(num_age_classes, num_gender_classes, num_race_classes)
 model = model.to(device)
@@ -167,7 +166,7 @@ def train(model, dataloader, criterion, optimizer, epoch, print_freq=100):
         loss_gender = criterion(outputs['gender'], labels['gender'])
         loss_race = criterion(outputs['race'], labels['race'])
 
-        loss = 1.2*loss_age + loss_gender + 1.1*loss_race
+        loss = loss_age + loss_gender + loss_race
 
         loss.backward()
         optimizer.step()
@@ -297,10 +296,7 @@ def predict(model, image_path, transform=transform):
     age_label = age_group_transform(age_group)
     gender_label = [k for k, v in gender_mapping.items() if v == gender][0]
     race_label = [k for k, v in race_mapping.items() if v == race][0]
-    #
-    # print(f'Predicted Age Group: {age_label}')
-    # print(f'Predicted Gender: {gender_label}')
-    # print(f'Predicted Race: {race_label}')
+
     return age_label, gender_label, race_label
 
 def predict2(model2, image_path, transform2=val_transform2):
@@ -327,12 +323,10 @@ if __name__ == '__main__':
     if os.path.exists(last_checkpoint):
         print('Loading checkpoint...')
         checkpoint = torch.load(last_checkpoint)
-        # for k in checkpoint:
-        #     print(k)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         best_val_acc = checkpoint['best_val_acc']
-        start_epoch = checkpoint['epoch'] + 1  # 下一个要训练的epoch
+        start_epoch = checkpoint['epoch'] + 1  # the next epoch to train
         print(f'Resuming training from epoch {start_epoch}')
         print(f'Current Avg Acc: {best_val_acc}')
     else:
@@ -372,4 +366,3 @@ if __name__ == '__main__':
     # Save the final model after training
     torch.save(checkpoint, 'final_checkpoint.pth')
     print("Final model saved")
-

@@ -12,21 +12,21 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {device}')
 
 # gender mapping
-gender_mapping = {'male': 0, 'female': 1}
+gender_mapping = {'Male': 0, 'Female': 1}
 
 # race mapping
 race_mapping = {
-    'white': 0,
-    'black': 1,
-    'asian': 2,
-    'indian': 3,
-    'others_hispanic_latino_middle_eastern': 4
+    'White': 0,
+    'Black': 1,
+    'Asian': 2,
+    'Indian': 3,
+    'Others_hispanic_latino_middle_eastern': 4
 }
 emotion_mapping = {
-    0:"Angry",
-    1:"Happy",
-    2:"Sad",
-    3:"Neutral",
+    0:"angry",
+    1:"happy",
+    2:"sad",
+    3:"neutral",
 }
 # initial size: 200 * 200
 transform = transforms.Compose([
@@ -50,11 +50,11 @@ def age_group(age):
 
 def age_group_transform(age_group):
     if age_group == 0 or 1:
-        return "17-30"
+        return "17-35"
     elif age_group == 2:
-        return "30-55"
+        return "35-50"
     else:
-        return "55+"
+        return "50+"
 
 
 class UTKFaceDataset(Dataset):
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     csv_file = 'utk_dataset_metadata.csv'
     img_dir = 'UTKFace'
 
-    # 创建数据集实例
+    # create dataset entity
     dataset = UTKFaceDataset(
         csv_file=csv_file,
         img_dir=img_dir,

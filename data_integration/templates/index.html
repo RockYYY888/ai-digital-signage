@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Detection Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Base style */
+    body {
+      margin: 0;
+      background-color: #1e1e2f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #ffffff;
+    }
+
+    #container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 1400px;
+      height: 70%;
+      background: linear-gradient(145deg, #2e2e3f, #1a1a28);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    /* Left camera display area */
+    #camera-view {
+      width: 50%;
+      height: 100%;
+      background-color: #14141f;
+      display: flex;
+      flex-direction: column;  
+      justify-content: flex-start;
+      align-items: center;
+      position: relative;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #face-image-container {
+      width: 100%;  
+      height: 100%;  
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #face-image {
+      width: 80%;
+      height: 80%;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 3px dashed #ffcc00;
+      /*display: none;*/
+    }
+
+    #camera-status {
+      width: 100%;  
+      margin-top: 1px;  
+      text-align: center; 
+      color: #ffcc00;  
+      font-size: 1rem; 
+      line-height: 1.4;  
+    }
+
+    #camera-connection-status {
+      font-size: 1rem;  
+      margin: 0;      
+      color: #ffcc00;  
+      font-weight: bold;  
+    }
+
+    #face-detection-status {
+      font-size: 1rem;  
+      margin: 2px 0; 
+      color: red;   
+    }
+
+    /* Right status area */
+    #status {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(145deg, #2a2a3b, #1f1f30);
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .status-card {
+      background-color: #202030;
+      border-radius: 12px;
+      padding: 40px 20px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    #status-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #00ffcc;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #status-text {
+      font-family: 'Roboto', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: #c4c4de;
+      line-height: 1.8;
+      margin: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .highlight {
+      font-weight: bold;
+      color: #ffcc00;
+      background-color: #333;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .status-text-green {
+      color: #32cd32;
+    }
+
+    .status-text-red {
+      color: #ff4d4d;
+    }
+
+
+
+    #additional-info p {
+      font-size: 1.5rem;        
+      color: #ffcc00;          
+      font-weight: bold;       
+      margin: 10px 0;      
+    }
+
+    /* Optional: Adding a hover effect */
+    #additional-info:hover {
+      /*background-color: #444; */ 
+      cursor: pointer;        
+    }
+
+    #additional-info p:hover {
+      color: #00ffcc; /* Change text color */
+      font-size: 1.8rem; /* Enlarge font */
+      text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.8); /* Add glow effect */
+      transform: scale(1.1); /* Slightly enlarge */
+      transition: all 0.3s ease; /* Smooth transition */
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      #container {
+        flex-direction: column;
+        height: auto;
+      }
+
+      #camera-view, #status {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .status-card {
+        padding: 20px 15px;
+      }
+
+      #status-heading {
+        font-size: 2rem;
+      }
+
+      #status-text {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Left camera display area -->
+    <div id="camera-view">
+        <div id="face-image-container">
+          <img id="face-image" src="/static/face.jpg" alt="Face Image">
+        </div>
+        <!-- Add status messages below the image -->
+        <div id="camera-status">
+          <p id="camera-connection-status">Camera connection status: Connected</p>
+          <p id="face-detection-status">Face detection status: Face is detected</p>
+        </div>
+      </div>
+
+    <!-- Right status area -->
+    <div id="status">
+      <div class="status-card">
+        <div id="status-heading">ANALYSIS FINISHED</div>
+        <div id="status-text">
+          The system has completed the face analysis and generated personalized content.<br>
+          <span class="highlight">Model Result:</span>
+        </div>
+        <div id="additional-info">
+          Age: <span id="age"></span><br>
+            Gender: <span id="gender"></span><br>
+            Ethnicity: <span id="ethnicity"></span><br>
+            Emotion: <span id="emotion"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate camera connection and face detection status
+    const eventSource = new EventSource('/stream');
+  
+  eventSource.onmessage = function(e) {
+    try {
+        const dataArray = JSON.parse(e.data);
+        // Ensure that the data order is consistent with the backend
+        const [age, gender, ethnicity, emotion] = dataArray;
+        
+        document.getElementById("age").textContent = age;
+        document.getElementById("gender").textContent = gender;
+        document.getElementById("ethnicity").textContent = ethnicity;
+        document.getElementById("emotion").textContent = 
+            emotion.charAt(0).toUpperCase() + emotion.slice(1);
+    } catch (error) {
+        console.error("Parsing error:", error);
+    }
+};
+    
+
+    // Example: Update status to simulate camera connected and face detected
+    updateCameraStatus(true, true);
+  </script>
+</body>
+</html>

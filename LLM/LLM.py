@@ -1,8 +1,9 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from video_selection import *
+from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
+from data_integration.data_interface import product_queue
 import json
 
 # Load the model and tokenizer globally
@@ -196,6 +197,7 @@ class AdvertisementPipeline:
             ad_text = self.generator.generate_ad_text(messages)
           
             self.output_results(video_info, ad_text)
+            product_queue.put(video_info['product'])
           
         except Exception as e:
             print(f"Error generating advertisement: {e}")
