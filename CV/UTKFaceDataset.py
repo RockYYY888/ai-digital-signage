@@ -12,7 +12,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {device}')
 
 # gender mapping
-gender_mapping = {'male': 0, 'female': 1}
+gender_mapping = {'Male': 0, 'Female': 1}
 
 # race mapping
 race_mapping = {
@@ -23,10 +23,10 @@ race_mapping = {
     'Others_hispanic_latino_middle_eastern': 4
 }
 emotion_mapping = {
-    0:"Angry",
-    1:"Happy",
-    2:"Sad",
-    3:"Neutral",
+    0:"angry",
+    1:"happy",
+    2:"sad",
+    3:"neutral",
 }
 # initial size: 200 * 200
 transform = transforms.Compose([
