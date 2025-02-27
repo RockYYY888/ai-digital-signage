@@ -8,3 +8,5 @@ prediction_queue = Queue()
 today = date.today()
 print("Today's date is:", today)
 
+# Get video name to deliver to dashboard
+video_queue = Queue()
