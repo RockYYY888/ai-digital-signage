@@ -50,7 +50,10 @@ def analyze_frame(frame):
     # Face detection
     results = face_detector(frame_eq, conf=0.86)
     if not results or len(results[0].boxes.xyxy) == 0:
+        prediction_queue.put(("no_face"))
         return None
+    
+    prediction_queue.put(("analyzing"))
 
     # Process the first detected face
     box = results[0].boxes.xyxy[0]
