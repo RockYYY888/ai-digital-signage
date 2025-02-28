@@ -3,8 +3,9 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import product_queue
+from data_integration.data_interface import product_queue, prediction_queue
 import json
+import time
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
@@ -195,10 +196,11 @@ class AdvertisementPipeline:
             )
           
             ad_text = self.generator.generate_ad_text(messages)
+            prediction_queue.put(("feedback"))
           
             self.output_results(video_info, ad_text)
             product_queue.put(video_info['product'])
-          
+            time.sleep(10)
         except Exception as e:
             print(f"Error generating advertisement: {e}")
 
