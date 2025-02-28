@@ -84,14 +84,6 @@ if __name__ == "__main__":
     context = Context()
     pipeline = AdvertisementPipeline()
 
-    # Start CV thread
-    cv_thread = threading.Thread(
-        target=cv_thread_func,
-        args=(context.detected_face_queue, context.face_detection_active)
-    )
-    cv_thread.daemon = True
-    cv_thread.start()
-
     # Start Flask thread
     flask_thread = threading.Thread(
         target=app.run,
@@ -99,6 +91,14 @@ if __name__ == "__main__":
     )
     flask_thread.daemon = True
     flask_thread.start()
+
+    # Start CV thread
+    cv_thread = threading.Thread(
+        target=cv_thread_func,
+        args=(context.detected_face_queue, context.face_detection_active)
+    )
+    cv_thread.daemon = True
+    cv_thread.start()
 
     # Run state machine
     current_state = AdRotating(context)
