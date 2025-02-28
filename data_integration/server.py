@@ -2,6 +2,7 @@ from flask import Flask, render_template, Response
 import time
 import json
 from data_integration.data_generator import get_data_stream
+from data_integration.data_interface import prediction_queue
 # from data_integration.data_interface import eye_tracking_queue
 
 app = Flask(__name__,
