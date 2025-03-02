@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Video Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Video Player</title>
     <style>
         body { 
             margin: 0; 
@@ -12,22 +13,83 @@
             height: 100vh; 
             background: #000; 
         }
+        #video-container {
+            position: relative;
+            width: 80%;
+            height: 80%;
+        }
         video { 
-            max-width: 100%; 
-            max-height: 100%; 
+            width: 100%;
+            height: 100%;
+        }
+        #qr-code {
+            position: absolute;
+            top: 8.5%; 
+            right: 0%; 
+            width: 10%; 
+            height: auto; 
+            display: none;
+            z-index: 2;
+        }
+        #qr-text {
+            position: absolute;
+            top: 22.5%; 
+            right: 0%; 
+            color: white;
+            font-size: 1vw; 
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5); 
+            padding: 5px;
+            border-radius: 5px;
+            display: none;
+            z-index: 2;
         }
     </style>
 </head>
 <body>
-    <!-- Video player -->
-    <video id="videoPlayer" autoplay muted loop controls>
-        <source src="/static/videos/test.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+    <div id="video-container">
+        <video id="videoPlayer" autoplay muted controls>
+            <source src="/static/videos/test.mp4" type="video/mp4">
+        </video>
+        <div id="qr-wrapper">
+            <img id="qr-code" src="/static/qr.jpg" alt="QR Code">
+            <div id="qr-text">Please scan the QR code to fill in the feedback questionnaire</div>
+        </div>
+    </div>
 
     <script>
         const videoPlayer = document.getElementById('videoPlayer');
-        let currentProduct = "test";  // Initial default product
+        const qrCode = document.getElementById('qr-code');
+        const qrText = document.getElementById('qr-text');
+        let currentProduct = "test";
+
+        // Bind video event listeners
+        function bindVideoEvents() {
+            videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
+            videoPlayer.addEventListener('ended', handleVideoEnd);
+        }
+
+        // Handle video time updates
+        function handleTimeUpdate() {
+            const remainingTime = videoPlayer.duration - videoPlayer.currentTime;
+            if (remainingTime <= 5 && remainingTime > 0) {
+                qrCode.style.display = 'block';
+                qrText.style.display = 'block';
+            } else if (remainingTime <= 0) {
+                qrCode.style.display = 'none';
+                qrText.style.display = 'none';
+            }
+        }
+
+        // Handle video end
+        function handleVideoEnd() {
+            qrCode.style.display = 'none';
+            qrText.style.display = 'none';
+        }
+
+        // Initialize event listeners
+        bindVideoEvents();
 
         // Periodically check the product queue
         setInterval(() => {
@@ -35,21 +97,26 @@
                 .then(response => response.json())
                 .then(data => {
                     const newProduct = data.product || "test";
-                    
-                    // If the product name changes, update the video source
                     if (newProduct !== currentProduct) {
                         currentProduct = newProduct;
                         const newVideoSrc = `/static/videos/${currentProduct}.mp4`;
                         
-                        // Update the video source and reload
+                        // Remove old event listeners
+                        videoPlayer.removeEventListener('timeupdate', handleTimeUpdate);
+                        videoPlayer.removeEventListener('ended', handleVideoEnd);
+                        
+                        // Update video source
                         videoPlayer.src = newVideoSrc;
                         videoPlayer.load();
+                        
+                        // Rebind events
                         videoPlayer.play()
+                            .then(() => bindVideoEvents())
                             .catch(error => console.error("Playback failed:", error));
                     }
                 })
                 .catch(error => console.error('Error fetching product:', error));
-        }, 2000);  // Check every 2 seconds
+        }, 2000);
     </script>
 </body>
 </html>
