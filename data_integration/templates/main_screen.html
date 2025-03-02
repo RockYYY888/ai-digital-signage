@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Main Screen Video Player</title>
+    <style>
+        body { 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: #000; 
+        }
+        video { 
+            max-width: 100%; 
+            max-height: 100%; 
+        }
+    </style>
+</head>
+<body>
+    <video id="videoPlayer" autoplay muted loop>
+        <source src="/static/videos/test.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</body>
+</html>
