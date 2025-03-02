@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Main Screen Video Player</title>
+    <title>Video Player</title>
     <style>
         body { 
             margin: 0; 
@@ -19,9 +19,37 @@
     </style>
 </head>
 <body>
-    <video id="videoPlayer" autoplay muted loop>
+    <!-- Video player -->
+    <video id="videoPlayer" autoplay muted loop controls>
         <source src="/static/videos/test.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        let currentProduct = "test";  // Initial default product
+
+        // Periodically check the product queue
+        setInterval(() => {
+            fetch('/get_product_queue')
+                .then(response => response.json())
+                .then(data => {
+                    const newProduct = data.product || "test";
+                    
+                    // If the product name changes, update the video source
+                    if (newProduct !== currentProduct) {
+                        currentProduct = newProduct;
+                        const newVideoSrc = `/static/videos/${currentProduct}.mp4`;
+                        
+                        // Update the video source and reload
+                        videoPlayer.src = newVideoSrc;
+                        videoPlayer.load();
+                        videoPlayer.play()
+                            .catch(error => console.error("Playback failed:", error));
+                    }
+                })
+                .catch(error => console.error('Error fetching product:', error));
+        }, 2000);  // Check every 2 seconds
+    </script>
 </body>
 </html>
