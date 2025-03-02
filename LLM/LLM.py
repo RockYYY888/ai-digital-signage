@@ -200,7 +200,8 @@ class AdvertisementPipeline:
           
             self.output_results(video_info, ad_text)
             product_queue.put(video_info['product'])
-            time.sleep(10)
+            time.sleep(10) # for waiting feedback, need revise to event occur
+            return ad_text
         except Exception as e:
             print(f"Error generating advertisement: {e}")
 
