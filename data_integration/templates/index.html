@@ -319,70 +319,118 @@
 
 
   <script>
-    const eventSource = new EventSource('/stream');
-
-    eventSource.onmessage = function(e) {
-  try {
-    const data = JSON.parse(e.data);
-
-    // Get DOM element
-    const noFaceState = document.getElementById('no-face-state');
-    const faceDetectionState = document.getElementById('analysing-state');
-    const predictionState = document.getElementById('prediction-state');
-    const feedbackState = document.getElementById('feedback-state');
-    const cameraImage = document.getElementById('face-image');
-    const noFaceImage = document.getElementById('no-face-image');
-    const faceDetectionStatus = document.getElementById('face-detection-status');
-
-    // Update personal information (if any)
-    document.getElementById("age").textContent = data.age || '';
-    document.getElementById("gender").textContent = data.gender || '';
-    document.getElementById("ethnicity").textContent = data.ethnicity || '';
-    document.getElementById("emotion").textContent = 
-      data.emotion ? data.emotion.charAt(0).toUpperCase() + data.emotion.slice(1) : '';
-
-    // Switch display according to status
-    if (data.status === 'finished') {
-      noFaceState.classList.add('hidden');
-      faceDetectionState.classList.add('hidden');
-      feedbackState.classList.add('hidden');
-      predictionState.classList.remove('hidden');
-      cameraImage.src = "/static/face.jpg";
-      cameraImage.classList.remove('hidden');
-      noFaceImage.classList.add('hidden');
-      faceDetectionStatus.textContent = "Face detection status: Face detected";
-    } else if (data.status === 'no_face') {
-      noFaceState.classList.remove('hidden');
-      faceDetectionState.classList.add('hidden');
-      predictionState.classList.add('hidden');
-      feedbackState.classList.add('hidden');
-      faceDetectionStatus.textContent = "Face detection status: No face detected";
-      cameraImage.classList.add('hidden');
-      noFaceImage.classList.remove('hidden');
-      noFaceImage.src = "/static/no_face.jpg";
-    } else if (data.status === 'analyzing') {
-      faceDetectionState.classList.remove('hidden');
-      noFaceState.classList.add('hidden');
-      predictionState.classList.add('hidden');
-      feedbackState.classList.add('hidden');
-      faceDetectionStatus.textContent = "Face detection status: Analyzing...";
-      cameraImage.classList.remove('hidden');
-      noFaceImage.classList.add('hidden');
-      cameraImage.src = "/static/face.jpg";
-    } else if (data.status === 'feedback'){
-      faceDetectionState.classList.add('hidden');
-      noFaceState.classList.add('hidden');
-      predictionState.classList.add('hidden');
-      feedbackState.classList.remove('hidden');
-      cameraImage.classList.remove('hidden');
-      noFaceImage.classList.add('hidden');
-      cameraImage.src = "/static/face.jpg";
-    }
-  } catch (error) {
-    console.error("Parsing error:", error);
-  }
-    };
-  </script>
+    (function() {
+      // DOM元素缓存
+      const elements = {
+        states: {
+          noFace: document.getElementById('no-face-state'),
+          analysing: document.getElementById('analysing-state'),
+          prediction: document.getElementById('prediction-state'),
+          feedback: document.getElementById('feedback-state')
+        },
+        images: {
+          face: document.getElementById('face-image'),
+          noFace: document.getElementById('no-face-image')
+        },
+        statusText: {
+          detection: document.getElementById('face-detection-status'),
+          watchingTime: document.getElementById('watching-time-value'),
+          age: document.getElementById('age'),
+          gender: document.getElementById('gender'),
+          ethnicity: document.getElementById('ethnicity'),
+          emotion: document.getElementById('emotion')
+        }
+      };
+    
+      // 状态配置映射
+      const stateConfig = {
+        no_face: {
+          showState: 'noFace',
+          image: 'noFace',
+          statusText: 'No face detected'
+        },
+        analyzing: {
+          showState: 'analysing',
+          image: 'face',
+          statusText: 'Analyzing...'
+        },
+        finished: {
+          showState: 'prediction',
+          image: 'face',
+          statusText: 'Face detected'
+        },
+        feedback: {
+          showState: 'feedback',
+          image: 'face',
+          statusText: 'Waiting for feedback'
+        }
+      };
+    
+      // General state switching method
+      function handleStateChange(state) {
+        // Hide All Status
+        Object.values(elements.states).forEach(el => el.classList.add('hidden'));
+        
+        // Display target status
+        const config = stateConfig[state];
+        elements.states[config.showState].classList.remove('hidden');
+    
+        // Update image display
+        const isFaceImage = config.image === 'face';
+        elements.images.face.classList.toggle('hidden', !isFaceImage);
+        elements.images.noFace.classList.toggle('hidden', isFaceImage);
+    
+        // Update Status Text
+        elements.statusText.detection.textContent = 
+          `Face detection status: ${config.statusText}`;
+    
+        // Update image source (avoid duplicate settings)
+        if (isFaceImage && elements.images.face.src !== "/static/face.jpg") {
+          elements.images.face.src = "/static/face.jpg";
+        }
+      }
+    
+      // SSE connection
+      const eventSource = new EventSource('/stream');
+      let isFirstMessage = true;
+    
+      eventSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          
+          // update personal information
+          Object.entries({
+            age: data.age,
+            gender: data.gender,
+            ethnicity: data.ethnicity,
+            emotion: data.emotion ? 
+              data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
+          }).forEach(([key, value]) => {
+            elements.statusText[key].textContent = value || '';
+          });
+    
+          // change status
+          if (stateConfig[data.status]) {
+            handleStateChange(data.status);
+          }
+    
+          // first connection
+          if (isFirstMessage) {
+            elements.images.noFace.src = "/static/no_face.jpg";
+            isFirstMessage = false;
+          }
+        } catch (error) {
+          console.error("SSE处理错误:", error);
+        }
+      };
+    
+      // clear resource
+      window.addEventListener('beforeunload', () => {
+        eventSource.close();
+      });
+    })();
+    </script>
+    
     
 </body>
 </html>
