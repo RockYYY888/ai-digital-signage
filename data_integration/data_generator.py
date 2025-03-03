@@ -65,4 +65,5 @@ def generate_test_input():
 
 def get_data_stream():
     while True:
+        time.sleep(0.1)
         yield generate_test_input()
