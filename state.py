@@ -1,4 +1,3 @@
-# state.py
 import threading
 import time
 import queue
@@ -9,10 +8,12 @@ from data_integration.server import app
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
-        self.face_detection_active.set()  # Enable face detection by default
-        self.detected_face_queue = queue.Queue(maxsize=10)  # Limit queue size
-        self.ad_text_queue = queue.Queue()
+        self.face_detection_active.set()  # Default: face detection enabled
+        self.detected_face_queue = queue.Queue(maxsize=1)  # Latest face only
+        self.ad_text_queue = queue.Queue(maxsize=1)  # Latest ad text only
         self.current_ad_text = None
+        self.state_lock = threading.Lock()  # Lock for state transitions
+        self.is_first_ad_rotating = True  # Flag for first AdRotating entry
 
 class State:
     def __init__(self, context):
@@ -23,62 +24,67 @@ class State:
 
 class AdRotating(State):
     def handle(self):
-        print("Ad Rotating: Displaying generic ad.")
-        try:
-            frame, prediction = self.context.detected_face_queue.get(timeout=5)  # Wait up to 5 seconds
-            self.context.face_detection_active.clear()  # Pause face detection
-            return ModelProcessing(self.context, frame, prediction)
-        except queue.Empty:
-            return self  # If no face detected, stay in AdRotating
+        with self.context.state_lock:
+            if self.context.is_first_ad_rotating:
+                print("Ad Rotating: Displaying generic ad.")
+                self.context.is_first_ad_rotating = False
+            if not self.context.detected_face_queue.empty():
+                frame, prediction = self.context.detected_face_queue.get()
+                self.context.face_detection_active.clear()  # Pause face detection
+                return ModelProcessing(self.context, frame, prediction)
+            return self  # Stay in AdRotating
 
 class ModelProcessing(State):
     def __init__(self, context, frame, prediction):
         super().__init__(context)
         self.frame = frame
         self.prediction = prediction
-        self.ad_generated_event = threading.Event()  # Add an event to signal completion
+        self.ad_generated_event = threading.Event()
 
     def handle(self):
-        print("Model Processing: Generating ad text.")
-        processing_thread = threading.Thread(target=self.process_frame)
-        processing_thread.start()
-        processing_thread.join()
-        self.ad_generated_event.wait()  # Wait for the ad text to be generated
-        if self.context.ad_text_queue.empty():
-            print("Ad generation failed, returning to Ad Rotating.")
-            self.context.face_detection_active.set()
-            return AdRotating(self.context)
-        return PersonalizedADDisplaying(self.context)
+        with self.context.state_lock:
+            print("Model Processing: Generating ad text.")
+            processing_thread = threading.Thread(target=self.process_frame)
+            processing_thread.start()
+            processing_thread.join()  # Wait for thread to finish
+            self.ad_generated_event.wait()  # Wait for ad text generation
+            if not self.context.ad_text_queue.empty():
+                return PersonalizedADDisplaying(self.context)
+            else:
+                print("Ad generation failed, returning to Ad Rotating.")
+                self.context.face_detection_active.set()
+                return AdRotating(self.context)
 
     def process_frame(self):
-        if self.prediction is None:
-            self.ad_generated_event.set()  # Signal even if no prediction
-            return
         ad_text = pipeline.generate_advertisement(self.prediction)
         if ad_text:
-            self.context.ad_text_queue.put(ad_text)
-        self.ad_generated_event.set()  # Signal that processing is done
+            try:
+                self.context.ad_text_queue.put_nowait(ad_text)
+            except queue.Full:
+                pass  # Discard old data if queue is full
+        self.ad_generated_event.set()
 
 class PersonalizedADDisplaying(State):
     def handle(self):
-        ad_text = self.context.ad_text_queue.get()
-        self.context.current_ad_text = ad_text
-        print(f"Personalized AD Displaying: {ad_text}")
-        time.sleep(10)
-        return FeedbackCollecting(self.context)
+        with self.context.state_lock:
+            ad_text = self.context.ad_text_queue.get()
+            self.context.current_ad_text = ad_text
+            # 在这里提取ad_text放到user screen的字幕里
+            # print(f"Personalized AD Displaying: {ad_text}")
+            # In real application: play_video(video_path)
+            return FeedbackCollecting(self.context)
 
 class FeedbackCollecting(State):
     def handle(self):
-        print("Feedback Collecting: Displaying QR code.")
-        self.context.face_detection_active.set()  # Resume face detection
-        start_time = time.time()
-        feedback_duration = 10
-        while time.time() - start_time < feedback_duration:
+        with self.context.state_lock:
+            print("Feedback Collecting: Displaying QR code.")
+            self.context.face_detection_active.set()  # Resume face detection
+            # In real application: display_qr_code() and wait for feedback via event/callback
+            # Check for new face detection during feedback period
             if not self.context.detected_face_queue.empty():
                 frame, prediction = self.context.detected_face_queue.get()
                 return ModelProcessing(self.context, frame, prediction)
-            time.sleep(1)
-        return AdRotating(self.context)
+            return AdRotating(self.context)
 
 if __name__ == "__main__":
     context = Context()
@@ -104,4 +110,4 @@ if __name__ == "__main__":
     current_state = AdRotating(context)
     while True:
         current_state = current_state.handle()
-        time.sleep(0.1)
+        time.sleep(0.1)  # Minimal delay for state machine pacing; adjust as needed

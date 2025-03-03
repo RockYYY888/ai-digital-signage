@@ -11,17 +11,17 @@ from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
 from data_integration.data_interface import prediction_queue
 
-# Device setup
+# 设备设置
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Image preprocessing
+# 图像预处理
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# Load models
+# 加载模型
 model_emotion = EmotionClassifier(num_classes=4).to(device)
 model_demographic = FaceAttributeModel(num_age_classes=4, num_gender_classes=2, num_race_classes=5).to(device)
 checkpoint_path = 'CV/best_face_attribute_model.pth'
@@ -31,31 +31,31 @@ checkpoint2 = torch.load(checkpoint_path2, map_location=device)
 model_demographic.load_state_dict(checkpoint['model_state_dict'])
 model_emotion.load_state_dict(checkpoint2['model_state_dict'])
 
-# Initialize YOLO face detector
+# 初始化 YOLO 人脸检测器
 face_detector = YOLO("CV/yolov8l-face.pt", verbose=False)
 
 def analyze_frame(frame):
-    """Analyze a single frame for face detection and predictions."""
-    # Histogram equalization
+    """分析单帧以检测人脸并生成预测结果"""
+    # 直方图均衡化
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     frame_eq = cv2.equalizeHist(frame_gray)
     frame_eq = cv2.cvtColor(frame_eq, cv2.COLOR_GRAY2BGR)
 
-    # Gamma correction
+    # Gamma 校正
     gamma = 1.2
     invGamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** invGamma) * 255 for i in range(256)]).astype("uint8")
     frame_eq = cv2.LUT(frame_eq, table)
 
-    # Face detection
+    # 人脸检测
     results = face_detector(frame_eq, conf=0.86)
     if not results or len(results[0].boxes.xyxy) == 0:
         prediction_queue.put(("no_face"))
         return None
-    
+
     prediction_queue.put(("analyzing"))
 
-    # Process the first detected face
+    # 处理检测到的第一个人脸
     box = results[0].boxes.xyxy[0]
     padding = 20
     x1, y1, x2, y2 = map(int, box)
@@ -65,25 +65,23 @@ def analyze_frame(frame):
     y2 = min(frame.shape[0], y2 + padding)
     cropped_image = frame[y1:y2, x1:x2]
 
-    # Convert to PIL image
+    # 转换为 PIL 图像
     pil_image = Image.fromarray(cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB))
 
-    # Predict demographics
+    # 预测 demographics
     age_label, gender_label, race_label = predict_demographics(model_demographic, pil_image)
 
-
-    # Predict emotion
+    # 预测情绪
     emotion_pred = predict2(model_emotion, pil_image)
     emotion_label = emotion_mapping.get(emotion_pred, "Unknown")
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
     print(f"Predicted Demographics: {combined_prediction}")
 
     prediction_queue.put(combined_prediction)
-
     return combined_prediction
 
 def predict_demographics(model, image):
-    """Predict age, gender, and race."""
+    """预测年龄、性别和种族"""
     model.eval()
     image = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -103,9 +101,9 @@ def predict_demographics(model, image):
     return age_label, gender_label, race_label
 
 def cv_thread_func(detected_face_queue, face_detection_active):
-    """Capture frames from webcam and detect faces."""
+    """从摄像头捕获帧并检测人脸"""
     cap = cv2.VideoCapture(0)
-    detection_interval = 2
+    detection_interval = 2  # 每 2 秒检测一次
     last_detection_time = time.time()
 
     if not cap.isOpened():
@@ -123,14 +121,21 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 print("Failed to capture frame.")
                 break
 
+            # 这里，可以把这个图片frame传到副屏里了
+            cv2.imshow('Webcam Feed', frame)
+            cv2.waitKey(1)
+
             current_time = time.time()
             if current_time - last_detection_time >= detection_interval:
                 last_detection_time = current_time
                 prediction = analyze_frame(frame)
                 if prediction:
-                    detected_face_queue.put((frame, prediction))
+                    try:
+                        detected_face_queue.put_nowait((frame, prediction))
+                    except queue.Full:
+                        pass
 
-            if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
+            if cv2.waitKey(1) & 0xFF == 27:  # 按 ESC 退出
                 break
     finally:
         cap.release()
