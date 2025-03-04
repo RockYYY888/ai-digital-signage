@@ -3,7 +3,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import product_queue, prediction_queue
+from data_integration.data_interface import product_queue, prediction_queue, ad_queue
 import json
 import time
 
@@ -23,7 +23,7 @@ class AdvertisementGenerator:
     }
 
     GENERATION_PARAMS = {
-"max_new_tokens": 50, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
+"max_new_tokens": 100, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
 "min_new_tokens": 30, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
 "temperature": 0.4, # Controls the randomness of the generated text. Lower values ​​(such as 0.4) make the output more deterministic and conservative, and higher values ​​(such as 1.0) make the output more creative.
 "top_p": 0.9, # Nucleus sampling parameter, controlling the range of tokens considered during generation. 0.9 means only considering tokens with cumulative probabilities in the top 90%, balancing diversity and quality.
@@ -67,7 +67,10 @@ class AdvertisementGenerator:
 
     def build_system_prompt(self):
         """Generate system prompt template"""
-        return "You are a senior copywriter at a multinational advertising agency. Your sole task is to provide advertisement content that perfectly meets my requirements, without any additional commentary."
+        return (
+        "You are a skilled copywriter at a global ad agency. Your only job is to deliver ad content matching my exact needs. "
+        "Output must be in double quotes, 20-30 words, with no extra text or comments."
+    )
 
     def build_user_prompt(self, demographics, product, context):
         """Construct user prompt from inputs"""
@@ -75,14 +78,12 @@ class AdvertisementGenerator:
         context_text = " ".join(context)
 
         return (
-            "Your task is to produce a creative advertisement text strictly between 20-50 words.\n"
-            f"Here is some background information: {context_text}\n\n"
-            f"Create a compelling advertisement for our product, '{product}'.\n"
-            f"Target Audience: {demographics['race']} {demographics['gender']} aged {demographics['age_range']}, feeling {demographics['emotion']}.\n"
-            f"The advertisement should be in a {tone} tone, highlighting unique features.\n"
-            "Provide the final advertisement content only, without any additional information.\n"
-            "Strictly provide ONLY the advertisement content within double quotes, without any additional text."
-        )
+        "Write a creative ad text for '{product}' in 20-30 words. "
+        f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
+        f"Use a {tone} tone. Highlight unique features. "
+        f"Background: {context_text}. "
+        "Return only the ad content in double quotes, nothing else."
+    )
 
     def construct_messages(self, demographics, product, context):
         """Build complete message structure for LLM input"""
@@ -196,6 +197,7 @@ class AdvertisementPipeline:
             )
           
             ad_text = self.generator.generate_ad_text(messages)
+            ad_queue.put(ad_text)
             prediction_queue.put(("feedback"))
           
             self.output_results(video_info, ad_text)
