@@ -3,7 +3,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import product_queue, prediction_queue, ad_queue
+from data_integration.data_interface import prediction_queue, ad_queue
 import json
 import time
 
@@ -78,7 +78,7 @@ class AdvertisementGenerator:
         context_text = " ".join(context)
 
         return (
-        "Write a creative ad text for '{product}' in 20-30 words. "
+        "Write a one-sentence creative ad text for '{product}' in 20-30 words. "
         f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
         f"Use a {tone} tone. Highlight unique features. "
         f"Background: {context_text}. "
@@ -201,7 +201,6 @@ class AdvertisementPipeline:
             prediction_queue.put(("feedback"))
           
             self.output_results(video_info, ad_text)
-            product_queue.put(video_info['product'])
             time.sleep(10) # for waiting feedback, need revise to event occur
             return ad_text
         except Exception as e:
