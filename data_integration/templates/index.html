@@ -77,19 +77,6 @@
       line-height: 1.4;  
     }
 
-    #camera-connection-status {
-      font-size: 1rem;  
-      margin: 0;      
-      color: #ffcc00;  
-      font-weight: bold;  
-    }
-
-    #face-detection-status {
-      font-size: 1rem;  
-      margin: 2px 0; 
-      color: red;   
-    }
-
     /* Right status area */
     #status {
       width: 50%;
@@ -134,7 +121,8 @@
       color: white;
       margin: 20px;
       text-align: left;
-      margin-left: -170px
+      position: relative; 
+      left: 50px;
     }
 
     #watching-time span {
@@ -154,7 +142,7 @@
     .highlight {
       font-weight: bold;
       font-size: 2rem;
-      color: orange;
+      color: #00ffcc;
       padding: 2px 4px;
       border-radius: 4px;
       margin: 80px;
@@ -165,23 +153,38 @@
 
     #additional-info {             
       font-size: 1.5rem;
-      color: orange;
+      color: white;
       margin: 10px 0;
       text-align: right; 
       padding-right: 0;  
-      margin-left: -120px; 
-      margin-top: -50px;              
+      margin-top: -50px;   
+      position: relative;
+      width: 100%;  
+      left: 100px;     
   }
 
-  #additional-info p {
-      margin: 0;                        
-      display: flex;                    
-      justify-content: flex-end;      
+    #additional-info p {
+      margin: 5px 0;                         
+      display: flex;  
+      justify-content: flex-start; 
+      align-items: center;
+      width: 100%;
     }
 
-    #additional-info p span {
+    #additional-info .label {
+      flex: 0 0 140px;  
+      text-align: right; 
+      color: white;  
+      padding-right: 15px; 
+    }
+
+    #additional-info span:not(.label) {
+      flex: 1;  
+      text-align: left; 
       color: orange; 
     }
+    
+   
 
 
     /* Optional: Adding a hover effect */
@@ -255,31 +258,28 @@
 </head>
 <body>
   <div id="container">
-    <!-- 摄像头显示区域 -->
+    <!-- Camera display area -->
     <div id="camera-view">
       <div id="image-container">
-        <img id="face-image" src="/static/face.jpg" alt="Face Image" class="hidden">
+        <img id="face-image" src="/face_image" alt="Detected Face" class="hidden">
         <img id="no-face-image" src="/static/no_face.jpg" alt="No Face Image">
-      </div>
-      <div id="camera-status">
-        <p id="face-detection-status">Face detection status: No face detected</p>
       </div>
     </div>
 
-    <!-- 状态显示区域 -->
+    <!-- Status display area -->
     <div id="status">
       <div class="status-card">
-        <!-- 无检测状态 (默认显示) -->
+        <!-- No detection status (default display) -->
         <div id="no-face-state">
           <div id="status-heading">AD Rotating</div>
         </div>
 
-        <!-- 正检测状态 -->
+        <!-- Positive detection state -->
         <div id="analysing-state" class="hidden">
           <div id="status-heading">MODEL ANALYZING</div>
         </div>
 
-        <!-- 检测完成状态 -->
+        <!-- Detection complete status -->
         <div id="prediction-state" class="hidden">
           <div id="status-heading">ANALYSIS FINISHED</div>
           <div id="watching-time">
@@ -289,14 +289,14 @@
             <span class="highlight">Model Analysis:</span>
           </div>
           <div id="additional-info">
-            <p>Age: <span id="age"></span><br></p>
-            <p>Gender: <span id="gender"></span><br></p>
-            <p>Ethnicity: <span id="ethnicity"></span><br></p>
-            <p>Emotion: <span id="emotion"></span></p>
-          </div>
+            <p><span class="label">Age:</span> <span id="age"></span></p>
+            <p><span class="label">Gender:</span> <span id="gender"></span></p>
+            <p><span class="label">Ethnicity:</span> <span id="ethnicity"></span></p>
+            <p><span class="label">Emotion:</span> <span id="emotion"></span></p>
+        </div>
         </div>
 
-        <!-- 获取反馈状态 -->
+        <!-- Get feedback status -->
         <div id="feedback-state" class="hidden">
           <div id="status-heading">Waiting for feedback</div>
           <div id="status-text">
@@ -320,115 +320,98 @@
 
   <script>
     (function() {
-      // DOM元素缓存
-      const elements = {
-        states: {
-          noFace: document.getElementById('no-face-state'),
-          analysing: document.getElementById('analysing-state'),
-          prediction: document.getElementById('prediction-state'),
-          feedback: document.getElementById('feedback-state')
-        },
-        images: {
-          face: document.getElementById('face-image'),
-          noFace: document.getElementById('no-face-image')
-        },
-        statusText: {
-          detection: document.getElementById('face-detection-status'),
-          watchingTime: document.getElementById('watching-time-value'),
-          age: document.getElementById('age'),
-          gender: document.getElementById('gender'),
-          ethnicity: document.getElementById('ethnicity'),
-          emotion: document.getElementById('emotion')
-        }
-      };
-    
-      // 状态配置映射
-      const stateConfig = {
-        no_face: {
-          showState: 'noFace',
-          image: 'noFace',
-          statusText: 'No face detected'
-        },
-        analyzing: {
-          showState: 'analysing',
-          image: 'face',
-          statusText: 'Analyzing...'
-        },
-        finished: {
-          showState: 'prediction',
-          image: 'face',
-          statusText: 'Face detected'
-        },
-        feedback: {
-          showState: 'feedback',
-          image: 'face',
-          statusText: 'Waiting for feedback'
-        }
-      };
-    
-      // General state switching method
-      function handleStateChange(state) {
-        // Hide All Status
-        Object.values(elements.states).forEach(el => el.classList.add('hidden'));
-        
-        // Display target status
-        const config = stateConfig[state];
-        elements.states[config.showState].classList.remove('hidden');
-    
-        // Update image display
-        const isFaceImage = config.image === 'face';
-        elements.images.face.classList.toggle('hidden', !isFaceImage);
-        elements.images.noFace.classList.toggle('hidden', isFaceImage);
-    
-        // Update Status Text
-        elements.statusText.detection.textContent = 
-          `Face detection status: ${config.statusText}`;
-    
-        // Update image source (avoid duplicate settings)
-        if (isFaceImage && elements.images.face.src !== "/static/face.jpg") {
-          elements.images.face.src = "/static/face.jpg";
-        }
-      }
-    
-      // SSE connection
-      const eventSource = new EventSource('/stream');
-      let isFirstMessage = true;
-    
-      eventSource.onmessage = function(e) {
-        try {
-          const data = JSON.parse(e.data);
-          
-          // update personal information
-          Object.entries({
-            age: data.age,
-            gender: data.gender,
-            ethnicity: data.ethnicity,
-            emotion: data.emotion ? 
-              data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
-          }).forEach(([key, value]) => {
-            elements.statusText[key].textContent = value || '';
-          });
-    
-          // change status
-          if (stateConfig[data.status]) {
-            handleStateChange(data.status);
-          }
-    
-          // first connection
-          if (isFirstMessage) {
-            elements.images.noFace.src = "/static/no_face.jpg";
-            isFirstMessage = false;
-          }
-        } catch (error) {
-          console.error("SSE处理错误:", error);
-        }
-      };
-    
-      // clear resource
-      window.addEventListener('beforeunload', () => {
-        eventSource.close();
+  const elements = {
+    states: {
+      noFace: document.getElementById('no-face-state'),
+      analysing: document.getElementById('analysing-state'),
+      prediction: document.getElementById('prediction-state'),
+      feedback: document.getElementById('feedback-state')
+    },
+    images: {
+      face: document.getElementById('face-image'),
+      noFace: document.getElementById('no-face-image')
+    },
+    statusText: {
+      watchingTime: document.getElementById('watching-time-value'),
+      age: document.getElementById('age'),
+      gender: document.getElementById('gender'),
+      ethnicity: document.getElementById('ethnicity'),
+      emotion: document.getElementById('emotion')
+    }
+  };
+
+  const stateConfig = {
+    no_face: {
+      showState: 'noFace',
+      image: 'noFace',
+      statusText: 'No face detected'
+    },
+    analyzing: {
+      showState: 'analysing',
+      image: 'face',
+      statusText: 'Analyzing...'
+    },
+    finished: {
+      showState: 'prediction',
+      image: 'face',
+      statusText: 'Face detected'
+    },
+    feedback: {
+      showState: 'feedback',
+      image: 'face',
+      statusText: 'Waiting for feedback'
+    }
+  };
+
+  function handleStateChange(state) {
+    Object.values(elements.states).forEach(el => el.classList.add('hidden'));
+    const config = stateConfig[state];
+    elements.states[config.showState].classList.remove('hidden');
+
+    const isFaceImage = config.image === 'face';
+    elements.images.face.classList.toggle('hidden', !isFaceImage);
+    elements.images.noFace.classList.toggle('hidden', isFaceImage);
+
+    // 仅在需要显示人脸时更新图片，避免频繁请求
+    if (isFaceImage) {
+      elements.images.face.src = `/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
+    }
+  }
+
+  const eventSource = new EventSource('/stream');
+  let isFirstMessage = true;
+
+  eventSource.onmessage = function(e) {
+    try {
+      const data = JSON.parse(e.data);
+      
+      Object.entries({
+        age: data.age,
+        gender: data.gender,
+        ethnicity: data.ethnicity,
+        emotion: data.emotion ? 
+          data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
+      }).forEach(([key, value]) => {
+        elements.statusText[key].textContent = value || '';
       });
-    })();
+
+      if (stateConfig[data.status]) {
+        handleStateChange(data.status);
+      }
+
+      if (isFirstMessage) {
+        elements.images.noFace.src = "/static/no_face.jpg";
+        isFirstMessage = false;
+      }
+    } catch (error) {
+      console.error("SSE处理错误:", error);
+    }
+  };
+
+  window.addEventListener('beforeunload', () => {
+    eventSource.close();
+  });
+})();
     </script>
     
     
