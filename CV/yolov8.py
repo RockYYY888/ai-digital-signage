@@ -9,7 +9,7 @@ import numpy as np
 import queue
 from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
-from data_integration.data_interface import prediction_queue
+from data_integration.data_interface import prediction_queue, frame_queue
 
 # 设备设置
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -121,7 +121,7 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 print("Failed to capture frame.")
                 break
 
-            # 这里，可以把这个图片frame传到副屏里了
+            # 显示到副屏（可选）
             cv2.imshow('Webcam Feed', frame)
             cv2.waitKey(1)
 
@@ -129,8 +129,9 @@ def cv_thread_func(detected_face_queue, face_detection_active):
             if current_time - last_detection_time >= detection_interval:
                 last_detection_time = current_time
                 prediction = analyze_frame(frame)
-                if prediction:
+                if prediction:  # 仅在检测到人脸时放入队列
                     try:
+                        frame_queue.put_nowait(frame)  # 单次帧放入队列
                         detected_face_queue.put_nowait((frame, prediction))
                     except queue.Full:
                         pass
