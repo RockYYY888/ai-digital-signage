@@ -135,8 +135,8 @@
       font-weight: 400;
       color: #c4c4de;
       line-height: 1.8;
-      margin-top: 0px;
-      margin-bottom: 50px;
+      margin-top: 40px;
+      margin-bottom: 20px;
     }
 
     .highlight {
@@ -145,7 +145,8 @@
       color: #00ffcc;
       padding: 2px 4px;
       border-radius: 4px;
-      margin: 80px;
+      margin-top: 100px;
+      display: block;
     }
 
     .status-text-green { color: #32cd32; }
@@ -282,23 +283,23 @@
         <!-- Detection complete status -->
         <div id="prediction-state" class="hidden">
           <div id="status-heading">ANALYSIS FINISHED</div>
-          <div id="watching-time">
-            <p>Watching Time: <span id="watching-time-value"></span></p>
-          </div>
           <div id="status-text">
-            <span class="highlight">Model Analysis:</span>
+            <span class="highlight">Model Analysis:</span> 
+            <span id="additional-info">
+              <p><span class="label">Age:</span> <span id="age"></span></p>
+              <p><span class="label">Gender:</span> <span id="gender"></span></p>
+              <p><span class="label">Ethnicity:</span> <span id="ethnicity"></span></p>
+              <p><span class="label">Emotion:</span> <span id="emotion"></span></p>
+            </span>
           </div>
-          <div id="additional-info">
-            <p><span class="label">Age:</span> <span id="age"></span></p>
-            <p><span class="label">Gender:</span> <span id="gender"></span></p>
-            <p><span class="label">Ethnicity:</span> <span id="ethnicity"></span></p>
-            <p><span class="label">Emotion:</span> <span id="emotion"></span></p>
-        </div>
         </div>
 
         <!-- Get feedback status -->
         <div id="feedback-state" class="hidden">
           <div id="status-heading">Waiting for feedback</div>
+          <div id="watching-time">
+            <p>Watching Time: <span id="watching-time-value"></span></p>
+          </div>
           <div id="status-text">
             <div id="feedback-info" style="text-align: center; margin-top: 20px;">
               <p style="font-size: 1.2rem; font-weight: 400; color: #ffffff; margin-bottom: 20px;">
