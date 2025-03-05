@@ -11,8 +11,7 @@ detect_queue = Queue()
 today = date.today()
 print("Start up. Today's date is:", today)
 
-# Get product name to deliver to dashboard. e.g: Soda
-product_queue = Queue()
+video_queue = Queue()
 
 ad_queue = Queue()
 
