@@ -76,9 +76,10 @@ class AdvertisementGenerator:
         """Construct user prompt from inputs"""
         tone = self.EMOTION_TONE_MAP.get(demographics['emotion'], "professional")
         context_text = " ".join(context)
+        product_name = product
 
         return (
-        "Write a one-sentence creative ad text for '{product}' in 20-30 words. "
+        f"Write a one-sentence creative ad text for {product_name} in 20-30 words. "
         f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
         f"Use a {tone} tone. Highlight unique features. "
         f"Background: {context_text}. "
@@ -199,6 +200,16 @@ class AdvertisementPipeline:
             ad_text = self.generator.generate_ad_text(messages)
             ad_queue.put(ad_text)
             prediction_queue.put(("feedback"))
+            video_queue.put((video_info['file_name']))
+            # 打印队列元素，不移除
+            temp_list = []
+            size = video_queue.qsize()
+            for _ in range(size):
+                item = video_queue.get()
+                print(item)
+                temp_list.append(item) #将元素放到临时列表
+            for item in temp_list: #将临时列表中的元素全部放回队列
+                video_queue.put(item)
           
             self.output_results(video_info, ad_text)
             time.sleep(10) # for waiting feedback, need revise to event occur
