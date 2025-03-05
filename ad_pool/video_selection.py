@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from data_integration.data_interface import video_queue
 
 # Database configuration
 db_file = os.path.join(os.path.dirname(__file__), 'advertisements.db')
