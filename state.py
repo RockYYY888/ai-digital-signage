@@ -74,18 +74,6 @@ class PersonalizedADDisplaying(State):
             # 在这里提取ad_text放到user screen的字幕里
             # print(f"Personalized AD Displaying: {ad_text}")
             # In real application: play_video(video_path)
-            return FeedbackCollecting(self.context)
-
-class FeedbackCollecting(State):
-    def handle(self):
-        with self.context.state_lock:
-            print("Feedback Collecting: Displaying QR code.")
-            self.context.face_detection_active.set()  # Resume face detection
-            # In real application: display_qr_code() and wait for feedback via event/callback
-            # Check for new face detection during feedback period
-            if not self.context.detected_face_queue.empty():
-                frame, prediction = self.context.detected_face_queue.get()
-                return ModelProcessing(self.context, frame, prediction)
             return AdRotating(self.context)
 
 if __name__ == "__main__":
