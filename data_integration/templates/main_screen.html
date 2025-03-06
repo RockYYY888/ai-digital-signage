@@ -22,7 +22,7 @@
         #video-container {
             position: relative;
             width: 100%;
-            height: 80%;
+            height: 100%; /* 默认模式下占满整个容器 */
         }
         video { 
             width: 100%;
@@ -57,10 +57,9 @@
             height: 8%;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            display: none;
+            display: none; /* 默认隐藏 */
             overflow: hidden;
             position: relative;
-            margin-top: 2%;
         }
         #scrolling-text-content {
             position: absolute;
@@ -90,132 +89,135 @@
         </div>
     </div>
 
-    <script>
-        const videoPlayer = document.getElementById('videoPlayer');
-        const qrCode = document.getElementById('qr-code');
-        const qrText = document.getElementById('qr-text');
-        const scrollingText = document.getElementById('scrolling-text');
-        const scrollingTextContent = document.getElementById('scrolling-text-content');
-        let currentVideo = "videos/0001.mp4"; // 初始视频
-        let hasStartedScrolling = false;
-        let isDefaultMode = true; // 标记是否处于默认模式（无新数据）
-        let nextVideo = null; // 存储待播放的新视频
+</body>
+</html>
 
-        // 生成随机视频文件名 (0001.mp4 到 0077.mp4)
-        function getRandomVideo() {
-            const min = 1;
-            const max = 77;
-            const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-            const paddedNum = String(randomNum).padStart(4, '0'); // 补齐4位，例如 "0001"
-            return `videos/${paddedNum}.mp4`;
-        }
+<script>
+    const videoPlayer = document.getElementById('videoPlayer');
+    const qrCode = document.getElementById('qr-code');
+    const qrText = document.getElementById('qr-text');
+    const scrollingText = document.getElementById('scrolling-text');
+    const scrollingTextContent = document.getElementById('scrolling-text-content');
+    const videoContainer = document.getElementById('video-container');
+    let currentVideo = "videos/0001.mp4"; // 初始视频
+    let hasStartedScrolling = false;
+    let isDefaultMode = true; // 标记是否处于默认模式（无新数据）
+    let nextVideo = null; // 存储待播放的新视频
 
-        function bindVideoEvents() {
-            videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
-            videoPlayer.addEventListener('ended', handleVideoEnd);
-        }
+    // 生成随机视频文件名 (0001.mp4 到 0077.mp4)
+    function getRandomVideo() {
+        const min = 1;
+        const max = 77;
+        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+        const paddedNum = String(randomNum).padStart(4, '0'); // 补齐4位，例如 "0001"
+        return `videos/${paddedNum}.mp4`;
+    }
 
-        function handleTimeUpdate() {
-            // 默认模式下不显示 QR 码，仅在新视频模式下显示
-            if (!isDefaultMode) {
-                const remainingTime = videoPlayer.duration - videoPlayer.currentTime;
-                if (remainingTime <= 5 && remainingTime > 0) {
-                    qrCode.style.display = 'block';
-                    qrText.style.display = 'block';
-                } else if (remainingTime <= 0) {
-                    qrCode.style.display = 'none';
-                    qrText.style.display = 'none';
-                }
-            }
+    function bindVideoEvents() {
+        videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
+        videoPlayer.addEventListener('ended', handleVideoEnd);
+    }
 
-            // 一开始就显示滚动字幕
-            if (!hasStartedScrolling) {
-                scrollingText.style.display = 'block';
-                hasStartedScrolling = true;
-            }
-        }
-
-        function handleVideoEnd() {
-            qrCode.style.display = 'none';
-            qrText.style.display = 'none';
-            scrollingText.style.display = 'none';
-            hasStartedScrolling = false;
-
-            if (isDefaultMode) {
-                // 默认模式下随机播放下一个视频
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.loop = false; // 不使用 loop 属性，依靠 ended 事件切换
-                videoPlayer.play()
-                    .catch(error => console.error("Playback failed:", error));
-            } else if (nextVideo) {
-                // 有新视频待播放，切换到新视频
-                playNewVideo(nextVideo);
-                nextVideo = null; // 清空待播放视频
+    function handleTimeUpdate() {
+        // 默认模式下不显示 QR 码，仅在新视频模式下显示
+        if (!isDefaultMode) {
+            const remainingTime = videoPlayer.duration - videoPlayer.currentTime;
+            if (remainingTime <= 5 && remainingTime > 0) {
+                qrCode.style.display = 'block';
+                qrText.style.display = 'block';
             } else {
-                // 新视频播放结束，恢复默认模式
-                isDefaultMode = true;
-                currentVideo = getRandomVideo(); // 随机选择一个视频开始
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.loop = false;
-                videoPlayer.play()
-                    .catch(error => console.error("Playback failed:", error));
+                qrCode.style.display = 'none';
+                qrText.style.display = 'none';
             }
         }
+    }
 
-        function playNewVideo(newVideo) {
-            currentVideo = newVideo;
-            const newVideoSrc = `/static/${currentVideo}`;
-            videoPlayer.loop = false; // 新视频不循环
-            videoPlayer.src = newVideoSrc;
-            videoPlayer.load();
+    function handleVideoEnd() {
+        // 视频结束时清空并隐藏字幕和 QR 码
+        qrCode.style.display = 'none';
+        qrText.style.display = 'none';
+        scrollingText.style.display = 'none';
+        scrollingTextContent.textContent = ''; // 清空字幕内容
+        hasStartedScrolling = false;
+
+        if (isDefaultMode) {
+            // 默认模式下随机播放下一个视频，保持全屏
+            videoContainer.style.height = '100%'; // 确保视频占满容器
+            currentVideo = getRandomVideo();
+            videoPlayer.src = `/static/${currentVideo}`;
+            videoPlayer.loop = false;
             videoPlayer.play()
-                .then(() => {
-                    hasStartedScrolling = false; // 重置滚动状态
-                    scrollingText.style.display = 'block'; // 立即显示字幕
-                    qrCode.style.display = 'block'; // 新视频播放时持续显示 QR 码
-                    qrText.style.display = 'block';
-                    bindVideoEvents();
-                })
+                .catch(error => console.error("Playback failed:", error));
+        } else if (nextVideo) {
+            // 有新视频待播放，切换到新视频
+            playNewVideo(nextVideo);
+            nextVideo = null; // 清空待播放视频
+        } else {
+            // 新视频播放结束，恢复默认模式
+            isDefaultMode = true;
+            videoContainer.style.height = '100%'; // 恢复全屏
+            currentVideo = getRandomVideo();
+            videoPlayer.src = `/static/${currentVideo}`;
+            videoPlayer.loop = false;
+            videoPlayer.play()
                 .catch(error => console.error("Playback failed:", error));
         }
+    }
 
-        bindVideoEvents();
+    function playNewVideo(newVideo) {
+        currentVideo = newVideo;
+        const newVideoSrc = `/static/${currentVideo}`;
+        videoPlayer.loop = false; // 新视频不循环
+        videoContainer.style.height = '92%'; // 为字幕留出空间
+        videoPlayer.src = newVideoSrc;
+        videoPlayer.load();
+        videoPlayer.play()
+            .then(() => {
+                hasStartedScrolling = false; // 重置滚动状态
+                qrCode.style.display = 'block'; // 新视频播放时显示 QR 码
+                qrText.style.display = 'block';
+                bindVideoEvents();
+            })
+            .catch(error => console.error("Playback failed:", error));
+    }
 
-        const eventSource = new EventSource('/stream');
+    bindVideoEvents();
 
-        eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            const newVideo = data.video || getRandomVideo(); // 后端返回的视频文件名，默认随机
-            const newAdText = data.ad_text || "这里是默认广告文本";
+    const eventSource = new EventSource('/stream');
 
-            // 更新并立即显示滚动字幕
-            scrollingTextContent.textContent = newAdText;
-            scrollingText.style.display = 'block'; // 立即显示
-            hasStartedScrolling = true; // 标记已开始，避免重复触发
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const newVideo = data.video || getRandomVideo(); // 后端返回的视频文件名，默认随机
+        const newAdText = data.ad_text || "这里是默认广告文本";
 
-            if (newVideo !== currentVideo) {
-                if (isDefaultMode) {
-                    // 从默认模式切换到新视频模式
-                    isDefaultMode = false;
-                    videoPlayer.loop = false;
-                    playNewVideo(newVideo);
-                } else {
-                    // 当前已有新视频，记录到 nextVideo，等待当前视频播放结束
-                    nextVideo = newVideo;
-                }
+        // 更新并显示滚动字幕
+        scrollingTextContent.textContent = newAdText;
+        scrollingText.style.display = 'block'; // 显示字幕
+        hasStartedScrolling = true;
+
+        if (newVideo !== currentVideo) {
+            if (isDefaultMode) {
+                // 从默认模式切换到新视频模式
+                isDefaultMode = false;
+                videoPlayer.loop = false;
+                playNewVideo(newVideo);
+            } else {
+                // 当前已有新视频，记录到 nextVideo，等待当前视频播放结束
+                nextVideo = newVideo;
             }
-        };
+        }
+    };
 
-        eventSource.onerror = function(error) {
-            console.error('EventSource error:', error);
-        };
+    eventSource.onerror = function(error) {
+        console.error('EventSource error:', error);
+    };
 
-        // 初始化时随机播放一个视频
-        currentVideo = getRandomVideo();
-        videoPlayer.src = `/static/${currentVideo}`;
-        videoPlayer.loop = false; // 初始不循环，依靠 ended 事件切换
-        videoPlayer.play().catch(error => console.error("Playback failed:", error));
-    </script>
+    // 初始化时随机播放一个视频，全屏显示
+    videoContainer.style.height = '100%'; // 默认模式下全屏
+    currentVideo = getRandomVideo();
+    videoPlayer.src = `/static/${currentVideo}`;
+    videoPlayer.loop = false; // 初始不循环，依靠 ended 事件切换
+    videoPlayer.play().catch(error => console.error("Playback failed:", error));
+</script>
 </body>
 </html>
