@@ -201,7 +201,6 @@ class AdvertisementPipeline:
             messages = self.generator.construct_messages(demographics, video_info['product'], video_info['description'])
             ad_text = self.generator.generate_ad_text(messages)
             ad_queue.put(ad_text) 
-            prediction_queue.put(("feedback"))
             self.output_results(video_info, ad_text)
             time.sleep(10)  # 等待反馈，可改为事件触发
             return ad_text
