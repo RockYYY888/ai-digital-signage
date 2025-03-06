@@ -3,7 +3,8 @@ import time
 import queue
 from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
-from data_integration.server import app
+from data_integration.server import app_1
+from data_integration.user_screen_server import app
 
 class Context:
     def __init__(self):
@@ -57,6 +58,7 @@ class ModelProcessing(State):
 
     def process_frame(self):
         ad_text = pipeline.generate_advertisement(self.prediction)
+
         if ad_text:
             try:
                 self.context.ad_text_queue.put_nowait(ad_text)
@@ -91,12 +93,20 @@ if __name__ == "__main__":
     pipeline = AdvertisementPipeline()
 
     # Start Flask thread
-    flask_thread = threading.Thread(
-        target=app.run,
+    flask_thread1 = threading.Thread(
+        target=app_1.run,
         kwargs={'threaded': True, 'port': 5000}
     )
-    flask_thread.daemon = True
-    flask_thread.start()
+    flask_thread1.daemon = True
+    flask_thread1.start()
+
+    # Start Flask thread
+    flask_thread2 = threading.Thread(
+        target=app.run,
+        kwargs={'threaded': True, 'port': 5001}
+    )
+    flask_thread2.daemon = True
+    flask_thread2.start()
 
     # Start CV thread
     cv_thread = threading.Thread(
