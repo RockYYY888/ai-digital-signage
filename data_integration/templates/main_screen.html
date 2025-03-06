@@ -31,26 +31,26 @@
         }
         #qr-code {
             position: absolute;
-            top: 8.5%; 
-            right: 0%; 
+            top: 0.5%;
+            right: 0%;
             width: 10%; 
             height: auto; 
             display: none;
-            z-index: 2;
+            z-index: 10;
         }
         #qr-text {
             position: absolute;
-            top: 22.5%; 
-            right: 0%; 
+            top: 0%;
+            right: 10%;
             color: white;
-            font-size: 1vw; 
+            font-size: 1.5vw;
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: rgba(0, 0, 0, 0.5); 
             padding: 5px;
             border-radius: 5px;
             display: none;
-            z-index: 2;
+            z-index: 10;
         }
         #scrolling-text {
             width: 100%;
@@ -77,7 +77,7 @@
 <body>
     <div id="main-container">
         <div id="video-container">
-            <video id="videoPlayer" autoplay muted controls loop>
+            <video id="videoPlayer" autoplay muted loop>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
             <div id="qr-wrapper">
@@ -128,7 +128,8 @@
                 }
             }
 
-            if (videoPlayer.currentTime >= 5 && !hasStartedScrolling) {
+            // 一开始就显示滚动字幕
+            if (!hasStartedScrolling) {
                 scrollingText.style.display = 'block';
                 hasStartedScrolling = true;
             }
@@ -170,8 +171,8 @@
             videoPlayer.load();
             videoPlayer.play()
                 .then(() => {
-                    hasStartedScrolling = false;
-                    scrollingText.style.display = 'none';
+                    hasStartedScrolling = false; // 重置滚动状态
+                    scrollingText.style.display = 'block'; // 立即显示字幕
                     qrCode.style.display = 'block'; // 新视频播放时持续显示 QR 码
                     qrText.style.display = 'block';
                     bindVideoEvents();
@@ -189,9 +190,9 @@
             const newAdText = data.ad_text || "这里是默认广告文本";
 
             // 更新并立即显示滚动字幕
-        scrollingTextContent.textContent = newAdText;
-        scrollingText.style.display = 'block'; // 立即显示
-        hasStartedScrolling = true; // 标记已开始，避免重复触发
+            scrollingTextContent.textContent = newAdText;
+            scrollingText.style.display = 'block'; // 立即显示
+            hasStartedScrolling = true; // 标记已开始，避免重复触发
 
             if (newVideo !== currentVideo) {
                 if (isDefaultMode) {
