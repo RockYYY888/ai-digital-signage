@@ -9,6 +9,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from CV.UTKFaceDataset import *
 from torch.utils.data import Dataset, DataLoader, random_split, Subset
+from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -81,7 +82,7 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 class FaceAttributeModel(nn.Module):
     def __init__(self, num_age_classes, num_gender_classes, num_race_classes, *args, **kwargs):
         super().__init__()
-        self.base_model = models.resnet50(pretrained=True)
+        self.base_model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         num_features = self.base_model.fc.in_features
         self.base_model.fc = nn.Identity()
 
@@ -118,7 +119,7 @@ class FaceAttributeModel(nn.Module):
 class EmotionClassifier(nn.Module):
     def __init__(self, num_classes=4):
         super(EmotionClassifier, self).__init__()
-        self.base_model = models.resnet18(pretrained=True)
+        self.base_model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         num_features = self.base_model.fc.in_features
         self.base_model.fc = nn.Sequential(
             nn.Dropout(0.5),

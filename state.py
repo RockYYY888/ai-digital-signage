@@ -71,9 +71,7 @@ class PersonalizedADDisplaying(State):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
-            # 在这里提取ad_text放到user screen的字幕里
-            # print(f"Personalized AD Displaying: {ad_text}")
-            # In real application: play_video(video_path)
+
             return AdRotating(self.context)
 
 if __name__ == "__main__":
@@ -108,4 +106,4 @@ if __name__ == "__main__":
     current_state = AdRotating(context)
     while True:
         current_state = current_state.handle()
-        time.sleep(0.1)  # Minimal delay for state machine pacing; adjust as needed
+        time.sleep(0.15)  # Minimal delay for state machine pacing; adjust as needed

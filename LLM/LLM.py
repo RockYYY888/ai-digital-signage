@@ -130,7 +130,6 @@ class AdvertisementGenerator:
             clean_up_tokenization_spaces=True
         )
 
-        # print("【Original model output】:\n", response)
         return self.extract_ad_content(response)
 
     def extract_ad_content(self, text):
@@ -210,9 +209,9 @@ class AdvertisementPipeline:
 
     def output_results(self, video_info, ad_text):
         """Format and display results"""
-        print("**Advertising Information:**")
-        print(f"{video_info['product']}: {video_info['description']}")
-        print("\n**Personalized Advertising Message:**")
+        # print("**Advertising Information:**")
+        print(f"{video_info['product']}") #: {video_info['description']}")
+        # print("\n**Personalized Advertising Message:**")
         print(ad_text)
 
 # Initialize pipeline when module loads
