@@ -34,57 +34,19 @@ model_emotion.load_state_dict(checkpoint2['model_state_dict'])
 # 初始化 YOLO 人脸检测器
 face_detector = YOLO("CV/yolov8l-face.pt", verbose=False)
 
-def robust_preprocessing(frame, apply_gamma=True, gamma=1.1):
-    """
-    使用YCrCb的自适应直方图均衡化 + 轻微Gamma校正，
-    在增强亮度/对比度的同时，尽量保证图像色彩自然。
-
-    :param frame: 原始帧 (BGR 格式)
-    :param apply_gamma: 是否进行gamma校正
-    :param gamma: gamma校正系数，通常在1.0 ~ 1.3之间
-    :return: 处理后的帧 (BGR 格式)
-    """
-
-    # 1) 转换到 YCrCb 空间
-    ycrcb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
-    y, cr, cb = cv2.split(ycrcb)
-
-    # 2) 对 Y 通道做自适应直方图均衡化 (CLAHE)
-    #    clipLimit 可适当调节，越大增强越明显；tileGridSize 也可调
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    y_eq = clahe.apply(y)
-
-    # 3) 合并回 YCrCb，并转回 BGR
-    ycrcb_eq = cv2.merge((y_eq, cr, cb))
-    frame_eq = cv2.cvtColor(ycrcb_eq, cv2.COLOR_YCrCb2BGR)
-
-    if apply_gamma:
-        # 4) 做一次轻微的 Gamma 校正
-        #    gamma=1.1~1.2 程度比较温和
-        invGamma = 1.0 / gamma
-        table = np.array([
-            ( (i / 255.0) ** invGamma ) * 255
-            for i in range(256)
-        ]).astype("uint8")
-        frame_eq = cv2.LUT(frame_eq, table)
-
-    return frame_eq
-
 def analyze_frame(frame):
     """分析单帧以检测人脸并生成预测结果"""
-    processed_frame = robust_preprocessing(frame, apply_gamma=True, gamma=1.1)
-
     # 人脸检测
-    results = face_detector(processed_frame, conf=0.86)
+    results = face_detector(frame, conf=0.86)
     if not results or len(results[0].boxes.xyxy) == 0:
         prediction_queue.put(("no_face"))
-        return None
+        return None, None
 
     prediction_queue.put(("analyzing"))
 
     # 处理检测到的第一个人脸
     box = results[0].boxes.xyxy[0]
-    padding = 20
+    padding = 35
     x1, y1, x2, y2 = map(int, box)
     x1 = max(0, x1 - padding)
     y1 = max(0, y1 - padding)
@@ -148,9 +110,6 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 print("Failed to capture frame.")
                 break
 
-            #cv2.imshow('Webcam Feed', frame)
-            #cv2.waitKey(1)
-
             current_time = time.time()
             if current_time - last_detection_time >= detection_interval:
                 last_detection_time = current_time
@@ -162,8 +121,6 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                     except queue.Full:
                         pass
 
-            #if cv2.waitKey(1) & 0xFF == 27:  # 按 ESC 退出
-            #    break
     finally:
         cap.release()
         cv2.destroyAllWindows()
