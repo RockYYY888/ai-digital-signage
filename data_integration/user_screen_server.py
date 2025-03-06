@@ -1,3 +1,4 @@
+
 from flask import Flask, jsonify, render_template, Response
 from data_integration.data_interface import video_queue, ad_queue  
 from queue import Empty
