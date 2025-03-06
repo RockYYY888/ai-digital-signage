@@ -39,14 +39,6 @@ def generate_test_input():
             "ethnicity": "",
             "emotion": "",
         }
-    elif last_feedback:   # If you are waiting for feedback
-        return {
-            "status": "feedback",
-            "age": "",
-            "gender": "",
-            "ethnicity": "",
-            "emotion": "",
-        }
     else:  # If none
         return {
             "status": "no_face",
