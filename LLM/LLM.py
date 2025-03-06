@@ -3,7 +3,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import prediction_queue, ad_queue, video_queue
+from data_integration.data_interface import ad_queue, video_queue
 import json
 import time
 import threading
