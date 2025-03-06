@@ -122,8 +122,8 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 break
 
             # 显示到副屏（可选）
-            cv2.imshow('Webcam Feed', frame)
-            cv2.waitKey(1)
+            #cv2.imshow('Webcam Feed', frame)
+            #cv2.waitKey(1)
 
             current_time = time.time()
             if current_time - last_detection_time >= detection_interval:
@@ -136,8 +136,8 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                     except queue.Full:
                         pass
 
-            if cv2.waitKey(1) & 0xFF == 27:  # 按 ESC 退出
-                break
+            #if cv2.waitKey(1) & 0xFF == 27:  # 按 ESC 退出
+            #    break
     finally:
         cap.release()
         cv2.destroyAllWindows()
