@@ -31,14 +31,14 @@ def generate_test_input():
             "ethnicity": last_prediction[2],
             "emotion": last_prediction[3],
         }
-    elif last_detection:  # If a face is detected but not predicted
+    elif last_detection:
         return {
-            "status": "detected",
-            "age": "",
-            "gender": "",
-            "ethnicity": "",
-            "emotion": "",
-        }
+        "status": "analyzing",  # 原为 "detected"
+        "age": "",
+        "gender": "",
+        "ethnicity": "",
+        "emotion": "",
+    }
     else:  # If none
         return {
             "status": "no_face",
