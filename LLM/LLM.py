@@ -4,7 +4,6 @@ import random
 import re
 from functools import lru_cache
 from data_integration.data_interface import prediction_queue, ad_queue
-from data_integration.user_screen_server import app
 import json
 import time
 import threading
@@ -196,33 +195,15 @@ class AdvertisementPipeline:
             print(f"Product: {video_info['product']}\n")
 
     def generate_advertisement(self, input_data):
-        """Main pipeline execution"""
         try:
             demographics = self.parse_demographics(input_data)
             video_info = self.select_video(demographics)
-          
-            self.print_debug_info(video_info)
-          
-            messages = self.generator.construct_messages(
-                demographics,
-                video_info['product'],
-                video_info['description'],
-            )
-          
+            messages = self.generator.construct_messages(demographics, video_info['product'], video_info['description'])
             ad_text = self.generator.generate_ad_text(messages)
-            ad_queue.put(ad_text)
-            """temp_list = []
-            size = ad_queue.qsize()
-            for _ in range(size):
-                item = ad_queue.get()
-                print(item)
-                temp_list.append(item) #将元素放到临时列表
-            for item in temp_list: #将临时列表中的元素全部放回队列
-                ad_queue.put(item)"""
+            ad_queue.put(ad_text)  # 使用全局 ad_queue
             prediction_queue.put(("feedback"))
-          
             self.output_results(video_info, ad_text)
-            time.sleep(10) # for waiting feedback, need revise to event occur
+            time.sleep(10)  # 等待反馈，可改为事件触发
             return ad_text
         except Exception as e:
             print(f"Error generating advertisement: {e}")
@@ -240,12 +221,12 @@ pipeline = AdvertisementPipeline()
 if __name__ == "__main__":
     # Example usage
     # Start Flask thread
-    flask_thread = threading.Thread(
+    """flask_thread = threading.Thread(
         target=app.run,
         kwargs={'threaded': True, 'port': 5001}
     )
     flask_thread.daemon = True
-    flask_thread.start()
+    flask_thread.start()"""
     test_input = ('17-35', 'Male', 'Asian', 'happy')
     pipeline.debug_mode = True  # Enable for debugging
     pipeline.generate_advertisement(test_input)
