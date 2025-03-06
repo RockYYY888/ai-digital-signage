@@ -321,98 +321,91 @@
 
   <script>
     (function() {
-  const elements = {
-    states: {
-      noFace: document.getElementById('no-face-state'),
-      analysing: document.getElementById('analysing-state'),
-      prediction: document.getElementById('prediction-state'),
-      feedback: document.getElementById('feedback-state')
-    },
-    images: {
-      face: document.getElementById('face-image'),
-      noFace: document.getElementById('no-face-image')
-    },
-    statusText: {
-      watchingTime: document.getElementById('watching-time-value'),
-      age: document.getElementById('age'),
-      gender: document.getElementById('gender'),
-      ethnicity: document.getElementById('ethnicity'),
-      emotion: document.getElementById('emotion')
-    }
-  };
-
-  const stateConfig = {
-    no_face: {
-      showState: 'noFace',
-      image: 'noFace',
-      statusText: 'No face detected'
-    },
-    analyzing: {
-      showState: 'analysing',
-      image: 'face',
-      statusText: 'Analyzing...'
-    },
-    finished: {
-      showState: 'prediction',
-      image: 'face',
-      statusText: 'Face detected'
-    },
-    feedback: {
-      showState: 'feedback',
-      image: 'face',
-      statusText: 'Waiting for feedback'
-    }
-  };
-
-  function handleStateChange(state) {
-    Object.values(elements.states).forEach(el => el.classList.add('hidden'));
-    const config = stateConfig[state];
-    elements.states[config.showState].classList.remove('hidden');
-
-    const isFaceImage = config.image === 'face';
-    elements.images.face.classList.toggle('hidden', !isFaceImage);
-    elements.images.noFace.classList.toggle('hidden', isFaceImage);
-
-    // 仅在需要显示人脸时更新图片，避免频繁请求
-    if (isFaceImage) {
-      elements.images.face.src = `/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
-    }
-  }
-
-  const eventSource = new EventSource('/stream');
-  let isFirstMessage = true;
-
-  eventSource.onmessage = function(e) {
-    try {
-      const data = JSON.parse(e.data);
-      
-      Object.entries({
-        age: data.age,
-        gender: data.gender,
-        ethnicity: data.ethnicity,
-        emotion: data.emotion ? 
-          data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
-      }).forEach(([key, value]) => {
-        elements.statusText[key].textContent = value || '';
+      const elements = {
+        states: {
+          noFace: document.getElementById('no-face-state'),
+          analysing: document.getElementById('analysing-state'),
+          prediction: document.getElementById('prediction-state'),
+          feedback: document.getElementById('feedback-state')
+        },
+        images: {
+          face: document.getElementById('face-image'),
+          noFace: document.getElementById('no-face-image')
+        },
+        statusText: {
+          watchingTime: document.getElementById('watching-time-value'),
+          age: document.getElementById('age'),
+          gender: document.getElementById('gender'),
+          ethnicity: document.getElementById('ethnicity'),
+          emotion: document.getElementById('emotion')
+        }
+      };
+    
+      const stateConfig = {
+        no_face: {
+          showState: 'noFace',
+          image: 'noFace',
+          statusText: 'No face detected'
+        },
+        analyzing: {
+          showState: 'analysing',
+          image: 'face',
+          statusText: 'Analyzing...'
+        },
+        finished: {
+          showState: 'prediction',
+          image: 'face',
+          statusText: 'Face detected'
+        }
+      };
+    
+      function handleStateChange(state) {
+        Object.values(elements.states).forEach(el => el.classList.add('hidden'));
+        const config = stateConfig[state];
+        elements.states[config.showState].classList.remove('hidden');
+    
+        const isFaceImage = config.image === 'face';
+        elements.images.face.classList.toggle('hidden', !isFaceImage);
+        elements.images.noFace.classList.toggle('hidden', isFaceImage);
+    
+        if (isFaceImage) {
+          elements.images.face.src = `/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
+        }
+      }
+    
+      const eventSource = new EventSource('/stream');
+      let isFirstMessage = true;
+    
+      eventSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          
+          Object.entries({
+            age: data.age,
+            gender: data.gender,
+            ethnicity: data.ethnicity,
+            emotion: data.emotion ? data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
+          }).forEach(([key, value]) => {
+            elements.statusText[key].textContent = value || '';
+          });
+    
+          if (stateConfig[data.status]) {
+            handleStateChange(data.status);
+          }
+    
+          if (isFirstMessage) {
+            elements.images.noFace.src = "/static/no_face.jpg";
+            isFirstMessage = false;
+          }
+        } catch (error) {
+          console.error("SSE处理错误:", error);
+        }
+      };
+    
+      window.addEventListener('beforeunload', () => {
+        eventSource.close();
       });
-
-      if (stateConfig[data.status]) {
-        handleStateChange(data.status);
-      }
-
-      if (isFirstMessage) {
-        elements.images.noFace.src = "/static/no_face.jpg";
-        isFirstMessage = false;
-      }
-    } catch (error) {
-      console.error("SSE处理错误:", error);
-    }
-  };
-
-  window.addEventListener('beforeunload', () => {
-    eventSource.close();
-  });
-})();
+    })();
     </script>
     
     

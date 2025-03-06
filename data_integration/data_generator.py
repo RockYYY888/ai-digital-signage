@@ -4,10 +4,9 @@ from data_integration.data_interface import prediction_queue,detect_queue
 # Global variable initialization
 last_prediction = None
 last_detection = None
-last_feedback = None
 
 def generate_test_input():
-    global last_prediction, last_detection, last_feedback
+    global last_prediction, last_detection
     
     # If there is new data in the queue, update last_detection and last_prediction
     if not prediction_queue.empty():  # Assume there is only one queue prediction_queue
@@ -15,19 +14,13 @@ def generate_test_input():
         if data == ("analyzing"):  # Indicates that a face was detected but not analyzed
             last_detection = data
             last_prediction = None
-            last_feedback = None
         elif data == ("no_face"):  # Indicates that no face was detected
             last_detection = None
             last_prediction = None
-            last_feedback = None
-        elif data == ("feedback"): # Waiting for feedback
-            last_detection = None
-            last_prediction = None
-            last_feedback = data
         else:  # Indicates that the analysis is complete
             last_prediction = data
             last_detection = None
-            last_feedback = None
+            
     
     # Return the latest status and data
     if last_prediction:  # If there is a prediction result
