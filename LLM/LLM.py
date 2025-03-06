@@ -3,7 +3,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import prediction_queue, ad_queue
+from data_integration.data_interface import prediction_queue, ad_queue, video_queue
 import json
 import time
 import threading
@@ -200,7 +200,7 @@ class AdvertisementPipeline:
             video_info = self.select_video(demographics)
             messages = self.generator.construct_messages(demographics, video_info['product'], video_info['description'])
             ad_text = self.generator.generate_ad_text(messages)
-            ad_queue.put(ad_text)  # 使用全局 ad_queue
+            ad_queue.put(ad_text) 
             prediction_queue.put(("feedback"))
             self.output_results(video_info, ad_text)
             time.sleep(10)  # 等待反馈，可改为事件触发
@@ -221,12 +221,6 @@ pipeline = AdvertisementPipeline()
 if __name__ == "__main__":
     # Example usage
     # Start Flask thread
-    """flask_thread = threading.Thread(
-        target=app.run,
-        kwargs={'threaded': True, 'port': 5001}
-    )
-    flask_thread.daemon = True
-    flask_thread.start()"""
     test_input = ('17-35', 'Male', 'Asian', 'happy')
     pipeline.debug_mode = True  # Enable for debugging
     pipeline.generate_advertisement(test_input)
