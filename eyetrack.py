@@ -4,54 +4,52 @@ import numpy as np
 import time
 import threading
 import queue
-from CV.yolov8 import analyze_frame  # 假设这是你的人脸检测函数
-from ad_pool.random_ads import AdPool  # 假设这是你的广告池类
+import os
+import re
+from CV.yolov8 import analyze_frame
+import sqlite3
+from datetime import datetime
 
-# 初始化人脸检测和关键点检测器
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("eyetracking/shape_predictor_68_face_landmarks.dat")
-
-# 初始化摄像头
-cap = cv2.VideoCapture(1)
-
-# 创建窗口
-cv2.namedWindow("Ad Player", cv2.WINDOW_NORMAL)
-cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
-
-# 定义全局变量和锁
-frame_lock = threading.Lock()
-watching_status = False
-watching_lock = threading.Lock()
-total_watch_time = 0
-cam_frame = None
-cam_frame_lock = threading.Lock()
-ad_frame = None
-
-# 创建广告池实例
-ad_pool = AdPool()
-
-# 创建队列存储预测结果（只保留最新结果）
+# 创建队列存储预测结果
 prediction_queue = queue.Queue(maxsize=1)
 
+# 全局变量追踪观看时间
+watching_lock = threading.Lock()
+total_watch_time = 0
+
 def calculate_eye_distance(landmarks):
-    """计算双眼之间的距离"""
+    
     left_eye = (landmarks.part(36).x, landmarks.part(36).y)
     right_eye = (landmarks.part(45).x, landmarks.part(45).y)
     return np.linalg.norm(np.array(right_eye) - np.array(left_eye))
 
-def eye_tracking():
+def eye_tracking(active_event):
     """眼动追踪线程"""
-    global watching_status, total_watch_time, cam_frame
+    global total_watch_time
+    
+    print("开始眼动追踪")
+    
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor("eyetracking/shape_predictor_68_face_landmarks.dat")
+    cap = cv2.VideoCapture(1)
+    
     start_time = None
     last_prediction_time = 0
-    while True:
+    initial_prediction = None
+    
+    with watching_lock:
+        total_watch_time = 0
+
+    while active_event.is_set():
         ret, frame = cap.read()
         if not ret:
             break
+            
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = detector(gray)
         current_time = time.time()
         is_watching = False
+        
         for face in faces:
             landmarks = predictor(gray, face)
             eye_distance = calculate_eye_distance(landmarks)
@@ -59,95 +57,215 @@ def eye_tracking():
                 is_watching = True
                 if start_time is None:
                     start_time = current_time
-                # 每秒更新一次预测结果
-                if current_time - last_prediction_time >= 1:
-                    prediction = analyze_frame(frame,verbose=False)
+                
+                if initial_prediction is None or current_time - last_prediction_time >= 2:
+                    prediction = analyze_frame(frame)
                     if prediction:
-                        # 去掉情绪部分，只保留前三个元素 (age, gender, race)
                         prediction = prediction[:3]
-                        # 只保留最新预测结果
+                        if initial_prediction is None:
+                            initial_prediction = prediction
+                            print(f"初始预测结果: {initial_prediction}")
                         if prediction_queue.full():
-                            prediction_queue.get()  # 移除旧结果
+                            prediction_queue.get()
                         prediction_queue.put(prediction)
+                        print(f"当前预测: {prediction}")
                     last_prediction_time = current_time
                 break
-        with watching_lock:
-            watching_status = is_watching
-            if is_watching and start_time is not None:
+
+        if is_watching and start_time is not None:
+            with watching_lock:
                 total_watch_time += current_time - start_time
-                start_time = current_time
-            else:
-                start_time = None
-        with cam_frame_lock:
-            cam_frame = frame.copy()
-        time.sleep(0.01)  # 减少 CPU 占用
-
-def play_advertisement():
-    """播放广告线程"""
-    global ad_frame
-    while True:
-        ad_path = ad_pool.get_random_ad()
-        if not ad_path:
-            print("No ad available, waiting...")
-            time.sleep(1)
-            continue
-        ad_cap = cv2.VideoCapture(ad_path)
-        if not ad_cap.isOpened():
-            print(f"Cannot open the file: {ad_path}")
-            continue
-        fps = ad_cap.get(cv2.CAP_PROP_FPS) or 30.0
-        frame_interval = 1.0 / fps
-        next_frame_time = time.time()
-
-        # 记录广告开始时的观看时间
-        with watching_lock:
-            start_watch_time = total_watch_time
-
-        while True:
-            current_time = time.time()
-            if current_time >= next_frame_time:
-                ret, frame = ad_cap.read()
-                if not ret:
-                    print("End of advertisement video.")
-                    break
-                with frame_lock:
-                    ad_frame = frame.copy()
-                next_frame_time = current_time + frame_interval
-            else:
-                time.sleep(max(0, next_frame_time - current_time))
-        ad_cap.release()
-
-        # 计算广告观看时间
-        with watching_lock:
-            end_watch_time = total_watch_time
-        ad_watch_time = end_watch_time - start_watch_time
-
-        # 获取最后一次预测结果并合并
-        if not prediction_queue.empty():
-            final_prediction = prediction_queue.get()
-            result = (round(ad_watch_time, 2), final_prediction)
-            print(f"Result: {result}")  # 例如 (5.23, ('20-30', 'Male', 'White'))
+            start_time = current_time
         else:
-            result = (round(ad_watch_time, 2), None)
-            print(f"Result: {result}")  # 例如 (2.15, None)
+            start_time = None
 
-# 启动线程
-eye_thread = threading.Thread(target=eye_tracking, daemon=True)
-ad_thread = threading.Thread(target=play_advertisement, daemon=True)
-eye_thread.start()
-ad_thread.start()
+    if prediction_queue.empty() and initial_prediction is not None:
+        prediction_queue.put(initial_prediction)
+        print(f"添加初始预测结果: {initial_prediction}")
+    
+    cap.release()
+    print(f"眼动追踪结束，总观看时间: {total_watch_time:.2f}秒")
 
-# 主循环：显示画面
-while True:
-    with cam_frame_lock:
-        if cam_frame is not None:
-            cv2.imshow("Camera", cam_frame)
-    with frame_lock:
-        if ad_frame is not None:
-            cv2.imshow("Ad Player", ad_frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+def extract_ad_id(video_path):
+    """从视频路径中提取广告ID"""
+    try:
+        match = re.search(r'ad_(\d+)', video_path)
+        if match:
+            ad_id = int(match.group(1))
+        else:
+            ad_id = os.path.basename(video_path).split('.')[0]
+        print(f"广告ID: {ad_id}")
+    except Exception as e:
+        print(f"提取广告ID出错: {e}")
+        ad_id = hash(video_path) % 10000
+        print(f"使用备用ID: {ad_id}")
+    return ad_id
 
-# 清理资源
-cap.release()
-cv2.destroyAllWindows()
+def start_eye_tracking(video_path):
+    """启动眼动追踪"""
+    print(f"开始追踪: {video_path}")
+    ad_id = extract_ad_id(video_path)
+    
+    # 重置观看时间
+    with watching_lock:
+        global total_watch_time
+        total_watch_time = 0
+    
+    # 清空预测队列
+    while not prediction_queue.empty():
+        prediction_queue.get()
+    
+    eyetrack_active = threading.Event()
+    eyetrack_active.set()
+    
+    eyetrack_thread = threading.Thread(target=eye_tracking, args=(eyetrack_active,))
+    eyetrack_thread.daemon = True
+    eyetrack_thread.start()
+    print("眼动追踪线程已启动")
+    
+    return eyetrack_active, eyetrack_thread, ad_id
+
+def stop_eye_tracking(eyetrack_active, eyetrack_thread):
+    """停止眼动追踪"""
+    if eyetrack_active.is_set():  # 检查是否仍在运行
+        eyetrack_active.clear()
+        print("停止眼动追踪线程")
+        eyetrack_thread.join(timeout=1.0)
+        print("眼动追踪线程已终止")
+    
+    with watching_lock:
+        watch_time = total_watch_time
+    
+    final_prediction = None
+    try:
+        if not prediction_queue.empty():
+            final_prediction = prediction_queue.get(timeout=0.5)
+            print(f"获取预测结果: {final_prediction}")
+    except Exception as e:
+        print(f"处理预测错误: {e}")
+    
+    return watch_time, final_prediction
+
+def play_targeted_video(video_path):
+    """播放目标视频"""
+    print(f"play video: {video_path}")
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"cannot open: {video_path}")
+        return
+    
+    cv2.namedWindow("Targeted Video", cv2.WINDOW_NORMAL)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cv2.imshow("Targeted Video", frame)
+        if cv2.waitKey(int(1000/fps)) & 0xFF == ord('q'):
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    print("end")
+
+def track_and_play_video(video_path):
+    """启动眼动追踪并播放视频"""
+    print(f"开始追踪和播放: {video_path}")
+    ad_id = extract_ad_id(video_path)
+    
+    eyetrack_active, eyetrack_thread, ad_id = start_eye_tracking(video_path)
+    
+    play_targeted_video(video_path)
+    
+    watch_time, final_prediction = stop_eye_tracking(eyetrack_active, eyetrack_thread)
+    
+    success = update_database(watch_time, final_prediction, ad_id)
+    if success:
+        print(f"time ={watch_time:.2f}, prediction={final_prediction}")
+    else:
+        print("update fail")
+    
+    return watch_time, final_prediction
+
+def update_database(watch_time, demographics, ad_id):
+    
+    if demographics is None:
+        print("Cannot define")
+        return False
+    
+    try:
+        # 解包 demographics 数据
+        age_group, gender, ethnicity = demographics
+        print(f"Prepare for database age={age_group}, gender={gender}, ethnicity={ethnicity}")
+        
+        # 使用与 dashboard 相同的数据库文件
+        db_path = 'Dashboard/advertisements.db'
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # 检查 demographics 表是否存在，若不存在则创建
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='demographics'")
+        if not cursor.fetchone():
+            print("demographics dont exist")
+            cursor.execute("""
+                CREATE TABLE demographics (
+                    demographics_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    gender TEXT,
+                    age_group TEXT,
+                    ethnicity TEXT
+                )
+            """)
+        
+        # 检查 viewers 表是否存在，若不存在则创建
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='viewers'")
+        if not cursor.fetchone():
+            print("viewers dont exist")
+            cursor.execute("""
+                CREATE TABLE viewers (
+                    viewer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    view_time REAL,
+                    demographics_id INTEGER,
+                    visit_date TEXT,
+                    ad_id INTEGER,  
+                    FOREIGN KEY(demographics_id) REFERENCES demographics(demographics_id)
+                )
+            """)
+        
+        # 检查 demographics 表中是否已有匹配记录
+        cursor.execute("""
+            SELECT demographics_id FROM demographics 
+            WHERE gender = ? AND age_group = ? AND ethnicity = ?
+        """, (gender, age_group, ethnicity))
+        
+        result = cursor.fetchone()
+        if result:
+            demographics_id = result[0]
+            print(f"find demographics  ID={demographics_id}")
+        else:
+            # 插入新的 demographics 记录
+            cursor.execute("""
+                INSERT INTO demographics (gender, age_group, ethnicity)
+                VALUES (?, ?, ?)
+            """, (gender, age_group, ethnicity))
+            demographics_id = cursor.lastrowid
+            print(f"create demographics ID={demographics_id}")
+        
+        # 插入 viewers 记录
+        current_date = datetime.now().strftime('%Y-%m-%d')  # 格式与 dashboard 一致
+        cursor.execute("""
+            INSERT INTO viewers (view_time, demographics_id, visit_date, ad_id)
+            VALUES (?, ?, ?, ?)
+        """, (float(watch_time), demographics_id, current_date, int(ad_id)))  # 确保类型正确
+        
+        conn.commit()
+        print(f"update time={watch_time:.2f}, demographic ID={demographics_id}, ad ID={ad_id}")
+        return True
+    
+    except Exception as e:
+        print(f"fail {e}")
+        return False
+    
+    finally:
+        if 'conn' in locals():
+            conn.close()
