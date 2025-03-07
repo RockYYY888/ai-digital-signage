@@ -5,7 +5,6 @@ from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
 from data_integration.server import app_1
 from data_integration.user_screen_server import app
-
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
@@ -15,6 +14,9 @@ class Context:
         self.current_ad_text = None
         self.state_lock = threading.Lock()  # Lock for state transitions
         self.is_first_ad_rotating = True  # Flag for first AdRotating entry
+        self.eye_tracking_active = threading.Event()
+        self.video_complete_event = threading.Event()
+        self.video_completion_queue = queue.Queue()
 
 class State:
     def __init__(self, context):
@@ -71,8 +73,43 @@ class PersonalizedADDisplaying(State):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
-            self.context.face_detection_active.set()  # 重新启用人脸检测
+            
+            print("prepare to start")
+            
+            # 重置视频完成事件
+            self.context.video_complete_event.clear()
+            
+            # 启动眼动追踪
+            self.context.eye_tracking_active.set()
+            
+            # 启动监听视频完成的线程
+            video_monitor = threading.Thread(
+                target=self.monitor_video_completion
+            )
+            video_monitor.daemon = True
+            video_monitor.start()
+            
+            # 等待视频播放完成
+            self.context.video_complete_event.wait()
+            
+            # 视频播放完成，停止眼动追踪
+            self.context.eye_tracking_active.clear()
+            print("目标视频播放完成，眼动追踪已停止")
+            
+            # 重新启用人脸检测
+            self.context.face_detection_active.set()
+            
             return AdRotating(self.context)
+    
+    def monitor_video_completion(self):
+        try:
+            # 使用 Context 中定义的队列
+            signal = self.context.video_completion_queue.get()
+            if signal == "video_complete":
+                self.context.video_complete_event.set()
+        except Exception as e:
+            print(f"error {e}")
+            self.context.video_complete_event.set()
 
 if __name__ == "__main__":
     context = Context()
