@@ -40,6 +40,7 @@ def analyze_frame(frame):
     results = face_detector(frame, conf=0.86)
     if not results or len(results[0].boxes.xyxy) == 0:
         prediction_queue.put(("no_face"))
+        print("[INFO] No face detected at this frame.")
         return None, None
 
     prediction_queue.put(("analyzing"))
@@ -64,7 +65,7 @@ def analyze_frame(frame):
     emotion_pred = predict2(model_emotion, pil_image)
     emotion_label = emotion_mapping.get(emotion_pred, "Unknown")
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
-    print(f"Predicted Demographics: {combined_prediction}")
+    print(f"[INFO] Predicted Demographics: {combined_prediction}")
 
     prediction_queue.put(combined_prediction)
     return combined_prediction, pil_image
