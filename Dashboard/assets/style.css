@@ -11,6 +11,24 @@ body {
   position: relative;
   box-shadow: 2px 2px 2px #1f2c56;
 }
+.info-container {
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  width: 100%;
+}
+
+.info-card:first-child {
+  margin-top: 11px; 
+}
+
+.info-card {
+  background-color: #1f2c56;
+  padding: 15px;
+  width: 80%;
+  text-align: center;
+  margin-bottom: 15px; 
+}
 
 .create_container {
   border-radius: 5px;
@@ -22,6 +40,7 @@ body {
   height: 550px;
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
   width: calc(100% - 20px) !important;
 }
 
@@ -51,7 +70,7 @@ body {
   align-items: center !important;
   justify-content: center !important;
   height: 30px !important;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   font-weight: 400 !important;
 }
 
@@ -116,7 +135,7 @@ body {
   background-color: #1f2c56 !important;
   color: white !important;
   font-size: 16px !important;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   border: none !important;
   padding: 0 12px !important;
   height: 32px !important;
@@ -161,13 +180,13 @@ body {
   color: white !important;
   font-size: 16px !important;
   padding: 15px 0 !important;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   font-weight: 400 !important;
 }
 
 .DayPicker_weekHeader {
   color: rgba(255, 255, 255, 0.7) !important;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   font-size: 14px !important;
   top: 50px !important;
 }
@@ -177,7 +196,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: white !important;
   font-size: 14px !important;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   transition: all 0.2s ease;
 }
 
@@ -499,7 +518,7 @@ body {
   /* currently ems cause chrome bug misinterpreting rems on body element */
   line-height: 1.6;
   font-weight: 400;
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
   color: rgb(50, 50, 50);
 }
 
@@ -857,9 +876,9 @@ form {
 }
 
 body, input, button, select, textarea, .DateInput_input, .CalendarDay, .DayPicker, .CalendarMonth_caption {
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
 }
 
 .Select-value-label {
-  font-family: 'HelveticaNeue', Helvetica, Arial, sans-serif !important;
+  font-family: Verdana !important;
 }
