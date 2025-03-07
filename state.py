@@ -5,6 +5,8 @@ from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
 from data_integration.server import app_1
 from data_integration.user_screen_server import app
+from Dashboard.dashboard import app_2
+
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
@@ -130,6 +132,14 @@ if __name__ == "__main__":
     )
     flask_thread2.daemon = True
     flask_thread2.start()
+
+    flask_thread3 = threading.Thread(
+        target=app_2.run,
+        kwargs={'threaded': True, 'port': 5002}
+    )
+    flask_thread3.daemon = True
+    flask_thread3.start()
+
 
     # Start CV thread
     cv_thread = threading.Thread(

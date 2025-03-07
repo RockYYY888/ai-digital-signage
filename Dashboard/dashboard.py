@@ -5,9 +5,11 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import numpy as np
 import sqlite3
+import os
 
-# Database connection and data loading
-conn = sqlite3.connect('advertisements.db')
+db_path = os.path.join(os.path.dirname(__file__), "advertisements.db")
+conn = sqlite3.connect(db_path)
+
 query = """
 SELECT 
     v.viewer_id,
