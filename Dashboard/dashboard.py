@@ -81,7 +81,7 @@ color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
 # Create Dash app
 app_2 = dash.Dash(__name__)
 
-# Define bar chart generation function
+# Define bar chart generation function with dragmode='none'
 def create_bar_chart(data_counts, title, legend_title, colors):
     fig = go.Figure()
     for i, group in enumerate(data_counts.index):
@@ -100,7 +100,8 @@ def create_bar_chart(data_counts, title, legend_title, colors):
         plot_bgcolor='#1f2c56',
         xaxis={'title': 'Completion Rate Range', 'color': 'white'},
         yaxis={'title': 'Count', 'color': 'white'},
-        font={'color': 'white'}
+        font={'color': 'white'},
+        dragmode=False  # Disable drag interaction (e.g., box selection for zoom)
     )
     return fig
 
@@ -166,7 +167,7 @@ app_2.layout = html.Div([
                         figure=create_bar_chart(gender_completion_counts, "Gender Completion Rate Distribution", "Gender", color_palette),
                         config={
                             'scrollZoom': False,
-                            'displayModeBar': True,
+                            'displayModeBar': False,  # Hide mode bar to prevent interaction
                             'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
                         }
                     )
@@ -177,7 +178,7 @@ app_2.layout = html.Div([
                         figure=create_bar_chart(age_completion_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette),
                         config={
                             'scrollZoom': False,
-                            'displayModeBar': True,
+                            'displayModeBar': False,  # Hide mode bar to prevent interaction
                             'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
                         }
                     )
@@ -188,7 +189,7 @@ app_2.layout = html.Div([
                         figure=create_bar_chart(ethnicity_completion_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette),
                         config={
                             'scrollZoom': False,
-                            'displayModeBar': True,
+                            'displayModeBar': False,  # Hide mode bar to prevent interaction
                             'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
                         }
                     )
@@ -315,9 +316,11 @@ def update_all(selected_date):
         ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'], fill_value=0
     )
 
+    # Create charts with dragmode='none'
     gender_chart = create_bar_chart(daily_gender_completion_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
     age_chart = create_bar_chart(daily_age_completion_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
     ethnicity_chart = create_bar_chart(daily_ethnicity_completion_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
+
     pie_chart = {
         'data': [
             go.Pie(
@@ -486,7 +489,7 @@ def update_line_chart(ad_id, time_granularity, slider_value, time_points):
         font={'color': 'white', 'size': 14},
         margin={'t': 60, 'b': 100, 'l': 80, 'r': 40},
         hovermode='x unified',
-        dragmode=False
+        dragmode=False  # Disable drag interaction for consistency
     )
     return fig
 
