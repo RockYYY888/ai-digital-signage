@@ -6,6 +6,7 @@ from LLM.LLM import AdvertisementPipeline
 from data_integration.server import app_1
 from data_integration.user_screen_server import app
 from Dashboard.dashboard import app_2
+from eyetrack import *
 
 class Context:
     def __init__(self):
@@ -76,27 +77,23 @@ class PersonalizedADDisplaying(State):
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
             
-            print("prepare to start")
+            print(f"Starting personalized video: {ad_text}")
             
-            # 重置视频完成事件
-            self.context.video_complete_event.clear()
-            
-            # 启动眼动追踪
-            self.context.eye_tracking_active.set()
-            
-            # 启动监听视频完成的线程
-            video_monitor = threading.Thread(
-                target=self.monitor_video_completion
+            # 启动眼动追踪线程
+            eyetrack_thread = threading.Thread(
+                target=eye_tracking,  # 假设 eye_tracking 是眼动追踪函数
+                args=(self.context.eye_tracking_active,)
             )
-            video_monitor.daemon = True
-            video_monitor.start()
+            eyetrack_thread.daemon = True
+            eyetrack_thread.start()
             
-            # 等待视频播放完成
-            self.context.video_complete_event.wait()
+            # 播放视频（假设 ad_text 是视频路径）
+            play_targeted_video(ad_text)  # 假设这是播放视频的函数
             
-            # 视频播放完成，停止眼动追踪
+            # 视频播放完成后停止眼动追踪
             self.context.eye_tracking_active.clear()
-            print("目标视频播放完成，眼动追踪已停止")
+            eyetrack_thread.join(timeout=1.0)  # 等待线程结束
+            print("Eye tracking stopped after video completion")
             
             # 重新启用人脸检测
             self.context.face_detection_active.set()
