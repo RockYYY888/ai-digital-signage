@@ -29,29 +29,6 @@
             height: 100%;
             object-fit: contain;
         }
-        #qr-code {
-            position: absolute;
-            top: 0.5%;
-            right: 0%;
-            width: 10%; 
-            height: auto; 
-            display: none;
-            z-index: 10;
-        }
-        #qr-text {
-            position: absolute;
-            top: 0%;
-            right: 10%;
-            color: white;
-            font-size: 1.5vw;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: rgba(0, 0, 0, 0.5); 
-            padding: 5px;
-            border-radius: 5px;
-            display: none;
-            z-index: 10;
-        }
         #scrolling-text {
             width: 100%;
             height: 8%;
@@ -93,10 +70,6 @@
             <video id="videoPlayer" autoplay muted loop>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
-            <div id="qr-wrapper">
-                <img id="qr-code" src="/static/qr.jpg" alt="QR Code">
-                <div id="qr-text">Please scan the QR code to fill in the feedback questionnaire</div>
-            </div>
             <div id="placeholder-screen">
                 <img src="/static/no_face.jpg" alt="Placeholder Image" width="300" height="300"><br>
                 正在准备下一个视频...
@@ -107,22 +80,17 @@
         </div>
     </div>
 
-</body>
-</html>
-
 <script>
     const videoPlayer = document.getElementById('videoPlayer');
-    const qrCode = document.getElementById('qr-code');
-    const qrText = document.getElementById('qr-text');
     const scrollingText = document.getElementById('scrolling-text');
     const scrollingTextContent = document.getElementById('scrolling-text-content');
     const videoContainer = document.getElementById('video-container');
-    const placeholderScreen = document.getElementById('placeholder-screen'); // 新增
+    const placeholderScreen = document.getElementById('placeholder-screen');
     let currentVideo = "videos/0001.mp4";
     let hasStartedScrolling = false;
     let isDefaultMode = true;
     let nextVideo = null;
-    let showPlaceholder = false; // 控制过渡界面显示的标志
+    let showPlaceholder = false;
 
     function getRandomVideo() {
         const min = 1;
@@ -133,35 +101,19 @@
     }
 
     function bindVideoEvents() {
-        videoPlayer.addEventListener('timeupdate', handleTimeUpdate);
         videoPlayer.addEventListener('ended', handleVideoEnd);
     }
 
-    function handleTimeUpdate() {
-        if (!isDefaultMode) {
-            const remainingTime = videoPlayer.duration - videoPlayer.currentTime;
-            if (remainingTime <= 5 && remainingTime > 0) {
-                qrCode.style.display = 'block';
-                qrText.style.display = 'block';
-            } else {
-                qrCode.style.display = 'none';
-                qrText.style.display = 'none';
-            }
-        }
-    }
-
     function handleVideoEnd() {
-        qrCode.style.display = 'none';
-        qrText.style.display = 'none';
         scrollingText.style.display = 'none';
         scrollingTextContent.textContent = '';
         hasStartedScrolling = false;
 
         if (isDefaultMode) {
-            if (showPlaceholder) { // 检查是否需要显示过渡界面
+            if (showPlaceholder) {
                 videoContainer.style.height = '100%';
-                videoPlayer.style.display = 'none'; // 隐藏视频
-                placeholderScreen.style.display = 'block'; // 显示过渡界面
+                videoPlayer.style.display = 'none';
+                placeholderScreen.style.display = 'block';
             } else {
                 videoContainer.style.height = '100%';
                 currentVideo = getRandomVideo();
@@ -190,13 +142,11 @@
         videoContainer.style.height = '92%';
         videoPlayer.src = newVideoSrc;
         videoPlayer.style.display = 'block';
-        placeholderScreen.style.display = 'none'; // 确保隐藏过渡界面
+        placeholderScreen.style.display = 'none';
         videoPlayer.load();
         videoPlayer.play()
             .then(() => {
                 hasStartedScrolling = false;
-                qrCode.style.display = 'block';
-                qrText.style.display = 'block';
                 bindVideoEvents();
             })
             .catch(error => console.error("Playback failed:", error));
@@ -208,13 +158,13 @@
 
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        if (data.video) { // 有新视频和广告数据
+        if (data.video) {
             const newVideo = data.video;
             const newAdText = data.ad_text;
             scrollingTextContent.textContent = newAdText;
             scrollingText.style.display = 'block';
             hasStartedScrolling = true;
-            showPlaceholder = false; // 隐藏过渡界面
+            showPlaceholder = false;
             placeholderScreen.style.display = 'none';
             videoPlayer.style.display = 'block';
             if (newVideo !== currentVideo) {
@@ -226,9 +176,9 @@
                     nextVideo = newVideo;
                 }
             }
-        } else if (data.queue_status) { // 处理队列状态
+        } else if (data.queue_status) {
             const { video_size, ad_size } = data.queue_status;
-            showPlaceholder = (video_size > 0 && ad_size === 0); // video_queue 有元素，ad_queue 为空
+            showPlaceholder = (video_size > 0 && ad_size === 0);
             if (showPlaceholder) {
                 videoPlayer.style.display = 'none';
                 placeholderScreen.style.display = 'block';
