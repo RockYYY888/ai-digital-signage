@@ -44,23 +44,45 @@
             font-size: 1.2em;
             animation: scroll 15s linear infinite;
         }
-        #placeholder-screen {
+        #transitive-screen {
             display: none;
             width: 100%;
             height: 100%;
-            background-color: #000;
-            color: #fff;
+            background: #1f2c56;
+            color: #ffffff;
             text-align: center;
-            font-size: 2em;
-            padding-top: 20%;
+            font-family: 'Playfair Display', serif;
             position: absolute;
             top: 0;
             left: 0;
             z-index: 20;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #transitive-text {
+            font-weight: bold;
+            font-size: 3rem;
+            color: #00ffcc;
+            line-height: 2.5;
+            text-transform: uppercase;
+        }
+        .loading-spinner {
+            width: 30px;
+            height: 30px;
+            border: 5px solid rgba(0, 255, 204, 0.3); 
+            border-top-color: #00ffcc; 
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 40px;
         }
         @keyframes scroll {
             from { left: 100%; }
             to { left: -100%; }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -70,9 +92,13 @@
             <video id="videoPlayer" autoplay muted loop>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
-            <div id="placeholder-screen">
-                <img src="/static/no_face.jpg" alt="Placeholder Image" width="300" height="300"><br>
-                正在准备下一个视频...
+            <div id="transitive-screen">
+                <div id="transitive-text">
+                    FACE DETECTED <br>
+                    PREPARING FOR YOUR PERSONALIZED ADS <br>
+                    STAY TUNED
+                </div>
+                <div class="loading-spinner"></div>
             </div>
         </div>
         <div id="scrolling-text">
@@ -85,12 +111,12 @@
     const scrollingText = document.getElementById('scrolling-text');
     const scrollingTextContent = document.getElementById('scrolling-text-content');
     const videoContainer = document.getElementById('video-container');
-    const placeholderScreen = document.getElementById('placeholder-screen');
+    const transitiveScreen = document.getElementById('transitive-screen');
     let currentVideo = "videos/0001.mp4";
     let hasStartedScrolling = false;
     let isDefaultMode = true;
     let nextVideo = null;
-    let showPlaceholder = false;
+    let showTransitive = false;
 
     function getRandomVideo() {
         const min = 1;
@@ -110,28 +136,29 @@
         hasStartedScrolling = false;
 
         if (isDefaultMode) {
-            if (showPlaceholder) {
-                videoContainer.style.height = '100%';
-                videoPlayer.style.display = 'none';
-                placeholderScreen.style.display = 'block';
-            } else {
-                videoContainer.style.height = '100%';
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.style.display = 'block';
-                placeholderScreen.style.display = 'none';
-                videoPlayer.play().catch(error => console.error("Playback failed:", error));
-            }
+            videoContainer.style.height = '100%';
+            currentVideo = getRandomVideo();
+            videoPlayer.src = `/static/${currentVideo}`;
+            videoPlayer.style.display = 'block';
+            transitiveScreen.style.display = 'none';
+            videoPlayer.play().catch(error => console.error("Playback failed:", error));
+        } else if (showTransitive) {
+            // 显示过渡界面，不消费 video_queue
+            videoContainer.style.height = '100%';
+            videoPlayer.style.display = 'none';
+            transitiveScreen.style.display = 'flex';
         } else if (nextVideo) {
             playNewVideo(nextVideo);
             nextVideo = null;
         } else {
+            // 恢复默认模式
             isDefaultMode = true;
             videoContainer.style.height = '100%';
             currentVideo = getRandomVideo();
             videoPlayer.src = `/static/${currentVideo}`;
+            videoPlayer.style.display = 'block';
+            transitiveScreen.style.display = 'none';
             videoPlayer.play().catch(error => console.error("Playback failed:", error));
-            placeholderScreen.style.display = 'none';
         }
     }
 
@@ -142,7 +169,7 @@
         videoContainer.style.height = '92%';
         videoPlayer.src = newVideoSrc;
         videoPlayer.style.display = 'block';
-        placeholderScreen.style.display = 'none';
+        transitiveScreen.style.display = 'none';
         videoPlayer.load();
         videoPlayer.play()
             .then(() => {
@@ -158,17 +185,17 @@
 
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        if (data.video) {
+        if (data.video && data.ad_text) {
             const newVideo = data.video;
             const newAdText = data.ad_text;
             scrollingTextContent.textContent = newAdText;
             scrollingText.style.display = 'block';
             hasStartedScrolling = true;
-            showPlaceholder = false;
-            placeholderScreen.style.display = 'none';
+            showTransitive = false;
+            transitiveScreen.style.display = 'none';
             videoPlayer.style.display = 'block';
             if (newVideo !== currentVideo) {
-                if (isDefaultMode) {
+                if (isDefaultMode || showTransitive) {
                     isDefaultMode = false;
                     videoPlayer.loop = false;
                     playNewVideo(newVideo);
@@ -178,12 +205,18 @@
             }
         } else if (data.queue_status) {
             const { video_size, ad_size } = data.queue_status;
-            showPlaceholder = (video_size > 0 && ad_size === 0);
-            if (showPlaceholder) {
-                videoPlayer.style.display = 'none';
-                placeholderScreen.style.display = 'block';
+            showTransitive = (video_size > 0 && ad_size === 0);
+            if (showTransitive) {
+                // 立即隐藏字幕并切换到过渡界面
+                scrollingText.style.display = 'none';
+                scrollingTextContent.textContent = ''; // 清空字幕内容
+                hasStartedScrolling = false;
+                if (videoPlayer.paused) {
+                    videoPlayer.style.display = 'none';
+                    transitiveScreen.style.display = 'flex';
+                }
             } else {
-                placeholderScreen.style.display = 'none';
+                transitiveScreen.style.display = 'none';
                 videoPlayer.style.display = 'block';
             }
         }
@@ -199,5 +232,6 @@
     videoPlayer.loop = false;
     videoPlayer.play().catch(error => console.error("Playback failed:", error));
 </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'91c858725fb5dd20',t:'MTc0MTMzMjE4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
