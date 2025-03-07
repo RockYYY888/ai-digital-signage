@@ -25,7 +25,7 @@ class AdvertisementGenerator:
 
     GENERATION_PARAMS = {
 "max_new_tokens": 100, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
-"min_new_tokens": 30, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
+"min_new_tokens": 15, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
 "temperature": 0.4, # Controls the randomness of the generated text. Lower values ​​(such as 0.4) make the output more deterministic and conservative, and higher values ​​(such as 1.0) make the output more creative.
 "top_p": 0.9, # Nucleus sampling parameter, controlling the range of tokens considered during generation. 0.9 means only considering tokens with cumulative probabilities in the top 90%, balancing diversity and quality.
 "repetition_penalty": 1.2, # Parameter for penalizing duplicate tokens. Values ​​greater than 1.0 (such as 1.2) will reduce duplicate content, and values ​​less than 1.0 will increase duplicate content.
@@ -70,7 +70,9 @@ class AdvertisementGenerator:
         """Generate system prompt template"""
         return (
         "You are a skilled copywriter at a global ad agency. Your only job is to deliver ad content matching my exact needs. "
-        "Output must be in double quotes, 20-30 words, with no extra text or comments."
+        "Output must be in double quotes, strictly 20-30 words, no more, no less. "
+        "If the text exceeds 30 words or falls below 20, adjust it before outputting. "
+        "No extra text or comments allowed—only the ad content in quotes."
     )
 
     def build_user_prompt(self, demographics, product, context):
@@ -80,11 +82,10 @@ class AdvertisementGenerator:
         product_name = product
 
         return (
-        f"Write a one-sentence creative ad text for {product_name} in 20-30 words. "
+        f"Write a one-sentence creative ad text for {product_name}, strictly 20-30 words. "
         f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
-        f"Use a {tone} tone. Highlight unique features. "
-        f"Background: {context_text}. "
-        "Return only the ad content in double quotes, nothing else."
+        f"Use a {tone} tone. Highlight unique features. Background: {context_text}. "
+        f"Ensure 20-30 words, adjust if needed, and return only the ad content in double quotes."
     )
 
     def construct_messages(self, demographics, product, context):
