@@ -71,7 +71,7 @@ class PersonalizedADDisplaying(State):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
-
+            self.context.face_detection_active.set()  # 重新启用人脸检测
             return AdRotating(self.context)
 
 if __name__ == "__main__":
