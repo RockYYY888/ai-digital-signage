@@ -77,7 +77,7 @@ class PersonalizedADDisplaying(State):
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
             
-            print(f"Starting personalized video: {ad_text}")
+            """print(f"Starting personalized video: {ad_text}")
             
             # 启动眼动追踪线程
             eyetrack_thread = threading.Thread(
@@ -93,7 +93,7 @@ class PersonalizedADDisplaying(State):
             # 视频播放完成后停止眼动追踪
             self.context.eye_tracking_active.clear()
             eyetrack_thread.join(timeout=1.0)  # 等待线程结束
-            print("Eye tracking stopped after video completion")
+            print("Eye tracking stopped after video completion")"""
             
             # 重新启用人脸检测
             self.context.face_detection_active.set()
