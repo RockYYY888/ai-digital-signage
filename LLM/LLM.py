@@ -202,7 +202,6 @@ class AdvertisementPipeline:
             ad_text = self.generator.generate_ad_text(messages)
             ad_queue.put(ad_text) 
             self.output_results(video_info, ad_text)
-            time.sleep(10)  # 等待反馈，可改为事件触发
             return ad_text
         except Exception as e:
             print(f"Error generating advertisement: {e}")
