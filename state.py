@@ -7,7 +7,7 @@ from LLM.LLM import AdvertisementPipeline
 from data_integration.server import app_1
 from data_integration.user_screen_server import app
 from Dashboard.dashboard import app_2
-from eyetrack import *
+#from eyetrack import *
 from data_integration.data_interface import video_queue, ad_queue
 
 class Context:
@@ -83,7 +83,7 @@ class PersonalizedADDisplaying(State):
 
             print(f"开始个性化视频播放: {ad_text}")
 
-            # 抽取广告ID
+            """"# 抽取广告ID
             ad_id = extract_ad_id(ad_text)
 
             # 更安全的摄像头转换过程
@@ -147,11 +147,11 @@ class PersonalizedADDisplaying(State):
 
             finally:
                 # 无论如何，确保重新启用人脸检测
-                print("重新启用人脸检测...")
-                self.context.face_detection_active.set()
-                time.sleep(1.0)  # 给时间让人脸检测线程启动
+                print("重新启用人脸检测...")"""
+            self.context.face_detection_active.set()
+            time.sleep(1.0)  # 给时间让人脸检测线程启动
 
-                return AdRotating(self.context)
+            return AdRotating(self.context)
 
 if __name__ == "__main__":
     context = Context()

@@ -92,88 +92,40 @@ def predict_demographics(model, image):
 
 def cv_thread_func(detected_face_queue, face_detection_active):
     """从摄像头捕获帧并检测人脸"""
-    cap = None
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     detection_interval = 2  # 每 2 秒检测一次
     last_detection_time = time.time()
-    camera_active = False
 
-    print("人脸检测线程已启动")
+    if not cap.isOpened():
+        print("Failed to open webcam.")
+        return
 
     try:
         while True:
-            # 检查是否应该激活或停用摄像头
-            if face_detection_active.is_set() and not camera_active:
-                # 需要启动摄像头
-                print("正在为人脸检测打开摄像头...")
-                try:
-                    # 尝试多次打开摄像头
-                    for i in range(5):
-                        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-                        if cap.isOpened():
-                            camera_active = True
-                            print("人脸检测摄像头成功打开")
-                            break
-                        else:
-                            print(f"尝试 {i+1}/5: 无法打开摄像头")
-                            time.sleep(0.5)
-                    
-                    if not camera_active:
-                        print("无法打开摄像头，等待一会再试")
-                        time.sleep(2)
-                        continue
-                except Exception as e:
-                    print(f"打开摄像头出错: {e}")
-                    time.sleep(1)
-                    continue
-            
-            # 检查是否需要关闭摄像头
-            elif not face_detection_active.is_set() and camera_active:
-                print("正在释放人脸检测的摄像头资源...")
-                if cap:
-                    cap.release()
-                    cap = None
-                camera_active = False
-                print("人脸检测摄像头已释放")
-                time.sleep(0.5)
+            if not face_detection_active.is_set():
+                time.sleep(0.1)
                 continue
-            
-            # 如果摄像头应该关闭，则等待
-            elif not face_detection_active.is_set():
-                time.sleep(0.2)
-                continue
-            
-            # 正常的摄像头处理
-            try:
-                ret, frame = cap.read()
-                if not ret:
-                    print("无法读取摄像头帧，重新初始化摄像头...")
-                    if cap:
-                        cap.release()
-                    camera_active = False
-                    time.sleep(0.5)
-                    continue
 
-                current_time = time.time()
-                if current_time - last_detection_time >= detection_interval:
-                    last_detection_time = current_time
-                    prediction, cropped_image = analyze_frame(frame)
-                    if prediction and prediction != ("no_face") and prediction != ("analyzing"):
-                        try:
-                         cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
-                         frame_queue.put_nowait(cropped_image_bgr)  # 单次帧放入队列
-                         detected_face_queue.put_nowait((cropped_image_bgr, prediction))
-                        except queue.Full:
-                            pass
-            except Exception as e:
-                print(f"摄像头处理错误: {e}")
-                time.sleep(0.2)
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to capture frame.")
+                break
+
+            current_time = time.time()
+            if current_time - last_detection_time >= detection_interval:
+                last_detection_time = current_time
+                prediction, cropped_image = analyze_frame(frame)
+                if prediction:  # 仅在检测到人脸时放入队列
+                    try:
+                        cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
+                        frame_queue.put_nowait(cropped_image_bgr)  # 单次帧放入队列
+                        detected_face_queue.put_nowait((cropped_image_bgr, prediction))
+                    except queue.Full:
+                        pass
 
     finally:
-        # 确保摄像头资源被释放
-        if cap:
-            cap.release()
-        print("人脸检测线程已结束，摄像头资源已释放")
+        cap.release()
+        cv2.destroyAllWindows()
 
-        
-        if __name__ == '__main__':
-         print(cv2.getBuildInformation())
+if __name__ == '__main__':
+    print(cv2.getBuildInformation())
