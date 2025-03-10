@@ -7,7 +7,7 @@ import numpy as np
 import sqlite3
 import os
 
-db_path = os.path.join(os.path.dirname(__file__), "advertisements.db")
+db_path = "advertisements.db"
 conn = sqlite3.connect(db_path)
 
 query = """
