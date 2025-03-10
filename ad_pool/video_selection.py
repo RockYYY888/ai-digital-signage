@@ -2,7 +2,7 @@ import os
 import sqlite3
 
 # Database configuration
-db_file = os.path.join(os.path.dirname(__file__), 'advertisements.db')
+db_file = 'advertisements.db'
 
 def get_targeted_videos_with_ads(age_group, gender, ethnicity):
     """

@@ -10,7 +10,7 @@ class AdPool:
         self.current_ad = None
         self.current_ads_list = []  # 存储广告列表
         self.lock = threading.Lock()
-        self.db_file = os.path.join(os.path.dirname(__file__), 'advertisements.db')  # 确保路径正确
+        self.db_file = 'advertisements.db'  # 确保路径正确
         # 初始化时加载所有广告
         self.load_all_ads()
 

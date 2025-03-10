@@ -24,15 +24,15 @@ class AdvertisementGenerator:
     }
 
     GENERATION_PARAMS = {
-"max_new_tokens": 100, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
-"min_new_tokens": 15, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
-"temperature": 0.4, # Controls the randomness of the generated text. Lower values ​​(such as 0.4) make the output more deterministic and conservative, and higher values ​​(such as 1.0) make the output more creative.
+"max_new_tokens": 50, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
+"min_new_tokens": 10, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
+"temperature": 0.7, # Controls the randomness of the generated text. Lower values ​​(such as 0.4) make the output more deterministic and conservative, and higher values ​​(such as 1.0) make the output more creative.
 "top_p": 0.9, # Nucleus sampling parameter, controlling the range of tokens considered during generation. 0.9 means only considering tokens with cumulative probabilities in the top 90%, balancing diversity and quality.
 "repetition_penalty": 1.2, # Parameter for penalizing duplicate tokens. Values ​​greater than 1.0 (such as 1.2) will reduce duplicate content, and values ​​less than 1.0 will increase duplicate content.
 "do_sample": True, # Whether to use sampling methods to generate text. When set to True, use sampling (such as temperature and top_p) to generate more random text; when False, use greedy search to generate deterministic text.
 "num_beams": 2, # The number of beams for beam search. The larger the value, the higher the quality of the generated text may be, but the computational cost is also higher. Setting it to 4 means using 4 beams for search.
 "length_penalty": 0.5, # Controls the penalty factor for the length of the generated text. Values ​​greater than 1.0 encourage the generation of long text, and values ​​less than 1.0 encourage the generation of short text. 1.0 means no additional penalty is imposed.
-"no_repeat_ngram_size": 3 # The size of n-grams that prohibit repetition. Setting it to 3 means prohibiting the generation of combinations containing repeated 3 tokens, reducing repetition.
+#"no_repeat_ngram_size": 3 # The size of n-grams that prohibit repetition. Setting it to 3 means prohibiting the generation of combinations containing repeated 3 tokens, reducing repetition.
 }
 
 

@@ -80,18 +80,18 @@ class PersonalizedADDisplaying(State):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
             self.context.current_ad_text = ad_text
-            
+
             print(f"开始个性化视频播放: {ad_text}")
-            
+
             # 抽取广告ID
             ad_id = extract_ad_id(ad_text)
-            
+
             # 更安全的摄像头转换过程
             print("正在安全停止人脸检测...")
             self.context.face_detection_active.clear()
             time.sleep(3.0)  # 增加等待时间确保摄像头完全释放
             print("摄像头资源已释放")
-            
+
             try:
                 # 启动眼动追踪线程
                 self.context.eye_tracking_active.set()
@@ -102,20 +102,20 @@ class PersonalizedADDisplaying(State):
                 eyetrack_thread.daemon = True
                 eyetrack_thread.start()
                 print("眼动追踪线程已启动")
-                
+
                 # 放视频到队列
                 try:
                     while not video_queue.empty():
                         video_queue.get()
                     while not ad_queue.empty():
                         ad_queue.get()
-                    
+
                     video_queue.put(ad_text, block=False)
                     ad_queue.put(ad_text, block=False)
                     print(f"已将视频 {ad_text} 加入播放队列")
                 except queue.Full:
                     print("队列已满，视频可能无法播放")
-                
+
                 # 等待视频播放完成，设置更保守的超时
                 print("等待视频播放完成...")
                 video_wait_time = 20  # 秒
@@ -123,14 +123,14 @@ class PersonalizedADDisplaying(State):
                     time.sleep(1)
                     # 检查视频状态
                     # (这里可以添加视频播放完成的检查逻辑)
-                
+
                 # 安全停止眼动追踪
                 print("安全停止眼动追踪...")
                 self.context.eye_tracking_active.clear()
                 # 给足够时间让眼动追踪线程完成最后的时间更新
                 time.sleep(1.0)  # 确保最后的时间更新完成
                 eyetrack_thread.join(timeout=3.0)
-                
+
                 # 获取预测结果
                 final_prediction = None
                 try:
@@ -139,18 +139,18 @@ class PersonalizedADDisplaying(State):
                         print(f"获取预测结果: {final_prediction}")
                 except Exception as e:
                     print(f"获取预测结果失败: {e}")
-                
+
                 # 更新数据库逻辑将移到eyetrack.py中
-                
+
             except Exception as e:
                 print(f"处理个性化广告时发生错误: {e}")
-            
+
             finally:
                 # 无论如何，确保重新启用人脸检测
                 print("重新启用人脸检测...")
                 self.context.face_detection_active.set()
                 time.sleep(1.0)  # 给时间让人脸检测线程启动
-                
+
                 return AdRotating(self.context)
 
 if __name__ == "__main__":

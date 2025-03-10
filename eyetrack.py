@@ -208,7 +208,7 @@ def update_database(watch_time, demographics, ad_id):
         age_group, gender, ethnicity = demographics
         print(f"准备更新数据库: age={age_group}, gender={gender}, ethnicity={ethnicity}")
         
-        db_path = 'Dashboard/advertisements.db'  # 与 dashboard 一致的数据库路径
+        db_path = 'advertisements.db'  # 与 dashboard 一致的数据库路径
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
