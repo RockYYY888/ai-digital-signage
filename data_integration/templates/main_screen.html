@@ -10,7 +10,7 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            height: 100vh; 
+            min-height: 100vh; 
             background: #000; 
         }
         #main-container {
@@ -36,9 +36,7 @@
             color: white;
             display: none;
             overflow: hidden;
-            position: absolute;
-            bottom: 0;
-            left: 0;
+            position: relative;
         }
         #scrolling-text-content {
             position: absolute;
@@ -102,9 +100,9 @@
                 </div>
                 <div class="loading-spinner"></div>
             </div>
-            <div id="scrolling-text">
-                <div id="scrolling-text-content"></div>
-            </div>
+        </div>
+        <div id="scrolling-text">
+            <div id="scrolling-text-content"></div>
         </div>
     </div>
 
@@ -138,6 +136,7 @@
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
             hasStartedScrolling = false;
+            videoContainer.style.height = '100%'; // 恢复默认高度
 
             if (isPlayingPersonalizedAd) {
                 isPlayingPersonalizedAd = false;
@@ -173,6 +172,7 @@
             currentVideo = newVideo;
             const newVideoSrc = `/static/${currentVideo}`;
             videoPlayer.loop = false;
+            videoContainer.style.height = '92%';
             videoPlayer.src = newVideoSrc;
             videoPlayer.style.display = 'block';
             transitiveScreen.style.display = 'none';
@@ -200,7 +200,7 @@
                 scrollingText.style.display = 'block';
                 videoPlayer.style.display = 'block';
                 transitiveScreen.style.display = 'none';
-              
+                
                 isPlayingPersonalizedAd = true;
                 pendingTransitive = false;
                 isDefaultMode = false;
@@ -214,7 +214,7 @@
                 }
             } else if (data.queue_status) {
                 const { video_size, ad_size } = data.queue_status;
-              
+                
                 if (isPlayingPersonalizedAd) {
                     pendingTransitive = (video_size > 0 && ad_size === 0);
                 } else {
@@ -236,6 +236,7 @@
             console.error('EventSource error:', error);
         };
 
+        videoContainer.style.height = '100%';
         currentVideo = getRandomVideo();
         videoPlayer.src = `/static/${currentVideo}`;
         videoPlayer.loop = false;
