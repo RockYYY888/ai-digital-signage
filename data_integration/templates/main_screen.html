@@ -136,6 +136,7 @@
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
             hasStartedScrolling = false;
+            videoContainer.style.height = '100%'; // 恢复默认高度
 
             if (isPlayingPersonalizedAd) {
                 isPlayingPersonalizedAd = false;
@@ -171,6 +172,7 @@
             currentVideo = newVideo;
             const newVideoSrc = `/static/${currentVideo}`;
             videoPlayer.loop = false;
+            videoContainer.style.height = '92%';
             videoPlayer.src = newVideoSrc;
             videoPlayer.style.display = 'block';
             transitiveScreen.style.display = 'none';
