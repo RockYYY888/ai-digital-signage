@@ -8,6 +8,7 @@ import os
 app_1 = Flask(__name__,
             template_folder='templates',
             static_folder='static')
+app_1.config['DEBUG'] = False
 
 @app_1.route('/')
 def index():

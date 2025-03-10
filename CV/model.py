@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 batch_size = 72
 csv_file = 'CV/utk_dataset_metadata.csv'
-img_dir = 'UTKFace'
+img_dir = 'CV/UTKFace'
 
 # data augmentation
 train_transforms = transforms.Compose([

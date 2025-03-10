@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     flask_thread3 = threading.Thread(
         target=app_2.run,
-        kwargs={'threaded': True, 'port': 5002}
+        kwargs={'threaded': True, 'port': 5002, 'debug': False}
     )
     flask_thread3.daemon = True
     flask_thread3.start()

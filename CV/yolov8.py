@@ -92,7 +92,7 @@ def predict_demographics(model, image):
 
 def cv_thread_func(detected_face_queue, face_detection_active):
     """从摄像头捕获帧并检测人脸"""
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     detection_interval = 2  # 每 2 秒检测一次
     last_detection_time = time.time()
 
@@ -117,11 +117,15 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 prediction, cropped_image = analyze_frame(frame)
                 if prediction:  # 仅在检测到人脸时放入队列
                     try:
-                        frame_queue.put_nowait(np.array(cropped_image))  # 单次帧放入队列
-                        detected_face_queue.put_nowait((np.array(cropped_image), prediction))
+                        cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
+                        frame_queue.put_nowait(cropped_image_bgr)  # 单次帧放入队列
+                        detected_face_queue.put_nowait((cropped_image_bgr, prediction))
                     except queue.Full:
                         pass
 
     finally:
         cap.release()
         cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    print(cv2.getBuildInformation())

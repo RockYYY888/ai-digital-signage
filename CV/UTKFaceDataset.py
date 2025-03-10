@@ -107,7 +107,7 @@ class UTKFaceDataset(Dataset):
 
 
 if __name__ == '__main__':
-    csv_file = 'utk_dataset_metadata.csv'
+    csv_file = 'CV/utk_dataset_metadata.csv'
     img_dir = 'UTKFace'
 
     # create dataset entity

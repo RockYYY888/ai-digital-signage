@@ -82,7 +82,6 @@ color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
 
 # Create Dash app
 app_2 = dash.Dash(__name__)
-
 # Define bar chart generation function with dragmode='none'
 def create_bar_chart(data_counts, title, legend_title, colors):
     fig = go.Figure()

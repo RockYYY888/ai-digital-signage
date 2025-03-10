@@ -8,6 +8,7 @@ import time
 app = Flask(__name__,
             template_folder='templates',
             static_folder='static')
+app.config['DEBUG'] = False
 
 @app.route('/')
 def index():
