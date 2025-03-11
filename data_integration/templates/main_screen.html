@@ -119,7 +119,8 @@
         let showTransitive = false;
         let isPlayingPersonalizedAd = false;
         let pendingTransitive = false;
-
+        let isInTransitiveState = false; // New flag to track if transitive screen is displayed
+    
         function getRandomVideo() {
             const min = 1;
             const max = 77;
@@ -127,36 +128,36 @@
             const paddedNum = String(randomNum).padStart(4, '0');
             return `videos/${paddedNum}.mp4`;
         }
-
+    
         function bindVideoEvents() {
             videoPlayer.addEventListener('ended', handleVideoEnd);
         }
-
+    
         function handleVideoEnd() {
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
             hasStartedScrolling = false;
-            videoContainer.style.height = '100%'; // 恢复默认高度
-
+            videoContainer.style.height = '100%'; // Restore default height
+    
             if (isPlayingPersonalizedAd) {
                 isPlayingPersonalizedAd = false;
-                isDefaultMode = true;
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.style.display = 'block';
-                transitiveScreen.style.display = 'none';
-                videoPlayer.play().catch(error => console.error("Playback failed:", error));
-
-                if (pendingTransitive) {
-                    pendingTransitive = false;
-                    showTransitive = true;
+                if (showTransitive) {
+                    isInTransitiveState = true;
                     videoPlayer.style.display = 'none';
                     transitiveScreen.style.display = 'flex';
+                } else {
+                    isDefaultMode = true;
+                    currentVideo = getRandomVideo();
+                    videoPlayer.src = `/static/${currentVideo}`;
+                    videoPlayer.style.display = 'block';
+                    transitiveScreen.style.display = 'none';
+                    videoPlayer.play().catch(error => console.error("Playback failed:", error));
                 }
             } else if (nextVideo) {
                 playNewVideo(nextVideo);
                 nextVideo = null;
             } else if (showTransitive) {
+                isInTransitiveState = true;
                 videoPlayer.style.display = 'none';
                 transitiveScreen.style.display = 'flex';
             } else if (isDefaultMode) {
@@ -167,7 +168,7 @@
                 videoPlayer.play().catch(error => console.error("Playback failed:", error));
             }
         }
-
+    
         function playNewVideo(newVideo) {
             currentVideo = newVideo;
             const newVideoSrc = `/static/${currentVideo}`;
@@ -185,14 +186,14 @@
                 })
                 .catch(error => console.error("Playback failed:", error));
         }
-
+    
         bindVideoEvents();
-
+    
         const eventSource = new EventSource('/stream');
-
+    
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
-
+    
             if (data.video && data.ad_text) {
                 const newVideo = data.video;
                 const newAdText = data.ad_text;
@@ -204,7 +205,8 @@
                 isPlayingPersonalizedAd = true;
                 pendingTransitive = false;
                 isDefaultMode = false;
-
+                isInTransitiveState = false; // Exit transitive state if entering ad
+    
                 if (newVideo !== currentVideo) {
                     if (!isPlayingPersonalizedAd || nextVideo === null) {
                         playNewVideo(newVideo);
@@ -214,28 +216,30 @@
                 }
             } else if (data.queue_status) {
                 const { video_size, ad_size } = data.queue_status;
-                
+                showTransitive = (video_size > 0 && ad_size === 0);
+    
                 if (isPlayingPersonalizedAd) {
-                    pendingTransitive = (video_size > 0 && ad_size === 0);
-                } else {
-                    showTransitive = (video_size > 0 && ad_size === 0);
-                    if (showTransitive) {
-                        scrollingText.style.display = 'none';
-                        scrollingTextContent.textContent = '';
-                        videoPlayer.style.display = 'none';
-                        transitiveScreen.style.display = 'flex';
-                    } else {
-                        transitiveScreen.style.display = 'none';
-                        videoPlayer.style.display = 'block';
+                    pendingTransitive = showTransitive;
+                } else if (isInTransitiveState && !showTransitive) {
+                    // Exit transitive state if conditions no longer require it
+                    isInTransitiveState = false;
+                    transitiveScreen.style.display = 'none';
+                    videoPlayer.style.display = 'block';
+                    if (!isPlayingPersonalizedAd) {
+                        currentVideo = getRandomVideo();
+                        videoPlayer.src = `/static/${currentVideo}`;
+                        videoPlayer.play().catch(error => console.error("Playback failed:", error));
                     }
                 }
+                // Do not immediately show transitive screen when showTransitive becomes true;
+                // wait for handleVideoEnd to handle the transition
             }
         };
-
+    
         eventSource.onerror = function(error) {
             console.error('EventSource error:', error);
         };
-
+    
         videoContainer.style.height = '100%';
         currentVideo = getRandomVideo();
         videoPlayer.src = `/static/${currentVideo}`;
