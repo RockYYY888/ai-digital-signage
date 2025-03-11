@@ -119,7 +119,7 @@
         let showTransitive = false;
         let isPlayingPersonalizedAd = false;
         let pendingTransitive = false;
-        let isInTransitiveState = false; // New flag to track if transitive screen is displayed
+        let isInTransitiveState = false;
     
         function getRandomVideo() {
             const min = 1;
@@ -134,54 +134,52 @@
         }
     
         function handleVideoEnd() {
-    scrollingText.style.display = 'none';
-    scrollingTextContent.textContent = '';
-    hasStartedScrolling = false;
-    videoContainer.style.height = '100%'; // 恢复默认高度
-
-    if (isPlayingPersonalizedAd) {
-        // 发送通知到后端
-        fetch('/video-ended', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ video: currentVideo }), // 发送当前视频标识
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('后端响应:', data); // 处理后端返回的数据
-        })
-        .catch(error => console.error('发送请求失败:', error));
-
-        isPlayingPersonalizedAd = false;
-        if (showTransitive) {
-            isInTransitiveState = true;
-            videoPlayer.style.display = 'none';
-            transitiveScreen.style.display = 'flex';
-        } else {
-            isDefaultMode = true;
-            currentVideo = getRandomVideo();
-            videoPlayer.src = `/static/${currentVideo}`;
-            videoPlayer.style.display = 'block';
-            transitiveScreen.style.display = 'none';
-            videoPlayer.play().catch(error => console.error("Playback failed:", error));
+            scrollingText.style.display = 'none';
+            scrollingTextContent.textContent = '';
+            hasStartedScrolling = false;
+            videoContainer.style.height = '100%'; // 恢复默认高度
+    
+            if (isPlayingPersonalizedAd) {
+                fetch('/video-ended', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ video: currentVideo }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('后端响应:', data);
+                })
+                .catch(error => console.error('发送请求失败:', error));
+    
+                isPlayingPersonalizedAd = false;
+                showTransitive = false;
+                pendingTransitive = false;
+                isInTransitiveState = false;
+                nextVideo = null;
+    
+                isDefaultMode = true;
+                currentVideo = getRandomVideo();
+                videoPlayer.src = `/static/${currentVideo}`;
+                videoPlayer.style.display = 'block';
+                transitiveScreen.style.display = 'none';
+                videoPlayer.play().catch(error => console.error("Playback failed:", error));
+            } else if (nextVideo) {
+                playNewVideo(nextVideo);
+                nextVideo = null;
+            } else if (showTransitive) {
+                isInTransitiveState = true;
+                videoPlayer.style.display = 'none';
+                transitiveScreen.style.display = 'flex';
+            } else if (isDefaultMode) {
+                currentVideo = getRandomVideo();
+                videoPlayer.src = `/static/${currentVideo}`;
+                videoPlayer.style.display = 'block';
+                transitiveScreen.style.display = 'none';
+                videoPlayer.play().catch(error => console.error("Playback failed:", error));
+            }
         }
-    } else if (nextVideo) {
-        playNewVideo(nextVideo);
-        nextVideo = null;
-    } else if (showTransitive) {
-        isInTransitiveState = true;
-        videoPlayer.style.display = 'none';
-        transitiveScreen.style.display = 'flex';
-    } else if (isDefaultMode) {
-        currentVideo = getRandomVideo();
-        videoPlayer.src = `/static/${currentVideo}`;
-        videoPlayer.style.display = 'block';
-        transitiveScreen.style.display = 'none';
-        videoPlayer.play().catch(error => console.error("Playback failed:", error));
-    }
-}
     
         function playNewVideo(newVideo) {
             currentVideo = newVideo;
@@ -219,7 +217,7 @@
                 isPlayingPersonalizedAd = true;
                 pendingTransitive = false;
                 isDefaultMode = false;
-                isInTransitiveState = false; // Exit transitive state if entering ad
+                isInTransitiveState = false;
     
                 if (newVideo !== currentVideo) {
                     if (!isPlayingPersonalizedAd || nextVideo === null) {
@@ -235,7 +233,6 @@
                 if (isPlayingPersonalizedAd) {
                     pendingTransitive = showTransitive;
                 } else if (isInTransitiveState && !showTransitive) {
-                    // Exit transitive state if conditions no longer require it
                     isInTransitiveState = false;
                     transitiveScreen.style.display = 'none';
                     videoPlayer.style.display = 'block';
@@ -245,8 +242,6 @@
                         videoPlayer.play().catch(error => console.error("Playback failed:", error));
                     }
                 }
-                // Do not immediately show transitive screen when showTransitive becomes true;
-                // wait for handleVideoEnd to handle the transition
             }
         };
     
