@@ -20,7 +20,7 @@ class Context:
         self.state_lock = threading.Lock()  # 状态转换锁
         self.is_first_ad_rotating = True  # 首次广告轮播标志
         self.eye_tracking_active = threading.Event()
-        self.video_completion_queue = queue.Queue()  # 用于接收视频播放完成信号
+        self.video_completed = threading.Event()  # 用于接收视频播放完成信号
 
 class State:
     def __init__(self, context):
@@ -79,11 +79,15 @@ class PersonalizedADDisplaying(State):
     def handle(self):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
+            
             self.context.current_ad_text = ad_text
+            #print("等待视频播放完成...")
+            self.context.video_completed.wait()  # 阻塞直到 video_completed 被设置
+            self.context.video_completed.clear()  # 重置事件状态
 
-            print(f"开始个性化视频播放: {ad_text}")
+            """print(f"开始个性化视频播放: {ad_text}")
 
-            """"# 抽取广告ID
+            # 抽取广告ID
             ad_id = extract_ad_id(ad_text)
 
             # 更安全的摄像头转换过程
@@ -148,14 +152,17 @@ class PersonalizedADDisplaying(State):
             finally:
                 # 无论如何，确保重新启用人脸检测
                 print("重新启用人脸检测...")"""
+            time.sleep(1.0)  # Prevent face detection models from detecting too quickly
             self.context.face_detection_active.set()
-            time.sleep(1.0)  # 给时间让人脸检测线程启动
 
             return AdRotating(self.context)
 
 if __name__ == "__main__":
     context = Context()
     pipeline = AdvertisementPipeline()
+
+    from data_integration.user_screen_server import set_context
+    set_context(context)
 
     # 启动 Flask 线程
     flask_thread1 = threading.Thread(

@@ -134,40 +134,54 @@
         }
     
         function handleVideoEnd() {
-            scrollingText.style.display = 'none';
-            scrollingTextContent.textContent = '';
-            hasStartedScrolling = false;
-            videoContainer.style.height = '100%'; // Restore default height
-    
-            if (isPlayingPersonalizedAd) {
-                isPlayingPersonalizedAd = false;
-                if (showTransitive) {
-                    isInTransitiveState = true;
-                    videoPlayer.style.display = 'none';
-                    transitiveScreen.style.display = 'flex';
-                } else {
-                    isDefaultMode = true;
-                    currentVideo = getRandomVideo();
-                    videoPlayer.src = `/static/${currentVideo}`;
-                    videoPlayer.style.display = 'block';
-                    transitiveScreen.style.display = 'none';
-                    videoPlayer.play().catch(error => console.error("Playback failed:", error));
-                }
-            } else if (nextVideo) {
-                playNewVideo(nextVideo);
-                nextVideo = null;
-            } else if (showTransitive) {
-                isInTransitiveState = true;
-                videoPlayer.style.display = 'none';
-                transitiveScreen.style.display = 'flex';
-            } else if (isDefaultMode) {
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.style.display = 'block';
-                transitiveScreen.style.display = 'none';
-                videoPlayer.play().catch(error => console.error("Playback failed:", error));
-            }
+    scrollingText.style.display = 'none';
+    scrollingTextContent.textContent = '';
+    hasStartedScrolling = false;
+    videoContainer.style.height = '100%'; // 恢复默认高度
+
+    if (isPlayingPersonalizedAd) {
+        // 发送通知到后端
+        fetch('/video-ended', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ video: currentVideo }), // 发送当前视频标识
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('后端响应:', data); // 处理后端返回的数据
+        })
+        .catch(error => console.error('发送请求失败:', error));
+
+        isPlayingPersonalizedAd = false;
+        if (showTransitive) {
+            isInTransitiveState = true;
+            videoPlayer.style.display = 'none';
+            transitiveScreen.style.display = 'flex';
+        } else {
+            isDefaultMode = true;
+            currentVideo = getRandomVideo();
+            videoPlayer.src = `/static/${currentVideo}`;
+            videoPlayer.style.display = 'block';
+            transitiveScreen.style.display = 'none';
+            videoPlayer.play().catch(error => console.error("Playback failed:", error));
         }
+    } else if (nextVideo) {
+        playNewVideo(nextVideo);
+        nextVideo = null;
+    } else if (showTransitive) {
+        isInTransitiveState = true;
+        videoPlayer.style.display = 'none';
+        transitiveScreen.style.display = 'flex';
+    } else if (isDefaultMode) {
+        currentVideo = getRandomVideo();
+        videoPlayer.src = `/static/${currentVideo}`;
+        videoPlayer.style.display = 'block';
+        transitiveScreen.style.display = 'none';
+        videoPlayer.play().catch(error => console.error("Playback failed:", error));
+    }
+}
     
         function playNewVideo(newVideo) {
             currentVideo = newVideo;
