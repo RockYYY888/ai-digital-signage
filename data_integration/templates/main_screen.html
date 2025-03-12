@@ -34,17 +34,18 @@
             bottom: 0;
             width: 100%;
             height: 8%;
-            background: rgba(0, 0, 0, 0.7);
+            background: transparent; 
             color: white;
             display: none;
             overflow: hidden;
-            z-index: 10; /* Ensure subtitles are above the video */
+            z-index: 10;
         }
         #scrolling-text-content {
             position: absolute;
             white-space: nowrap;
             font-size: 1.2em;
-            animation: scroll linear infinite; /* Duration set via JS */
+            left: 100%;
+            animation: scroll var(--duration) linear; /* 使用 CSS 变量 */
         }
         .loading-spinner {
             width: 30px;
@@ -57,7 +58,7 @@
         }
         @keyframes scroll {
             from { left: 100%; }
-            to { left: -100%; }
+            to { left: var(--to-left); }
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -86,9 +87,8 @@
         let hasStartedScrolling = false;
         let isDefaultMode = true;
         let isPlayingPersonalizedAd = false;
-        let pendingAd = null; // Store pending personalized ad
+        let pendingAd = null;
 
-        // Generate a random video file name
         function getRandomVideo() {
             const min = 1;
             const max = 77;
@@ -97,28 +97,27 @@
             return `videos/${paddedNum}.mp4`;
         }
 
-        // Bind video events
         function bindVideoEvents() {
             videoPlayer.addEventListener('ended', handleVideoEnd);
-            videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded); // New event for duration
+            videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
         }
 
-        // Handle video metadata loaded (to get duration)
         function handleVideoLoaded() {
-            if (isPlayingPersonalizedAd) {
-                const videoDuration = videoPlayer.duration; // Get video duration in seconds
-                scrollingTextContent.style.animationDuration = `${videoDuration}s`; // Set animation duration
-            }
+            const videoDuration = videoPlayer.duration;
+            const textWidth = scrollingTextContent.offsetWidth;
+            const containerWidth = scrollingText.offsetWidth;
+            const toLeft = -(textWidth / containerWidth * 100);
+
+            scrollingTextContent.style.setProperty('--to-left', `${toLeft}%`);
+            scrollingTextContent.style.setProperty('--duration', `${videoDuration}s`);
         }
 
-        // Handle video end event
         function handleVideoEnd() {
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
             hasStartedScrolling = false;
 
             if (isPlayingPersonalizedAd) {
-                // Notify backend that personalized ad has finished
                 fetch('/video-ended', {
                     method: 'POST',
                     headers: {
@@ -127,9 +126,7 @@
                     body: JSON.stringify({ video: currentVideo }),
                 })
                 .then(response => response.json())
-                .then(data => {
-                    console.log('Backend response:', data);
-                })
+                .then(data => console.log('Backend response:', data))
                 .catch(error => console.error('Failed to send request:', error));
 
                 isPlayingPersonalizedAd = false;
@@ -139,7 +136,6 @@
                 videoPlayer.style.display = 'block';
                 videoPlayer.play().catch(error => console.error("Playback failed:", error));
             } else if (pendingAd) {
-                // Play personalized ad
                 currentVideo = pendingAd.video;
                 const newVideoSrc = `/static/${currentVideo}`;
                 videoPlayer.loop = false;
@@ -152,13 +148,11 @@
                         hasStartedScrolling = false;
                         scrollingTextContent.textContent = pendingAd.ad_text;
                         scrollingText.style.display = 'block';
-                        pendingAd = null; // Clear pending ad
-                        // Animation duration will be set in handleVideoLoaded
+                        pendingAd = null;
                         bindVideoEvents();
                     })
                     .catch(error => console.error("Playback failed:", error));
             } else {
-                // Continue playing default video
                 isDefaultMode = true;
                 currentVideo = getRandomVideo();
                 videoPlayer.src = `/static/${currentVideo}`;
@@ -167,28 +161,19 @@
             }
         }
 
-        // Initial binding of events
         bindVideoEvents();
 
-        // Set up server-sent events
         const eventSource = new EventSource('/stream');
-
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
-
             if (data.video && data.ad_text) {
-                // Store personalized ad to play after current video
                 pendingAd = { video: data.video, ad_text: data.ad_text };
-            } else if (data.queue_status) {
-                // Do nothing if ad queue is empty
             }
         };
-
         eventSource.onerror = function(error) {
             console.error('EventSource error:', error);
         };
 
-        // Start with a random video
         currentVideo = getRandomVideo();
         videoPlayer.src = `/static/${currentVideo}`;
         videoPlayer.loop = false;
