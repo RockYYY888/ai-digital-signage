@@ -44,29 +44,6 @@
             font-size: 1.2em;
             animation: scroll 15s linear infinite;
         }
-        #transitive-screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            background: #1f2c56;
-            color: #ffffff;
-            text-align: center;
-            font-family: 'Playfair Display', serif;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 20;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        #transitive-text {
-            font-weight: bold;
-            font-size: 3rem;
-            color: #00ffcc;
-            line-height: 2.5;
-            text-transform: uppercase;
-        }
         .loading-spinner {
             width: 30px;
             height: 30px;
@@ -92,14 +69,6 @@
             <video id="videoPlayer" autoplay muted loop>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
-            <div id="transitive-screen">
-                <div id="transitive-text">
-                    FACE DETECTED <br>
-                    PREPARING FOR YOUR PERSONALIZED ADS <br>
-                    STAY TUNED
-                </div>
-                <div class="loading-spinner"></div>
-            </div>
         </div>
         <div id="scrolling-text">
             <div id="scrolling-text-content"></div>
@@ -111,15 +80,11 @@
         const scrollingText = document.getElementById('scrolling-text');
         const scrollingTextContent = document.getElementById('scrolling-text-content');
         const videoContainer = document.getElementById('video-container');
-        const transitiveScreen = document.getElementById('transitive-screen');
         let currentVideo = "videos/0001.mp4";
         let hasStartedScrolling = false;
         let isDefaultMode = true;
-        let nextVideo = null;
-        let showTransitive = false;
         let isPlayingPersonalizedAd = false;
-        let pendingTransitive = false;
-        let isInTransitiveState = false;
+        let pendingAd = null; // 用于存储待播放的个性化广告
     
         function getRandomVideo() {
             const min = 1;
@@ -140,6 +105,7 @@
             videoContainer.style.height = '100%'; // 恢复默认高度
     
             if (isPlayingPersonalizedAd) {
+                // 通知后端个性化广告播放完成
                 fetch('/video-ended', {
                     method: 'POST',
                     headers: {
@@ -154,49 +120,38 @@
                 .catch(error => console.error('发送请求失败:', error));
     
                 isPlayingPersonalizedAd = false;
-                showTransitive = false;
-                pendingTransitive = false;
-                isInTransitiveState = false;
-                nextVideo = null;
-    
                 isDefaultMode = true;
                 currentVideo = getRandomVideo();
                 videoPlayer.src = `/static/${currentVideo}`;
                 videoPlayer.style.display = 'block';
-                transitiveScreen.style.display = 'none';
                 videoPlayer.play().catch(error => console.error("Playback failed:", error));
-            } else if (nextVideo) {
-                playNewVideo(nextVideo);
-                nextVideo = null;
-            } else if (showTransitive) {
-                isInTransitiveState = true;
-                videoPlayer.style.display = 'none';
-                transitiveScreen.style.display = 'flex';
-            } else if (isDefaultMode) {
+            } else if (pendingAd) {
+                // 播放个性化广告
+                currentVideo = pendingAd.video;
+                const newVideoSrc = `/static/${currentVideo}`;
+                videoPlayer.loop = false;
+                videoContainer.style.height = '92%';
+                videoPlayer.src = newVideoSrc;
+                videoPlayer.style.display = 'block';
+                videoPlayer.load();
+                videoPlayer.play()
+                    .then(() => {
+                        isPlayingPersonalizedAd = true;
+                        hasStartedScrolling = false;
+                        scrollingTextContent.textContent = pendingAd.ad_text;
+                        scrollingText.style.display = 'block';
+                        pendingAd = null; // 清空待播放广告
+                        bindVideoEvents();
+                    })
+                    .catch(error => console.error("Playback failed:", error));
+            } else {
+                // 继续播放默认视频
+                isDefaultMode = true;
                 currentVideo = getRandomVideo();
                 videoPlayer.src = `/static/${currentVideo}`;
                 videoPlayer.style.display = 'block';
-                transitiveScreen.style.display = 'none';
                 videoPlayer.play().catch(error => console.error("Playback failed:", error));
             }
-        }
-    
-        function playNewVideo(newVideo) {
-            currentVideo = newVideo;
-            const newVideoSrc = `/static/${currentVideo}`;
-            videoPlayer.loop = false;
-            videoContainer.style.height = '92%';
-            videoPlayer.src = newVideoSrc;
-            videoPlayer.style.display = 'block';
-            transitiveScreen.style.display = 'none';
-            videoPlayer.load();
-            videoPlayer.play()
-                .then(() => {
-                    isPlayingPersonalizedAd = true;
-                    hasStartedScrolling = false;
-                    bindVideoEvents();
-                })
-                .catch(error => console.error("Playback failed:", error));
         }
     
         bindVideoEvents();
@@ -207,41 +162,11 @@
             const data = JSON.parse(event.data);
     
             if (data.video && data.ad_text) {
-                const newVideo = data.video;
-                const newAdText = data.ad_text;
-                scrollingTextContent.textContent = newAdText;
-                scrollingText.style.display = 'block';
-                videoPlayer.style.display = 'block';
-                transitiveScreen.style.display = 'none';
-                
-                isPlayingPersonalizedAd = true;
-                pendingTransitive = false;
-                isDefaultMode = false;
-                isInTransitiveState = false;
-    
-                if (newVideo !== currentVideo) {
-                    if (!isPlayingPersonalizedAd || nextVideo === null) {
-                        playNewVideo(newVideo);
-                    } else {
-                        nextVideo = newVideo;
-                    }
-                }
+                // 当 ad_queue 和 video_queue 同时不为空时，存储待播放的个性化广告
+                pendingAd = { video: data.video, ad_text: data.ad_text };
+                // 等待当前默认视频播放完毕后由 handleVideoEnd 处理
             } else if (data.queue_status) {
-                const { video_size, ad_size } = data.queue_status;
-                showTransitive = (video_size > 0 && ad_size === 0);
-    
-                if (isPlayingPersonalizedAd) {
-                    pendingTransitive = showTransitive;
-                } else if (isInTransitiveState && !showTransitive) {
-                    isInTransitiveState = false;
-                    transitiveScreen.style.display = 'none';
-                    videoPlayer.style.display = 'block';
-                    if (!isPlayingPersonalizedAd) {
-                        currentVideo = getRandomVideo();
-                        videoPlayer.src = `/static/${currentVideo}`;
-                        videoPlayer.play().catch(error => console.error("Playback failed:", error));
-                    }
-                }
+                // 当 ad_queue 为空时，不做额外处理，保持默认状态
             }
         };
     
