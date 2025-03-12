@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Integrated Video Player</title>
     <style>
-        body { 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            background: #000; 
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
         }
         #main-container {
             width: 100%;
@@ -24,7 +24,7 @@
             width: 100%;
             height: 100%;
         }
-        video { 
+        video {
             width: 100%;
             height: 100%;
             object-fit: contain;
@@ -34,9 +34,9 @@
             bottom: 0;
             width: 100%;
             height: 8%;
-            background: transparent; 
+            background: transparent;
             color: white;
-            display: none;
+            display: none;  /* Initially hidden */
             overflow: hidden;
             z-index: 10;
         }
@@ -45,31 +45,21 @@
             white-space: nowrap;
             font-size: 1.2em;
             left: 100%;
-            animation: scroll var(--duration) linear; /* 使用 CSS 变量 */
+            /*animation: scroll var(--duration) linear;  Removed from here */
         }
-        .loading-spinner {
-            width: 30px;
-            height: 30px;
-            border: 5px solid rgba(0, 255, 204, 0.3); 
-            border-top-color: #00ffcc; 
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-top: 40px;
-        }
+
         @keyframes scroll {
             from { left: 100%; }
             to { left: var(--to-left); }
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+
+        /* No need for spin animation here */
     </style>
 </head>
 <body>
     <div id="main-container">
         <div id="video-container">
-            <video id="videoPlayer" autoplay muted loop>
+            <video id="videoPlayer" autoplay muted>  <!-- Removed loop from here -->
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
             <div id="scrolling-text">
@@ -84,10 +74,11 @@
         const scrollingTextContent = document.getElementById('scrolling-text-content');
         const videoContainer = document.getElementById('video-container');
         let currentVideo = "videos/0001.mp4";
-        let hasStartedScrolling = false;
         let isDefaultMode = true;
         let isPlayingPersonalizedAd = false;
         let pendingAd = null;
+        const pixelsPerSecond = 50; // Adjust this for scrolling speed
+
 
         function getRandomVideo() {
             const min = 1;
@@ -101,21 +92,28 @@
             videoPlayer.addEventListener('ended', handleVideoEnd);
             videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
         }
-
         function handleVideoLoaded() {
-            const videoDuration = videoPlayer.duration;
+
             const textWidth = scrollingTextContent.offsetWidth;
             const containerWidth = scrollingText.offsetWidth;
-            const toLeft = -(textWidth / containerWidth * 100);
+            const toLeft = -(textWidth);  // Scroll completely off-screen
+            scrollingTextContent.style.setProperty('--to-left', `${toLeft}px`);
 
-            scrollingTextContent.style.setProperty('--to-left', `${toLeft}%`);
-            scrollingTextContent.style.setProperty('--duration', `${videoDuration}s`);
+            // Calculate scroll duration based on text width and desired speed
+            const scrollDistance = containerWidth + textWidth;
+            const scrollDuration = scrollDistance / pixelsPerSecond;
+
+            // Set the animation property, including the calculated duration
+            scrollingTextContent.style.animation = `scroll ${scrollDuration}s linear`;
+            scrollingText.style.display = 'block';  // Show the scrolling text
         }
 
         function handleVideoEnd() {
+            // Clear the animation
+            scrollingTextContent.style.animation = '';
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
-            hasStartedScrolling = false;
+
 
             if (isPlayingPersonalizedAd) {
                 fetch('/video-ended', {
@@ -131,53 +129,53 @@
 
                 isPlayingPersonalizedAd = false;
                 isDefaultMode = true;
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.style.display = 'block';
-                videoPlayer.play().catch(error => console.error("Playback failed:", error));
+                loadAndPlayVideo(getRandomVideo());
             } else if (pendingAd) {
-                currentVideo = pendingAd.video;
-                const newVideoSrc = `/static/${currentVideo}`;
-                videoPlayer.loop = false;
-                videoPlayer.src = newVideoSrc;
-                videoPlayer.style.display = 'block';
-                videoPlayer.load();
-                videoPlayer.play()
-                    .then(() => {
-                        isPlayingPersonalizedAd = true;
-                        hasStartedScrolling = false;
-                        scrollingTextContent.textContent = pendingAd.ad_text;
-                        scrollingText.style.display = 'block';
-                        pendingAd = null;
-                        bindVideoEvents();
-                    })
-                    .catch(error => console.error("Playback failed:", error));
+                loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
+                pendingAd = null;
+
             } else {
                 isDefaultMode = true;
-                currentVideo = getRandomVideo();
-                videoPlayer.src = `/static/${currentVideo}`;
-                videoPlayer.style.display = 'block';
-                videoPlayer.play().catch(error => console.error("Playback failed:", error));
+                loadAndPlayVideo(getRandomVideo());
             }
         }
 
-        bindVideoEvents();
+        function loadAndPlayVideo(videoPath, adText = null) {
+            currentVideo = videoPath;
+            const newVideoSrc = `/static/${currentVideo}`;
+            videoPlayer.loop = false; // Ensure loop is off
+            videoPlayer.src = newVideoSrc;
+            videoPlayer.load();
+
+            if (adText) {
+                scrollingTextContent.textContent = adText;
+                isPlayingPersonalizedAd = true;
+            }
+
+            videoPlayer.play()
+                .then(() => {
+                  bindVideoEvents();
+                })
+                .catch(error => console.error("Playback failed:", error));
+        }
+
+
 
         const eventSource = new EventSource('/stream');
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.video && data.ad_text) {
                 pendingAd = { video: data.video, ad_text: data.ad_text };
-            }
+             }
         };
+
         eventSource.onerror = function(error) {
             console.error('EventSource error:', error);
         };
 
-        currentVideo = getRandomVideo();
-        videoPlayer.src = `/static/${currentVideo}`;
-        videoPlayer.loop = false;
-        videoPlayer.play().catch(error => console.error("Playback failed:", error));
+        // Initial video load
+        loadAndPlayVideo(getRandomVideo());
+
     </script>
 </body>
 </html>
