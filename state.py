@@ -46,9 +46,6 @@ class AdRotating(State):
             if self.is_first:
                 print("[State] Ad Rotating: Displaying generic ad.")
                 self.is_first = False
-            
-            self.context.default_video_completed.wait()
-            self.context.default_video_completed.clear()
 
             if not self.context.detected_face_queue.empty():
                 frame, prediction = self.context.detected_face_queue.get()
@@ -60,7 +57,11 @@ class AdRotating(State):
                 processing_thread.start()
                 processing_thread.join()  # 等待线程完成
                 self.llm_text_generated_event.wait()  # 等待广告文本生成
+                # 只有在跑完这个视频后才查询是否切换到下一个状态
+                self.context.default_video_completed.wait()
+                self.context.default_video_completed.clear()
                 if not self.context.ad_text_queue.empty():
+
                     return PersonalizedADDisplaying(self.context)
                 else:
                     print("[Error] Ad generation failed, returning to Ad Rotating.")
