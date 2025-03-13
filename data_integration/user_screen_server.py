@@ -1,14 +1,16 @@
-from flask import Flask, jsonify, render_template, Response, request
+from flask import Flask, jsonify, render_template, Response, request, Blueprint
 from data_integration.data_interface import video_queue, ad_queue  
 from queue import Empty
 from pathlib import Path
 import json
 import time
 
-app = Flask(__name__,
-            template_folder='templates',
-            static_folder='static')
-app.config['DEBUG'] = False
+user_screen = Blueprint(
+    "user_screen",  # Blueprint 名称（必须是字符串）
+    __name__,  # 让 Flask 知道这个 Blueprint 属于哪个模块
+    template_folder="templates",  # 指定 HTML 模板路径
+    static_folder="static"  # 指定静态文件路径
+)
 
 # 全局变量存储 context
 context = None
@@ -17,11 +19,11 @@ def set_context(ctx):
     global context
     context = ctx
 
-@app.route('/')
+@user_screen.route('/')
 def index():
     return render_template('main_screen.html', video_name="")
 
-@app.route('/stream')
+@user_screen.route('/stream')
 def stream():
     def event_stream():
         last_video = None
@@ -44,14 +46,16 @@ def stream():
             time.sleep(1)
     return Response(event_stream(), mimetype="text/event-stream")
 
-@app.route('/video-ended', methods=['POST'])
+@user_screen.route('/video-ended', methods=['POST'])
 def video_ended():
     data = request.json
     video = data.get('video')
-    print(f"Received video ended notification for: {video}")
+    print(f"[Server] Received video ended notification for: {video}")
     if context:
         context.video_completed.set()  # 设置事件，通知视频播放已完成
+    else:
+        print("[Error] Failed passing context in user_screen server")
     return jsonify({"status": "success"}), 200
 
 if __name__ == "__main__":
-    app.run(threaded=True, port=5001)
+    user_screen.run(threaded=True, port=5001)

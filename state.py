@@ -2,11 +2,14 @@ import threading
 import time
 import queue
 import os
+
+from flask import Flask
+
 from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
-from data_integration.server import app_1
-from data_integration.user_screen_server import app
-from Dashboard.dashboard import app_2
+from data_integration.server import secondary_screen_app
+from data_integration.user_screen_server import user_screen
+from Dashboard.dashboard import init_dashboard
 #from eyetrack import *
 from data_integration.data_interface import video_queue, ad_queue
 
@@ -18,70 +21,77 @@ class Context:
         self.ad_text_queue = queue.Queue(maxsize=1)  # 仅存储最新广告文本
         self.current_ad_text = None
         self.state_lock = threading.Lock()  # 状态转换锁
-        self.is_first_ad_rotating = True  # 首次广告轮播标志
         self.eye_tracking_active = threading.Event()
         self.video_completed = threading.Event()  # 用于接收视频播放完成信号
 
 class State:
-    def __init__(self, context):
+    def __init__(self, context, is_first=False):
         self.context = context
+        self.is_first = is_first
 
     def handle(self):
         pass
 
 class AdRotating(State):
+    def __init__(self, context, is_first=False):
+        super().__init__(context)
+        self.is_first = is_first
+        self.llm_text_generated_event = threading.Event()
+
+    def __str__(self):
+        return "ADRotation"
+
     def handle(self):
         with self.context.state_lock:
-            if self.context.is_first_ad_rotating:
-                print("Ad Rotating: Displaying generic ad.")
-                self.context.is_first_ad_rotating = False
+            self.context.face_detection_active.set()  # 进入AD Rotation开启yolo线程
+            # print("[AD R] Set face_detection_active true")
+            if self.is_first:
+                print("[State] Ad Rotating: Displaying generic ad.")
+                self.is_first = False
+
             if not self.context.detected_face_queue.empty():
+                print("[DEBUG] Into here")
                 frame, prediction = self.context.detected_face_queue.get()
                 self.context.face_detection_active.clear()  # 暂停人脸检测
-                return ModelProcessing(self.context, frame, prediction)
-            return self  # 保持在 AdRotating 状态
+                print("[ERROR] 断掉了cv")
 
-class ModelProcessing(State):
-    def __init__(self, context, frame, prediction):
-        super().__init__(context)
-        self.frame = frame
-        self.prediction = prediction
-        self.ad_generated_event = threading.Event()
-
-    def handle(self):
-        with self.context.state_lock:
-            print("Model Processing: Generating ad text.")
-            processing_thread = threading.Thread(target=self.process_frame)
-            processing_thread.start()
-            processing_thread.join()  # 等待线程完成
-            self.ad_generated_event.wait()  # 等待广告文本生成
-            if not self.context.ad_text_queue.empty():
-                return PersonalizedADDisplaying(self.context)
+                print("[State] LLM Processing: Generating ad text.")
+                processing_thread = threading.Thread(target=self.process_frame, args=prediction)
+                processing_thread.start()
+                processing_thread.join()  # 等待线程完成
+                self.llm_text_generated_event.wait()  # 等待广告文本生成
+                if not self.context.ad_text_queue.empty():
+                    return PersonalizedADDisplaying(self.context)
+                else:
+                    print("[Error] Ad generation failed, returning to Ad Rotating.")
+                    self.context.face_detection_active.set()
             else:
-                print("Ad generation failed, returning to Ad Rotating.")
-                self.context.face_detection_active.set()
-                return AdRotating(self.context)
+                # print("[AD R] No valid face, return self")
+                # print(f"[DEBUG] face_detection_active state: {self.context.face_detection_active.is_set()}")
 
-    def process_frame(self):
-        ad_text = pipeline.generate_advertisement(self.prediction)
+
+                return self  # 保持在 AdRotating 状态
+
+    def process_frame(self, prediction):
+        ad_text = pipeline.generate_advertisement(prediction)
         if ad_text:
             try:
                 self.context.ad_text_queue.put_nowait(ad_text)
             except queue.Full:
+                print("[ERROR] Queue is full")
                 pass  # 如果队列满，丢弃旧数据
-        self.ad_generated_event.set()
+        self.llm_text_generated_event.set()
 
 class PersonalizedADDisplaying(State):
     def __init__(self, context):
         super().__init__(context)
-        self.video_completed = threading.Event()  # 用于线程间同步
 
     def handle(self):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
             
             self.context.current_ad_text = ad_text
-            #print("等待视频播放完成...")
+            # 在user server里set过
             self.context.video_completed.wait()  # 阻塞直到 video_completed 被设置
             self.context.video_completed.clear()  # 重置事件状态
 
@@ -152,10 +162,18 @@ class PersonalizedADDisplaying(State):
             finally:
                 # 无论如何，确保重新启用人脸检测
                 print("重新启用人脸检测...")"""
-            time.sleep(1.0)  # Prevent face detection models from detecting too quickly
-            self.context.face_detection_active.set()
+            return AdRotating(self.context, True)
 
-            return AdRotating(self.context)
+# 创建 Flask 主应用
+main_app = Flask(__name__)
+
+# 挂载 app_1 到 /app1/
+main_app.register_blueprint(secondary_screen_app, url_prefix='/secondary-screen')
+
+# 挂载 app_user 到 /user/
+main_app.register_blueprint(user_screen, url_prefix='/user-screen')
+
+dash_app = init_dashboard(main_app)
 
 if __name__ == "__main__":
     context = Context()
@@ -164,27 +182,19 @@ if __name__ == "__main__":
     from data_integration.user_screen_server import set_context
     set_context(context)
 
-    # 启动 Flask 线程
-    flask_thread1 = threading.Thread(
-        target=app_1.run,
-        kwargs={'threaded': True, 'port': 5000}
-    )
-    flask_thread1.daemon = True
-    flask_thread1.start()
+    # 运行Flask app
+    flask_thread = threading.Thread(target=main_app.run, kwargs={
+        "host": "127.0.0.1",
+        "port": 5000,
+        "threaded": True,
+        "debug": False
+    })
+    flask_thread.daemon = True
+    flask_thread.start()
 
-    flask_thread2 = threading.Thread(
-        target=app.run,
-        kwargs={'threaded': True, 'port': 5001}
-    )
-    flask_thread2.daemon = True
-    flask_thread2.start()
-
-    flask_thread3 = threading.Thread(
-        target=app_2.run,
-        kwargs={'threaded': True, 'port': 5002}
-    )
-    flask_thread3.daemon = True
-    flask_thread3.start()
+    print("[Flask] User screen running on http://127.0.0.1:5000/user-screen/")
+    print("[Flask] Secondary screen running on http://127.0.0.1:5000/secondary-screen/")
+    print("[Flask] Dashboard running on http://127.0.0.1:5000/dashboard/")
 
     # 启动 CV 线程
     cv_thread = threading.Thread(
@@ -195,7 +205,13 @@ if __name__ == "__main__":
     cv_thread.start()
 
     # 运行状态机
-    current_state = AdRotating(context)
+    current_state = AdRotating(context, True)
+    prev_state = str(current_state)
     while True:
+        prev_state = str(current_state)
         current_state = current_state.handle()
-        time.sleep(0.15)  # 状态机节奏控制
+        if (prev_state != str(current_state)):
+            print("Current state: " + str(current_state) + " Prev state: " + str(prev_state))
+            print("[State] Current state is: " + str(current_state))
+            print("[Main] CV thread alive: " + str(cv_thread.is_alive()))
+        time.sleep(0.5)  # 状态机节奏控制

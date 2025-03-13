@@ -275,11 +275,6 @@
           <div id="status-heading">AD Rotating</div>
         </div>
 
-        <!-- Positive detection state -->
-        <div id="analysing-state" class="hidden">
-          <div id="status-heading">MODEL ANALYZING</div>
-        </div>
-
         <!-- Detection complete status -->
         <div id="prediction-state" class="hidden">
           <div id="status-heading">ANALYSIS FINISHED</div>
@@ -305,7 +300,6 @@
       const elements = {
         states: {
           noFace: document.getElementById('no-face-state'),
-          analysing: document.getElementById('analysing-state'),
           prediction: document.getElementById('prediction-state'),
         },
         images: {
@@ -326,11 +320,6 @@
           showState: 'noFace',
           image: 'noFace',
           statusText: 'No face detected'
-        },
-        analyzing: {
-          showState: 'analysing',
-          image: 'face',
-          statusText: 'Analyzing...'
         },
         finished: {
           showState: 'prediction',

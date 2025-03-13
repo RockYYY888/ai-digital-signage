@@ -9,7 +9,7 @@ import numpy as np
 import queue
 from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
-from data_integration.data_interface import prediction_queue, frame_queue
+from data_integration.data_interface import secendary_screen_signal_queue, frame_queue
 
 # 设备设置
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,13 +37,31 @@ face_detector = YOLO("CV/yolov8l-face.pt", verbose=False)
 def analyze_frame(frame):
     """分析单帧以检测人脸并生成预测结果"""
     # 人脸检测
-    results = face_detector(frame, conf=0.86)
-    if not results or len(results[0].boxes.xyxy) == 0:
-        prediction_queue.put(("no_face"))
-        print("[INFO] No face detected at this frame.")
-        return None, None
+    # print("[DEBUG] analyze_frame called.")
+    # if frame is None:
+    #     print("[DEBUG] Input frame is None!")
+    # else:
+    #     print(f"[DEBUG] Input frame shape: {frame.shape}, dtype: {frame.dtype}")
 
-    prediction_queue.put(("analyzing"))
+    # 人脸检测
+    # print("[DEBUG] Running YOLO face_detector with conf=0.86...")
+    results = face_detector(frame, conf=0.86)
+
+    # 打印 YOLO 返回的原始结果可视化（需要确保 results[0].boxes 存在）
+    # 如果想查看每个box的置信度，可以打印 results[0].boxes.conf
+    # if results:
+    #     print(f"[DEBUG] YOLO boxes count: {len(results[0].boxes.xyxy)}")
+    #     if len(results[0].boxes.xyxy) > 0:
+    #         # print(f"[DEBUG] boxes: {results[0].boxes.xyxy}")
+    #         print(f"[DEBUG] confidences: {results[0].boxes.conf}")
+    #     else:
+    #         print(f"[DEBUG] YOLO got {len(results[0].boxes.xyxy)} bounding boxes.")
+    # else:
+    #     print("[DEBUG] YOLO returned an empty results list.")
+
+    if not results or len(results[0].boxes.xyxy) == 0:
+        print("[CV] No face detected at this frame.")
+        return None, None
 
     # 处理检测到的第一个人脸
     box = results[0].boxes.xyxy[0]
@@ -65,9 +83,9 @@ def analyze_frame(frame):
     emotion_pred = predict2(model_emotion, pil_image)
     emotion_label = emotion_mapping.get(emotion_pred, "Unknown")
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
-    print(f"[INFO] Predicted Demographics: {combined_prediction}")
+    print(f"[CV] Predicted Demographics: {combined_prediction}")
 
-    prediction_queue.put(combined_prediction)
+    secendary_screen_signal_queue.put(combined_prediction)
     return combined_prediction, pil_image
 
 def predict_demographics(model, image):
@@ -91,41 +109,65 @@ def predict_demographics(model, image):
     return age_label, gender_label, race_label
 
 def cv_thread_func(detected_face_queue, face_detection_active):
-    """从摄像头捕获帧并检测人脸"""
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    detection_interval = 2  # 每 2 秒检测一次
+    detection_interval = 2
     last_detection_time = time.time()
 
     if not cap.isOpened():
-        print("Failed to open webcam.")
+        print("[CV] Failed to open webcam.")
         return
 
     try:
         while True:
+            # print("[CV] top of loop - face_detection_active =", face_detection_active.is_set())
             if not face_detection_active.is_set():
+                print("[CV] YOLO Face detection paused.")
                 time.sleep(0.1)
                 continue
 
+            # print("[CV] Attempting to capture frame...")
             ret, frame = cap.read()
-            if not ret:
-                print("Failed to capture frame.")
+            if not ret or not cap.isOpened():
+                print("[CV] Failed to capture frame or camera closed. Exiting loop.")
+                break
+            # print("[CV] Frame captured successfully.")
+
+            cv2.imshow("debug", frame)
+            if cv2.waitKey(1) & 0xFF == 27:
                 break
 
             current_time = time.time()
-            if current_time - last_detection_time >= detection_interval:
-                last_detection_time = current_time
-                prediction, cropped_image = analyze_frame(frame)
-                if prediction:  # 仅在检测到人脸时放入队列
-                    try:
-                        cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
-                        frame_queue.put_nowait(cropped_image_bgr)  # 单次帧放入队列
-                        detected_face_queue.put_nowait((cropped_image_bgr, prediction))
-                    except queue.Full:
-                        pass
+            time_since_last = current_time - last_detection_time
+            if time_since_last >= detection_interval:
+                try:
+                    # print("[CV] Calling analyze_frame...")
+                    prediction, cropped_image = analyze_frame(frame)
+                    # print("[CV] analyze_frame returned successfully.")
+                    # print("[CV] Frame analyzed successfully.")
+                    if prediction:
+                        try:
+                            # print("[CV] Converting image format...")
+                            cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
+                            # print("[CV] Putting to frame_queue...")
+                            frame_queue.put_nowait(cropped_image_bgr)
+                            # print("[CV] Putting to detected_face_queue...")
+                            detected_face_queue.put_nowait((cropped_image_bgr, prediction))
+                            # print("[CV] Face detected and added to queue.")
+                        except queue.Full:
+                            print("[CV] Queue full, skipping frame.")
+                except Exception as e:
+                    print(f"[CV] Error in analyze_frame or subsequent processing: {e}")
+                    continue
+                last_detection_time = time.time()
+            time.sleep(0.1)
 
+    except Exception as e:
+        print(f"[CV] Unexpected error in thread: {e}")
     finally:
+        # print("[CV] Releasing camera resources...")
         cap.release()
         cv2.destroyAllWindows()
+        # print("[CV] Thread terminated.")
 
 if __name__ == '__main__':
     print(cv2.getBuildInformation())

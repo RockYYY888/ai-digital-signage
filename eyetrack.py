@@ -49,7 +49,7 @@ def eye_tracking(active_event):
     while retry_count < max_retries and (cap is None or not cap.isOpened()):
         print(f"眼动追踪：尝试打开摄像头 (尝试 {retry_count+1}/{max_retries})")
         try:
-            cap = cv2.VideoCapture(0)
+            # cap = cv2.VideoCapture(0)
             if cap.isOpened():
                 ret, test_frame = cap.read()
                 if ret:
