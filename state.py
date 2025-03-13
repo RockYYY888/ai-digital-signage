@@ -63,7 +63,7 @@ class AdRotating(State):
             else:
                 # print("[AD R] No valid face, return self")
                 # print(f"[DEBUG] face_detection_active state: {self.context.face_detection_active.is_set()}")
-                return self 
+                return self
 
     def process_frame(self, prediction):
         ad_text = pipeline.generate_advertisement(prediction)
