@@ -176,7 +176,7 @@ def eye_tracking(active_event):
         
         # 直接更新数据库
         if initial_prediction:
-            ad_id = extract_ad_id("data_integration/static/videos")  # 替换为实际视频路径
+            ad_id = extract_ad_id("static/videos")  # 替换为实际视频路径
             success = update_database(total_watch_time, initial_prediction, ad_id)
             if success:
                 print(f"数据库更新成功: watch_time={total_watch_time:.2f}, demographics={initial_prediction}, ad_id={ad_id}")

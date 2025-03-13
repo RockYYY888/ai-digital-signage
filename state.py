@@ -50,13 +50,11 @@ class AdRotating(State):
                 self.is_first = False
 
             if not self.context.detected_face_queue.empty():
-                print("[DEBUG] Into here")
                 frame, prediction = self.context.detected_face_queue.get()
                 self.context.face_detection_active.clear()  # 暂停人脸检测
-                print("[ERROR] 断掉了cv")
 
                 print("[State] LLM Processing: Generating ad text.")
-                processing_thread = threading.Thread(target=self.process_frame, args=prediction)
+                processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
                 processing_thread.start()
                 processing_thread.join()  # 等待线程完成
                 self.llm_text_generated_event.wait()  # 等待广告文本生成
@@ -85,6 +83,9 @@ class AdRotating(State):
 class PersonalizedADDisplaying(State):
     def __init__(self, context):
         super().__init__(context)
+
+    def __str__(self):
+        return "PersonalizedADDisplaying"
 
     def handle(self):
         with self.context.state_lock:
@@ -174,6 +175,18 @@ main_app.register_blueprint(secondary_screen_app, url_prefix='/secondary-screen'
 main_app.register_blueprint(user_screen, url_prefix='/user-screen')
 
 dash_app = init_dashboard(main_app)
+
+@main_app.route('/')
+def index():
+    return """
+    <h2>Welcome to the Flask Server!</h2>
+    <p>Available Endpoints:</p>
+    <ul>
+        <li><a href="/user-screen/">User Screen</a></li>
+        <li><a href="/secondary-screen/">Secondary Screen</a></li>
+        <li><a href="/dashboard/">Dashboard</a></li>
+    </ul>
+    """
 
 if __name__ == "__main__":
     context = Context()

@@ -121,7 +121,7 @@ def cv_thread_func(detected_face_queue, face_detection_active):
         while True:
             # print("[CV] top of loop - face_detection_active =", face_detection_active.is_set())
             if not face_detection_active.is_set():
-                print("[CV] YOLO Face detection paused.")
+                # print("[CV] YOLO Face detection paused.")
                 time.sleep(0.1)
                 continue
 
@@ -132,9 +132,9 @@ def cv_thread_func(detected_face_queue, face_detection_active):
                 break
             # print("[CV] Frame captured successfully.")
 
-            cv2.imshow("debug", frame)
-            if cv2.waitKey(1) & 0xFF == 27:
-                break
+            # cv2.imshow("debug", frame)
+            # if cv2.waitKey(1) & 0xFF == 27:
+            #     break
 
             current_time = time.time()
             time_since_last = current_time - last_detection_time
