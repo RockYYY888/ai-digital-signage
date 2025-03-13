@@ -338,11 +338,11 @@
         elements.images.noFace.classList.toggle('hidden', isFaceImage);
     
         if (isFaceImage) {
-          elements.images.face.src = `/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
+          elements.images.face.src = `/secondary-screen/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
         }
       }
     
-      const eventSource = new EventSource('/stream');
+      const eventSource = new EventSource('/secondary-screen/stream');
       let isFirstMessage = true;
     
       eventSource.onmessage = function(e) {

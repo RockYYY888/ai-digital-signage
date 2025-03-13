@@ -16,7 +16,7 @@ secondary_screen_app = Blueprint(
 
 @secondary_screen_app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('/index.html')
 
 @secondary_screen_app.route('/stream')
 def stream():
@@ -27,7 +27,7 @@ def face_image():
     """返回检测到人脸的单张图片"""
     if not frame_queue.empty():
         frame = frame_queue.get()
-        ret, buffer = cv2.imencode('.jpg', frame)
+        buffer = cv2.imencode('.jpg', frame)
         return Response(buffer.tobytes(), mimetype='image/jpeg')
     # 使用绝对路径加载默认图片
     default_image_path = os.path.join(secondary_screen_app.static_folder, 'no_face.jpg')

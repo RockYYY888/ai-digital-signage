@@ -65,7 +65,7 @@
     <div id="main-container">
         <div id="video-container">
             <video id="videoPlayer" autoplay muted>
-                <source src="/static/videos/0001.mp4" type="video/mp4">
+                <source src="/videos/0001.mp4" type="video/mp4">
             </video>
             <div id="scrolling-text">
                 <div id="scrolling-text-content"></div>
@@ -124,7 +124,7 @@
 
     const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';  // 根据当前播放模式设置广告类型
 
-    fetch('/video-ended', {
+    fetch('/user-screen/video-ended', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -166,7 +166,7 @@
                 .catch(error => console.error("Playback failed:", error));
         }
 
-        const eventSource = new EventSource('/stream');
+        const eventSource = new EventSource('/user-screen/stream');
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.video && data.ad_text) {
