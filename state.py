@@ -19,7 +19,8 @@ class Context:
         self.current_ad_text = None
         self.state_lock = threading.Lock()  # 状态转换锁
         self.eye_tracking_active = threading.Event()
-        self.video_completed = threading.Event()  # 用于接收视频播放完成信号
+        self.default_video_completed = threading.Event()  # 新增：默认广告播放完成信号
+        self.personalized_video_completed = threading.Event()  # 修改：个性化广告播放完成信号（原 video_completed）
 
 class State:
     def __init__(self, context, is_first=False):
@@ -45,10 +46,14 @@ class AdRotating(State):
             if self.is_first:
                 print("[State] Ad Rotating: Displaying generic ad.")
                 self.is_first = False
+            
+            self.context.default_video_completed.wait()
+            self.context.default_video_completed.clear()
 
             if not self.context.detected_face_queue.empty():
                 frame, prediction = self.context.detected_face_queue.get()
                 self.context.face_detection_active.clear()  # 暂停人脸检测
+            
 
                 print("[State] LLM Processing: Generating ad text.")
                 processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
@@ -88,8 +93,8 @@ class PersonalizedADDisplaying(State):
             
             self.context.current_ad_text = ad_text
 
-            self.context.video_completed.wait()  # 阻塞直到 video_completed 被设置
-            self.context.video_completed.clear()  # 重置事件状态
+            self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
+            self.context.personalized_video_completed.clear()  # 重置信号
 
         return AdRotating(self.context, True)
 

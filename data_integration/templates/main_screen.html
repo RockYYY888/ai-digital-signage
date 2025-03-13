@@ -118,33 +118,35 @@
         }
 
         function handleVideoEnd() {
-            scrollingTextContent.style.animation = '';
-            scrollingText.style.display = 'none';
-            scrollingTextContent.textContent = '';
+    scrollingTextContent.style.animation = '';
+    scrollingText.style.display = 'none';
+    scrollingTextContent.textContent = '';
 
-            if (isPlayingPersonalizedAd) {
-                fetch('/video-ended', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ video: currentVideo }),
-                })
-                .then(response => response.json())
-                .then(data => console.log('Backend response:', data))
-                .catch(error => console.error('Failed to send request:', error));
+    const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';  // 根据当前播放模式设置广告类型
 
-                isPlayingPersonalizedAd = false;
-                isDefaultMode = true;
-                loadAndPlayVideo(getRandomVideo());
-            } else if (pendingAd) {
-                loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
-                pendingAd = null;
-            } else {
-                isDefaultMode = true;
-                loadAndPlayVideo(getRandomVideo());
-            }
-        }
+    fetch('/video-ended', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video: currentVideo, ad_type: adType }),  // 添加 ad_type 字段
+    })
+    .then(response => response.json())
+    .then(data => console.log('Backend response:', data))
+    .catch(error => console.error('Failed to send request:', error));
+
+    if (isPlayingPersonalizedAd) {
+        isPlayingPersonalizedAd = false;
+        isDefaultMode = true;
+        loadAndPlayVideo(getRandomVideo());
+    } else if (pendingAd) {
+        loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
+        pendingAd = null;
+    } else {
+        isDefaultMode = true;
+        loadAndPlayVideo(getRandomVideo());
+    }
+}
 
         function loadAndPlayVideo(videoPath, adText = null) {
             currentVideo = videoPath;
