@@ -1,6 +1,8 @@
 import threading
 import time
 import queue
+import webbrowser
+
 from flask import Flask
 from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
@@ -135,9 +137,9 @@ if __name__ == "__main__":
     flask_thread.daemon = True
     flask_thread.start()
 
-    print("[Flask] User screen running on http://127.0.0.1:5000/user-screen/")
-    print("[Flask] Secondary screen running on http://127.0.0.1:5000/secondary-screen/")
-    print("[Flask] Dashboard running on http://127.0.0.1:5000/dashboard/")
+    webbrowser.open("http://127.0.0.1:5000/user-screen/")
+    webbrowser.open("http://127.0.0.1:5000/secondary-screen/")
+    webbrowser.open("http://127.0.0.1:5000/dashboard/")
 
     # 启动 CV 线程
     cv_thread = threading.Thread(

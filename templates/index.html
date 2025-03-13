@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Detection Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Base style */
+    body {
+      margin: 0;
+      background-color: #192444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Playfair Display', serif;
+      color: #ffffff;
+    }
+
+    #container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 1400px;
+      height: 70%;
+      background: linear-gradient(145deg, #2e2e3f, #1a1a28);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    /* Left camera display area */
+    #camera-view {
+      width: 50%;
+      height: 100%;
+      background-color: #1f2c56;
+      display: flex;
+      flex-direction: column;  
+      justify-content: flex-start;
+      align-items: center;
+      position: relative;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #image-container {
+      width: 100%;  
+      height: 100%;  
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #face-image {
+      width: 70%;
+      height: 90%;
+      object-fit: cover;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+
+    #camera-image {
+      width: 80%;
+      height: 80%;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 3px dashed #ffcc00;
+    }
+
+    #camera-status {
+      width: 100%;  
+      margin-top: 1px;  
+      text-align: center; 
+      color: #ffcc00;  
+      font-size: 1rem; 
+      line-height: 1.4;  
+    }
+
+    /* Right status area */
+    #status {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #1f2c56;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .status-card {
+      background-color: #000839;
+      border-radius: 12px;
+      padding: 40px 20px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+      width: 85%;
+      height:92%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    #status-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #00ffcc;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    #watching-time {
+      font-size: 1.5rem;
+      color: white;
+      margin: 20px;
+      text-align: left;
+      position: relative; 
+      left: 50px;
+    }
+
+    #watching-time span {
+      color: orange; 
+    }
+
+    #status-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: #c4c4de;
+      line-height: 1.8;
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+
+    .highlight {
+      font-weight: bold;
+      font-size: 2rem;
+      color: #00ffcc;
+      padding: 2px 4px;
+      border-radius: 4px;
+      margin-top: 100px;
+      display: block;
+    }
+
+    .status-text-green { color: #32cd32; }
+    .status-text-red { color: #ff4d4d; }
+
+    #additional-info {             
+      font-size: 1.5rem;
+      color: white;
+      margin: 10px 0;
+      text-align: right; 
+      padding-right: 0;  
+      margin-top: -50px;   
+      position: relative;
+      width: 100%;  
+      left: 100px;     
+  }
+
+    #additional-info p {
+      margin: 5px 0;                         
+      display: flex;  
+      justify-content: flex-start; 
+      align-items: center;
+      width: 100%;
+    }
+
+    #additional-info .label {
+      flex: 0 0 140px;  
+      text-align: right; 
+      color: white;  
+      padding-right: 15px; 
+    }
+
+    #additional-info span:not(.label) {
+      flex: 1;  
+      text-align: left; 
+      color: orange; 
+    }
+    
+   
+
+
+    /* Optional: Adding a hover effect */
+    #additional-info:hover {
+      /*background-color: #444; */ 
+      cursor: pointer;        
+    }
+
+    /* New Custom Tooltip (Hover effect) */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      text-align: center;
+      border-radius: 5px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: -150%; 
+      left: 50%;
+      margin-left: -100px; /* Center the tooltip */
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* New CSS: Hover and active link effects */
+    a:hover {
+      color: #ffffff;  /* Change text color on hover */
+      border-bottom: 2px solid #ffffff;  /* Underline effect on hover */
+      transform: scale(1.05);  /* Slightly enlarge the link when hovered */
+    }
+
+    a:active {
+      color: #ffcc00;  /* Change color when the link is clicked */
+      border-bottom: 2px solid #ffcc00;  /* Underline effect on click */
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 768px) {
+      #container {
+        flex-direction: column;
+        height: auto;
+      }
+      #camera-view, #status {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .status-card {
+        padding: 20px 15px;
+      }
+      #status-heading { font-size: 2rem; }
+      #status-text { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Camera display area -->
+    <div id="camera-view">
+      <div id="image-container">
+        <img id="face-image" src="/face_image" alt="Detected Face" class="hidden">
+        <img id="no-face-image" src="/no_face.jpg" alt="No Face Image">
+      </div>
+    </div>
+
+    <!-- Status display area -->
+    <div id="status">
+      <div class="status-card">
+        <!-- No detection status (default display) -->
+        <div id="no-face-state">
+          <div id="status-heading">AD Rotating</div>
+        </div>
+
+        <!-- Detection complete status -->
+        <div id="prediction-state" class="hidden">
+          <div id="status-heading">ANALYSIS FINISHED</div>
+          <div id="status-text">
+            <span class="highlight">Model Analysis:</span> 
+            <span id="additional-info">
+              <p><span class="label">Age:</span> <span id="age"></span></p>
+              <p><span class="label">Gender:</span> <span id="gender"></span></p>
+              <p><span class="label">Ethnicity:</span> <span id="ethnicity"></span></p>
+              <p><span class="label">Emotion:</span> <span id="emotion"></span></p>
+            </span>
+          </div>
+        </div>
+
+        <!-- Get feedback status -->
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    (function() {
+      const elements = {
+        states: {
+          noFace: document.getElementById('no-face-state'),
+          prediction: document.getElementById('prediction-state'),
+        },
+        images: {
+          face: document.getElementById('face-image'),
+          noFace: document.getElementById('no-face-image')
+        },
+        statusText: {
+          watchingTime: document.getElementById('watching-time-value'),
+          age: document.getElementById('age'),
+          gender: document.getElementById('gender'),
+          ethnicity: document.getElementById('ethnicity'),
+          emotion: document.getElementById('emotion')
+        }
+      };
+    
+      const stateConfig = {
+        no_face: {
+          showState: 'noFace',
+          image: 'noFace',
+          statusText: 'No face detected'
+        },
+        finished: {
+          showState: 'prediction',
+          image: 'face',
+          statusText: 'Face detected'
+        }
+      };
+    
+      function handleStateChange(state) {
+        Object.values(elements.states).forEach(el => el.classList.add('hidden'));
+        const config = stateConfig[state];
+        elements.states[config.showState].classList.remove('hidden');
+    
+        const isFaceImage = config.image === 'face';
+        elements.images.face.classList.toggle('hidden', !isFaceImage);
+        elements.images.noFace.classList.toggle('hidden', isFaceImage);
+    
+        if (isFaceImage) {
+          elements.images.face.src = `/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
+        }
+      }
+    
+      const eventSource = new EventSource('/stream');
+      let isFirstMessage = true;
+    
+      eventSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          
+          Object.entries({
+            age: data.age,
+            gender: data.gender,
+            ethnicity: data.ethnicity,
+            emotion: data.emotion ? data.emotion[0].toUpperCase() + data.emotion.slice(1) : ''
+          }).forEach(([key, value]) => {
+            elements.statusText[key].textContent = value || '';
+          });
+    
+          if (stateConfig[data.status]) {
+            handleStateChange(data.status);
+          }
+    
+          if (isFirstMessage) {
+            elements.images.noFace.src = "/static/no_face.jpg";
+            isFirstMessage = false;
+          }
+        } catch (error) {
+          console.error("SSE处理错误:", error);
+        }
+      };
+    
+      window.addEventListener('beforeunload', () => {
+        eventSource.close();
+      });
+    })();
+    </script>
+    
+    
+</body>
+</html>
