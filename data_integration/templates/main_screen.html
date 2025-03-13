@@ -33,10 +33,8 @@
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 8%;
-            background: transparent;
-            color: white;
-            display: none;  /* Initially hidden */
+            height: 40px;
+            display: none;
             overflow: hidden;
             z-index: 10;
         }
@@ -45,21 +43,28 @@
             white-space: nowrap;
             font-size: 1.2em;
             left: 100%;
-            /*animation: scroll var(--duration) linear;  Removed from here */
+            line-height: 40px;
+            background: rgba(0, 0, 0, 0.7); /* 改为黑色背景 */
+            padding: 0 10px; /* 添加内边距让文字两侧有空间 */
+            box-sizing: border-box;
+            color: white;
         }
 
         @keyframes scroll {
-            from { left: 100%; }
-            to { left: var(--to-left); }
+            from { 
+                left: 100%;
+            }
+            to { 
+                left: -100%;
+            }
         }
-
-        /* No need for spin animation here */
     </style>
 </head>
+
 <body>
     <div id="main-container">
         <div id="video-container">
-            <video id="videoPlayer" autoplay muted>  <!-- Removed loop from here -->
+            <video id="videoPlayer" autoplay muted>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
             <div id="scrolling-text">
@@ -77,8 +82,10 @@
         let isDefaultMode = true;
         let isPlayingPersonalizedAd = false;
         let pendingAd = null;
-        const pixelsPerSecond = 50; // Adjust this for scrolling speed
+        const pixelsPerSecond = 120; // Adjust this for scrolling speed
 
+        videoPlayer.addEventListener('ended', handleVideoEnd);
+        videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
 
         function getRandomVideo() {
             const min = 1;
@@ -88,32 +95,32 @@
             return `videos/${paddedNum}.mp4`;
         }
 
-        function bindVideoEvents() {
-            videoPlayer.addEventListener('ended', handleVideoEnd);
-            videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
-        }
         function handleVideoLoaded() {
+            if (!scrollingTextContent.textContent) {
+                scrollingText.style.display = 'none';
+                return;
+            }
+
+            scrollingText.style.display = 'block';
+            void scrollingText.offsetWidth;
 
             const textWidth = scrollingTextContent.offsetWidth;
             const containerWidth = scrollingText.offsetWidth;
-            const toLeft = -(textWidth);  // Scroll completely off-screen
-            scrollingTextContent.style.setProperty('--to-left', `${toLeft}px`);
+            const toLeft = -(textWidth); // 修改为负的文本宽度
 
-            // Calculate scroll duration based on text width and desired speed
+            // 计算滚动时间
             const scrollDistance = containerWidth + textWidth;
             const scrollDuration = scrollDistance / pixelsPerSecond;
 
-            // Set the animation property, including the calculated duration
-            scrollingTextContent.style.animation = `scroll ${scrollDuration}s linear`;
-            scrollingText.style.display = 'block';  // Show the scrolling text
+            // 设置动画
+            scrollingTextContent.style.animation = `scroll ${scrollDuration}s linear infinite`;
+            scrollingTextContent.style.left = '100%'; // 确保每次开始时从右边开始
         }
 
         function handleVideoEnd() {
-            // Clear the animation
             scrollingTextContent.style.animation = '';
             scrollingText.style.display = 'none';
             scrollingTextContent.textContent = '';
-
 
             if (isPlayingPersonalizedAd) {
                 fetch('/video-ended', {
@@ -133,7 +140,6 @@
             } else if (pendingAd) {
                 loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
                 pendingAd = null;
-
             } else {
                 isDefaultMode = true;
                 loadAndPlayVideo(getRandomVideo());
@@ -143,39 +149,34 @@
         function loadAndPlayVideo(videoPath, adText = null) {
             currentVideo = videoPath;
             const newVideoSrc = `/static/${currentVideo}`;
-            videoPlayer.loop = false; // Ensure loop is off
+            videoPlayer.loop = false;
             videoPlayer.src = newVideoSrc;
             videoPlayer.load();
 
             if (adText) {
                 scrollingTextContent.textContent = adText;
                 isPlayingPersonalizedAd = true;
+            } else {
+                scrollingTextContent.textContent = '';
             }
 
             videoPlayer.play()
-                .then(() => {
-                  bindVideoEvents();
-                })
                 .catch(error => console.error("Playback failed:", error));
         }
-
-
 
         const eventSource = new EventSource('/stream');
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.video && data.ad_text) {
                 pendingAd = { video: data.video, ad_text: data.ad_text };
-             }
+            }
         };
 
         eventSource.onerror = function(error) {
             console.error('EventSource error:', error);
         };
 
-        // Initial video load
         loadAndPlayVideo(getRandomVideo());
-
     </script>
 </body>
 </html>
