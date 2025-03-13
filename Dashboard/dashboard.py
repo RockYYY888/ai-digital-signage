@@ -99,8 +99,8 @@ def create_bar_chart(data_counts, title, legend_title, colors):
         ))
     fig.update_layout(
         title=title,
-        paper_bgcolor='#1f2c56',
-        plot_bgcolor='#1f2c56',
+        plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+        paper_bgcolor='rgba(255, 255, 255, 0)',
         xaxis={'title': 'Completion Rate Range', 'color': 'white'},
         yaxis={'title': 'Count', 'color': 'white'},
         font={'color': 'white'},
@@ -268,8 +268,8 @@ def init_dashboard(server: Flask):
                                     marker={'colors': color_palette}, textinfo='percent', textfont={'size': 16}, textposition='auto')],
                     'layout': go.Layout(
                         title='Overall Completion Rate Distribution',
-                        paper_bgcolor='#1f2c56',
-                        plot_bgcolor='#1f2c56',
+                        plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+                        paper_bgcolor='rgba(255, 255, 255, 0)',
                         font={'color': 'white', 'size': 18},
                         height=500,
                         width=500,
@@ -404,8 +404,8 @@ def init_dashboard(server: Flask):
             ],
             'layout': go.Layout(
                 title='Overall Completion Rate Distribution',
-                paper_bgcolor='#1f2c56',
-                plot_bgcolor='#1f2c56',
+                plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+                paper_bgcolor='rgba(255, 255, 255, 0)',
                 font={'color': 'white'},
                 margin=dict(l=0, r=0, t=50, b=100),
                 legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
