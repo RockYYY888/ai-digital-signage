@@ -50,9 +50,13 @@ def stream():
 def video_ended():
     data = request.json
     video = data.get('video')
-    print(f"[Server] Received video ended notification for: {video}")
+    ad_type = data.get('ad_type')  # 新增字段：广告类型
+    print(f"[Server] Received video ended notification for: {video}, type: {ad_type}")
     if context:
-        context.video_completed.set()  # 设置事件，通知视频播放已完成
+        if ad_type == 'default':
+            context.default_video_completed.set()  # 设置默认广告结束信号
+        elif ad_type == 'personalized':
+            context.personalized_video_completed.set()  # 设置个性化广告结束信号
     else:
         print("[Error] Failed passing context in user_screen server")
     return jsonify({"status": "success"}), 200
