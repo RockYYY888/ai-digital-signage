@@ -108,8 +108,7 @@ def predict_demographics(model, image):
 
     return age_label, gender_label, race_label
 
-def cv_thread_func(detected_face_queue, face_detection_active):
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+def cv_thread_func(cap, detected_face_queue, face_detection_active):
     detection_interval = 2
     last_detection_time = time.time()
 

@@ -3,6 +3,7 @@ import time
 import queue
 import webbrowser
 
+import cv2
 from flask import Flask
 from CV.yolov8 import cv_thread_func, analyze_frame
 from LLM.LLM import AdvertisementPipeline
@@ -124,6 +125,11 @@ if __name__ == "__main__":
     context = Context()
     pipeline = AdvertisementPipeline()
 
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    if not cap.isOpened():
+        print("Error: cannot open camera!")
+        exit(1)
+
     from data_integration.user_screen_server import set_context
     set_context(context)
 
@@ -144,7 +150,7 @@ if __name__ == "__main__":
     # 启动 CV 线程
     cv_thread = threading.Thread(
         target=cv_thread_func,
-        args=(context.detected_face_queue, context.face_detection_active)
+        args=(cap, context.detected_face_queue, context.face_detection_active)
     )
     cv_thread.daemon = True
     cv_thread.start()
