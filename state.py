@@ -22,6 +22,8 @@ class Context:
         self.current_ad_text = None
         self.state_lock = threading.Lock()  # 状态转换锁
         self.eye_tracking_active = threading.Event()
+        self.eye_tracking_active.clear()  # 默认启用人脸检测
+
         self.default_video_completed = threading.Event()  # 新增：默认广告播放完成信号
         self.personalized_video_completed = threading.Event()  # 修改：个性化广告播放完成信号（原 video_completed）
 
