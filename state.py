@@ -10,7 +10,7 @@ from LLM.LLM import AdvertisementPipeline
 from data_integration.server import secondary_screen_app
 from data_integration.user_screen_server import user_screen
 from Dashboard.dashboard import init_dashboard
-from data_integration.data_interface import video_queue, ad_queue
+from data_integration.data_interface import secendary_screen_signal_queue
 #from eyetrack import *
 
 class Context:
@@ -101,6 +101,7 @@ class PersonalizedADDisplaying(State):
 
             self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
             self.context.personalized_video_completed.clear()  # 重置信号
+            secendary_screen_signal_queue.put("wait")
 
         return AdRotating(self.context, True)
 
