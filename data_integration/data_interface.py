@@ -12,4 +12,4 @@ video_queue = Queue()
 
 ad_queue = Queue()
 
-frame_queue = Queue()
+frame_queue = Queue(maxsize=1)

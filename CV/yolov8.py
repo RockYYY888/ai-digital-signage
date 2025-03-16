@@ -121,7 +121,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
             # print("[CV] top of loop - face_detection_active =", face_detection_active.is_set())
             if not face_detection_active.is_set():
                 # print("[CV] YOLO Face detection paused.")
-                time.sleep(0.1)
+                time.sleep(2)
                 continue
 
             # print("[CV] Attempting to capture frame...")
@@ -149,8 +149,9 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                             cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
                             # print("[CV] Putting to frame_queue...")
                             frame_queue.put_nowait(cropped_image_bgr)
-                            # print("[CV] Putting to detected_face_queue...")
+                            print("[CV] Putting to detected_face_queue...")
                             detected_face_queue.put_nowait((cropped_image_bgr, prediction))
+                            face_detection_active.clear()  # 暂停人脸检测
                             # print("[CV] Face detected and added to queue.")
                         except queue.Full:
                             print("[CV] Queue full, skipping frame.")

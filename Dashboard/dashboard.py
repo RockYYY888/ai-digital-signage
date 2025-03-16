@@ -128,7 +128,7 @@ def init_dashboard(server: Flask):
             <title>{%title%}</title>
             {%favicon%}
             {%css%}
-            <link rel="stylesheet" href="/assets/style.css">
+            <link rel="stylesheet" href="/dashboard/assets/style.css">
             <style>
                 body {
                     background-color: #192444;

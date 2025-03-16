@@ -1,4 +1,4 @@
-# eyetrack.py
+
 import cv2
 import dlib
 import numpy as np
@@ -23,7 +23,7 @@ def calculate_eye_distance(landmarks):
     right_eye = (landmarks.part(45).x, landmarks.part(45).y)
     return np.linalg.norm(np.array(right_eye) - np.array(left_eye))
 
-def eye_tracking(active_event):
+def eye_tracking(cap, eye_tracking_active):
     """眼动追踪线程"""
     global total_watch_time
     
@@ -39,35 +39,10 @@ def eye_tracking(active_event):
     # 初始化观看时间
     with watching_lock:
         total_watch_time = 0.0
-        print("观看时间已重置为0秒")
     
-    # 尝试打开摄像头
-    cap = None
-    retry_count = 0
-    max_retries = 5
-    
-    while retry_count < max_retries and (cap is None or not cap.isOpened()):
-        print(f"眼动追踪：尝试打开摄像头 (尝试 {retry_count+1}/{max_retries})")
-        try:
-            # cap = cv2.VideoCapture(0)
-            if cap.isOpened():
-                ret, test_frame = cap.read()
-                if ret:
-                    print("眼动追踪：摄像头成功打开")
-                    break
-                else:
-                    cap.release()
-                    cap = None
-            else:
-                print("眼动追踪：无法打开摄像头")
-        except Exception as e:
-            print(f"眼动追踪：摄像头错误: {e}")
-        
-        time.sleep(1.0)
-        retry_count += 1
-    
-    if cap is None or not cap.isOpened():
-        print("错误: 眼动追踪无法打开摄像头")
+    # 检查摄像头是否可用
+    if not cap or not cap.isOpened():
+        print("[CV] Failed to open webcam.")
         return
     
     # 初始化变量
@@ -92,16 +67,19 @@ def eye_tracking(active_event):
     # 主循环
     try:
         frame_count = 0
-        while active_event.is_set():
+        while True:  # 线程持续运行，直到外部停止
+            if not eye_tracking_active.is_set():
+                time.sleep(0.1)
+                continue
+            
+            ret, frame = cap.read()
+            if not ret:
+                print("[CV] Failed to capture frame. Retrying...")
+                time.sleep(0.1)
+                continue  # 重试而不是退出
+            
             frame_count += 1
             try:
-                # 读取帧
-                ret, frame = cap.read()
-                if not ret:
-                    print("无法读取摄像头帧")
-                    time.sleep(0.1)
-                    continue
-                    
                 # 处理帧
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 faces = detector(gray)
@@ -130,7 +108,7 @@ def eye_tracking(active_event):
                         print(f"面部分析错误: {e}")
                         continue
     
-                # 更新观看时间 - 关键修复
+                # 更新观看时间
                 if is_watching and start_time is not None:
                     time_diff = current_time - start_time
                     start_time = current_time

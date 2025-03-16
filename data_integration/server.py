@@ -27,6 +27,7 @@ def face_image():
     """返回检测到人脸的单张图片"""
     if not frame_queue.empty():
         frame = frame_queue.get()
+        print("[server.py]:Found a frame of face.")
         _, buffer = cv2.imencode('.jpg', frame)
         return Response(buffer.tobytes(), mimetype='image/jpeg')
     # 使用绝对路径加载默认图片

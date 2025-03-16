@@ -210,6 +210,7 @@ class AdvertisementPipeline:
         """Format and display results"""
         # print("**Advertising Information:**")
         print(f"{video_info['product']}") #: {video_info['description']}")
+        print(f"{video_info['file_name']}")
         # print("\n**Personalized Advertising Message:**")
         print(ad_text)
 
@@ -219,6 +220,6 @@ pipeline = AdvertisementPipeline()
 if __name__ == "__main__":
     # Example usage
     # Start Flask thread
-    test_input = ('17-35', 'Male', 'Asian', 'happy')
+    test_input = ('50+', 'Male', 'Indian', 'sad')
     pipeline.debug_mode = True  # Enable for debugging
     pipeline.generate_advertisement(test_input)
