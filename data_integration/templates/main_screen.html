@@ -87,27 +87,15 @@
         videoPlayer.addEventListener('ended', handleVideoEnd);
         videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
 
-        function seededRandom(seed) {
-    const a = 1664525;
-    const c = 1013904223;
-    const m = Math.pow(2, 32);
-    seed = (seed * a + c) % m;
-    return seed / m;
-}
-
-function getRandomVideo() {
-    const minutesSinceEpoch = Math.floor(Date.now() / 60000); 
-    const seed = minutesSinceEpoch; 
+        function getRandomVideo() {
+        const min = 1;
+        const max = 77;
     
-    const min = 1;
-    const max = 77;
+        // 使用 Math.random() 生成随机数
+        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
     
-    const randomNum = Math.floor(
-        seededRandom(seed) * (max - min + 1)
-    ) + min;
-    
-    const paddedNum = String(randomNum).padStart(4, '0');
-    return `videos/${paddedNum}.mp4`;
+        const paddedNum = String(randomNum).padStart(4, '0');
+        return `videos/${paddedNum}.mp4`;
 }
 
         function handleVideoLoaded() {

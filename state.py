@@ -46,31 +46,36 @@ class AdRotating(State):
 
     def handle(self):
         with self.context.state_lock:
-            self.context.face_detection_active.set()  # 进入AD Rotation开启yolo线程
+            self.context.face_detection_active.set()  # 进入AD Rotation开启yolo线程的摄像头调用
             # print("[AD R] Set face_detection_active true")
             if self.is_first:
                 print("[State] Ad Rotating: Displaying generic ad.")
                 self.is_first = False
 
             if not self.context.detected_face_queue.empty():
-                frame, prediction = self.context.detected_face_queue.get()
                 self.context.face_detection_active.clear()  # 暂停人脸检测
+                _ , prediction = self.context.detected_face_queue.get()
+                if not self.context.detected_face_queue.empty():
+                    print("not empty!!!!!!!!!!!!!!!!!!!!!!!")
+                if self.context.detected_face_queue.empty():
+                    print("empty!!!!!!!!!!")
             
-
                 print("[State] LLM Processing: Generating ad text.")
                 processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
                 processing_thread.start()
                 processing_thread.join()  # 等待线程完成
                 self.llm_text_generated_event.wait()  # 等待广告文本生成
+
                 # 只有在跑完这个视频后才查询是否切换到下一个状态
                 self.context.default_video_completed.wait()
                 self.context.default_video_completed.clear()
-                if not self.context.ad_text_queue.empty():
 
+                if not self.context.ad_text_queue.empty():
                     return PersonalizedADDisplaying(self.context)
                 else:
                     print("[Error] Ad generation failed, returning to Ad Rotating.")
                     self.context.face_detection_active.set()
+                    return self
             else:
                 # print("[AD R] No valid face, return self")
                 # print(f"[DEBUG] face_detection_active state: {self.context.face_detection_active.is_set()}")
@@ -84,6 +89,8 @@ class AdRotating(State):
             except queue.Full:
                 print("[ERROR] Queue is full")
                 pass  # 如果队列满，丢弃旧数据
+        else:
+            print("[Error] LLM failed outputing")
         self.llm_text_generated_event.set()
 
 class PersonalizedADDisplaying(State):
@@ -96,7 +103,6 @@ class PersonalizedADDisplaying(State):
     def handle(self):
         with self.context.state_lock:
             ad_text = self.context.ad_text_queue.get()
-            
             self.context.current_ad_text = ad_text
 
             self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
@@ -166,5 +172,4 @@ if __name__ == "__main__":
         current_state = current_state.handle()
         if (prev_state != str(current_state)):
             print("Current state: " + str(current_state) + ", Prev state: " + str(prev_state))
-            print("[Main] CV thread alive: " + str(cv_thread.is_alive()))
         time.sleep(0.5)  # 状态机节奏控制

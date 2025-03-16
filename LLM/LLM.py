@@ -167,23 +167,26 @@ class AdvertisementPipeline:
       
         if not videos:
             raise ValueError("No matching videos found")
-          
-        selected = random.choice(videos)
+    
+        # 提取视频文件名和权重
+        video_files = [video[0] for video in videos]  # 文件名在元组的第0个位置
+        weights = [video[2] for video in videos]      # 权重在元组的第2个位置
+    
+        # 使用加权随机选择
+        selected_video = random.choices(video_files, weights=weights, k=1)[0]
+    
+        # 找到选中的完整视频条目
+        selected = next(video for video in videos if video[0] == selected_video)
+    
+        # 将选中的视频放入队列
         video_queue.put(selected[0])
-        """    # 打印队列元素，不移除
-        temp_list = []
-        size = video_queue.qsize()
-        for _ in range(size):
-            item = video_queue.get()
-            print(item)
-            temp_list.append(item) #将元素放到临时列表
-        for item in temp_list: #将临时列表中的元素全部放回队列
-            video_queue.put(item)"""
+    
+        # 返回视频信息
         return {
-            'file_name': selected[0],
-            'description': selected[1],
-            'weight': selected[2],
-            'product': selected[3]
+        'file_name': selected[0],
+        'description': selected[1],
+        'weight': selected[2],
+        'product': selected[3]
         }
 
     def print_debug_info(self, video_info):
