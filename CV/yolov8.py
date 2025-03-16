@@ -158,6 +158,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                     print(f"[CV] Error in analyze_frame or subsequent processing: {e}")
                     continue
                 last_detection_time = time.time()
+                current_time = time.time()
 
             time.sleep(0.1)
 
