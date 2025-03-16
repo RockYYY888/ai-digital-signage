@@ -103,7 +103,15 @@ class PersonalizedADDisplaying(State):
     def handle(self):
         with self.context.state_lock:
             self.context.eye_tracking_active.set()
-            print("[State] Eye tracking activated for personalized ad.")
+            print("[State] Eye tracking activated for personalized ad.")\
+            
+            if not self.context.ad_text_queue.empty():
+                debug_ad_text = self.context.ad_text_queue.get_nowait()
+                print(f"[State] Displaying personalized ad with text: {debug_ad_text}")
+                # Optionally, send the ad_text to the secondary screen or another system
+                # For example: secondary_screen_signal_queue.put(ad_text)
+            else:
+                print("[Error] No ad text available for personalized ad display")
 
             self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
             self.context.eye_tracking_active.clear()
