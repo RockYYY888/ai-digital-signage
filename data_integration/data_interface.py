@@ -2,13 +2,15 @@ from queue import Queue
 from datetime import date
 
 # This is for age_group, gender, race. e.g: ["17-35", "Female", "Asian", "happy"]
-secendary_screen_signal_queue = Queue(maxsize=1)
+secondary_screen_signal_queue = Queue(maxsize=1)
 
 # Provide date for today. e.g: 2025-02-27
 today = date.today()
 print("Start up. Today's date is:", today)
 
-video_queue = Queue()
+video_queue = Queue(maxsize=1)
+ad_id_queue = Queue(maxsize=1)
+demographic_queue = Queue(maxsize=1)
 
 ad_queue = Queue()
 

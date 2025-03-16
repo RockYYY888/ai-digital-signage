@@ -1,5 +1,5 @@
 import time
-from data_integration.data_interface import secendary_screen_signal_queue
+from data_integration.data_interface import secondary_screen_signal_queue
 
 # Global variable initialization
 last_prediction = None
@@ -8,8 +8,8 @@ def generate_test_input():
     global last_prediction
     
     # If there is new data in the queue, update last_detection and last_prediction
-    if not secendary_screen_signal_queue.empty():  # Assume there is only one queue prediction_queue
-        data = secendary_screen_signal_queue.get()
+    if not secondary_screen_signal_queue.empty():  # Assume there is only one queue prediction_queue
+        data = secondary_screen_signal_queue.get()
         if data:
             last_prediction = data
 

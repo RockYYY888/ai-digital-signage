@@ -1,4 +1,3 @@
-import threading
 import time
 import cv2
 from ultralytics import YOLO
@@ -9,7 +8,7 @@ import numpy as np
 import queue
 from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
-from data_integration.data_interface import secendary_screen_signal_queue, frame_queue
+from data_integration.data_interface import secondary_screen_signal_queue, frame_queue
 
 # 设备设置
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,7 +84,7 @@ def analyze_frame(frame):
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
     print(f"[CV] Predicted Demographics: {combined_prediction}")
 
-    secendary_screen_signal_queue.put(combined_prediction)
+    secondary_screen_signal_queue.put(combined_prediction)
     return combined_prediction, pil_image
 
 def predict_demographics(model, image):
@@ -159,6 +158,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                     print(f"[CV] Error in analyze_frame or subsequent processing: {e}")
                     continue
                 last_detection_time = time.time()
+
             time.sleep(0.1)
 
     except Exception as e:

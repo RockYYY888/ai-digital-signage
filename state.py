@@ -2,7 +2,6 @@ import threading
 import time
 import queue
 import webbrowser
-
 import cv2
 from flask import Flask
 from CV.yolov8 import cv_thread_func, analyze_frame
@@ -10,8 +9,10 @@ from LLM.LLM import AdvertisementPipeline
 from data_integration.server import secondary_screen_app
 from data_integration.user_screen_server import user_screen
 from Dashboard.dashboard import init_dashboard
-from data_integration.data_interface import secendary_screen_signal_queue
-#from eyetrack import *
+from data_integration.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
+from eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
+
+
 
 class Context:
     def __init__(self):
@@ -19,13 +20,13 @@ class Context:
         self.face_detection_active.set()  # 默认启用人脸检测
         self.detected_face_queue = queue.Queue(maxsize=1)  # 仅存储最新人脸
         self.ad_text_queue = queue.Queue(maxsize=1)  # 仅存储最新广告文本
-        self.current_ad_text = None
         self.state_lock = threading.Lock()  # 状态转换锁
         self.eye_tracking_active = threading.Event()
-        self.eye_tracking_active.clear()  # 默认启用人脸检测
-
         self.default_video_completed = threading.Event()  # 新增：默认广告播放完成信号
-        self.personalized_video_completed = threading.Event()  # 修改：个性化广告播放完成信号（原 video_completed）
+        self.personalized_video_completed = threading.Event()
+        self.eye_tracking_active.clear()
+        self.total_watch_time = 0.0
+
 
 class State:
     def __init__(self, context, is_first=False):
@@ -54,12 +55,11 @@ class AdRotating(State):
 
             if not self.context.detected_face_queue.empty():
                 self.context.face_detection_active.clear()  # 暂停人脸检测
-                _ , prediction = self.context.detected_face_queue.get()
+                frame, prediction = self.context.detected_face_queue.get()
                 if not self.context.detected_face_queue.empty():
                     print("not empty!!!!!!!!!!!!!!!!!!!!!!!")
                 if self.context.detected_face_queue.empty():
                     print("empty!!!!!!!!!!")
-            
                 print("[State] LLM Processing: Generating ad text.")
                 processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
                 processing_thread.start()
@@ -102,12 +102,38 @@ class PersonalizedADDisplaying(State):
 
     def handle(self):
         with self.context.state_lock:
-            ad_text = self.context.ad_text_queue.get()
-            self.context.current_ad_text = ad_text
+            self.context.eye_tracking_active.set()
+            print("[State] Eye tracking activated for personalized ad.")
 
             self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
+            self.context.eye_tracking_active.clear()
+
+            if not ad_id_queue.empty():
+                ad_id = extract_number(ad_id_queue.get_nowait())
+            else:
+                print("[Error] Cannot get ad id")
+                exit(1)
+
+            if not demographic_queue.empty():
+                prediction = demographic_queue.get_nowait()
+            else:
+                print("[Error] Cannot get demographic id")
+                exit(1)
+
+            with watching_lock:
+                watch_time = self.context.total_watch_time
+                self.context.total_watch_time = 0
+
+            success = update_database(watch_time, prediction, ad_id)
+            if success:
+                print(f"[Eyetracking] Database updated: watch_time={watch_time:.2f}, demographics={prediction}, ad_id={ad_id}")
+            else:
+                print("[Eyetracking] Fatal. Database update failed]")
+                exit(1)
+
+            print("[State] Eye tracking stopped.")
             self.context.personalized_video_completed.clear()  # 重置信号
-            secendary_screen_signal_queue.put("wait")
+            secondary_screen_signal_queue.put("wait")
 
         return AdRotating(self.context, True)
 
@@ -163,6 +189,13 @@ if __name__ == "__main__":
     )
     cv_thread.daemon = True
     cv_thread.start()
+
+    eye_tracking_thread = threading.Thread(
+        target=eye_tracking_thread_func,
+        args=(cap, context.eye_tracking_active, context)
+    )
+    eye_tracking_thread.daemon = True
+    eye_tracking_thread.start()
 
     # 运行状态机
     current_state = AdRotating(context, True)

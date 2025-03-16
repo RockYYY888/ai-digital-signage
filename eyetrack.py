@@ -1,21 +1,20 @@
-
+import re
 import cv2
 import dlib
 import numpy as np
 import time
 import threading
-import queue
-import os
-import re
 import sqlite3
 from datetime import datetime
 
-# 预测结果队列
-prediction_queue = queue.Queue(maxsize=1)
-
-# 全局观看时间
 watching_lock = threading.Lock()
 total_watch_time = 0
+
+def extract_number(filename):
+    match = re.search(r"(\d+)\.mp4$", filename)  # 匹配文件名中的数字部分
+    if match:
+        return str(int(match.group(1)))  # 转换为整数去掉前导 0，再转换回字符串
+    return None
 
 def calculate_eye_distance(landmarks):
     """计算双眼之间的距离"""
@@ -23,232 +22,124 @@ def calculate_eye_distance(landmarks):
     right_eye = (landmarks.part(45).x, landmarks.part(45).y)
     return np.linalg.norm(np.array(right_eye) - np.array(left_eye))
 
-def eye_tracking(cap, eye_tracking_active):
-    """眼动追踪线程"""
-    global total_watch_time
-    
-    print("开始眼动追踪")
-    
+def eye_tracking_thread_func(cap, eye_tracking_active, context):
     detector = dlib.get_frontal_face_detector()
     try:
         predictor = dlib.shape_predictor("eyetracking/shape_predictor_68_face_landmarks.dat")
     except Exception as e:
         print(f"加载面部特征预测器出错: {e}")
         return
-    
-    # 初始化观看时间
+
+    # 初始化
     with watching_lock:
-        total_watch_time = 0.0
-    
-    # 检查摄像头是否可用
+        context.total_watch_time = 0.0
+
     if not cap or not cap.isOpened():
         print("[CV] Failed to open webcam.")
         return
-    
-    # 初始化变量
+
     start_time = None
-    last_update_time = time.time()
-    last_prediction_time = 0
-    initial_prediction = None
-    accumulated_watch_time = 0.0  # 本地累积观看时间
-    
-    # 获取已有的YOLO预测
+
     try:
-        while not prediction_queue.empty():
-            latest_prediction = prediction_queue.get()
-            if latest_prediction and latest_prediction != ("no_face") and latest_prediction != ("analyzing"):
-                initial_prediction = latest_prediction[:3]
-                print(f"使用已有的YOLO预测: {initial_prediction}")
-                prediction_queue.put(initial_prediction)  # 放回队列以备用
-                break
-    except Exception as e:
-        print(f"获取预测失败: {e}")
-    
-    # 主循环
-    try:
-        frame_count = 0
-        while True:  # 线程持续运行，直到外部停止
+        while True:
+            # 如果线程未激活，暂停并重置计时
             if not eye_tracking_active.is_set():
-                time.sleep(0.1)
+                with watching_lock:
+                    start_time = None
+                time.sleep(0.2)
                 continue
-            
+
             ret, frame = cap.read()
             if not ret:
-                print("[CV] Failed to capture frame. Retrying...")
-                time.sleep(0.1)
-                continue  # 重试而不是退出
-            
-            frame_count += 1
-            try:
-                # 处理帧
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = detector(gray)
-                current_time = time.time()
-                is_watching = False
-                
-                # 分析面部特征
-                for face in faces:
-                    try:
-                        landmarks = predictor(gray, face)
-                        eye_distance = calculate_eye_distance(landmarks)
-                        
-                        # 判断是否在观看
-                        if eye_distance > 8:
-                            is_watching = True
-                            if start_time is None:
-                                start_time = current_time
-                                print(f"开始观看，眼距: {eye_distance:.2f}")
-                            
-                            # 定期更新预测 - 降低YOLO调用频率
-                            if current_time - last_prediction_time >= 5 and frame_count % 30 == 0:
-                                last_prediction_time = current_time
-                                # 不在这里调用YOLO分析以避免资源冲突
+                print("[Eyetracking] Failed to capture frame.")
+                exit(1)
+
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = detector(gray)
+            current_time = time.time()
+            is_watching = False
+
+            for face in faces:
+                try:
+                    landmarks = predictor(gray, face)
+                    eye_distance = calculate_eye_distance(landmarks)
+                    if eye_distance > 8:  # 根据需要调整阈值
+                        is_watching = True
                         break
-                    except Exception as e:
-                        print(f"面部分析错误: {e}")
-                        continue
-    
-                # 更新观看时间
-                if is_watching and start_time is not None:
-                    time_diff = current_time - start_time
-                    start_time = current_time
-                    accumulated_watch_time += time_diff
-                    
-                    if current_time - last_update_time >= 5.0:
-                        with watching_lock:
-                            total_watch_time = accumulated_watch_time
-                        last_update_time = current_time
-                        print(f"累计观看时间: {accumulated_watch_time:.2f}秒")
-                elif not is_watching:
+                except Exception as e:
+                    print(f"面部分析错误: {e}")
+                    continue
+
+            # 更新 total_watch_time
+            with watching_lock:
+                if is_watching:
+                    if start_time is None:
+                        start_time = current_time
+                    else:
+                        context.total_watch_time += (current_time - start_time)
+                        start_time = current_time
+                else:
                     start_time = None
-                
-                # 控制循环速度
-                if frame_count % 2 == 0:
-                    time.sleep(0.03)
-                
-            except Exception as e:
-                print(f"眼动循环错误: {e}")
-                time.sleep(0.1)
-    
+
+            time.sleep(0.03)
+            # 这里就直接打印 context.total_watch_time
+            print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
+
     except Exception as e:
-        print(f"眼动追踪致命错误: {e}")
-    
+        print("[Eyetracking] Fatal error:", e)
+        exit(1)
+
     finally:
-        # 释放资源
         if cap is not None:
             cap.release()
-        
-        # 最终更新全局观看时间
-        with watching_lock:
-            total_watch_time = accumulated_watch_time
-        
-        # 确保预测结果可用
-        if initial_prediction:
-            try:
-                if prediction_queue.empty():
-                    prediction_queue.put(initial_prediction)
-            except:
-                pass
-        
-        print("眼动追踪线程已完成")
-        
-        # 直接更新数据库
-        if initial_prediction:
-            ad_id = extract_ad_id("static/videos")  # 替换为实际视频路径
-            success = update_database(total_watch_time, initial_prediction, ad_id)
-            if success:
-                print(f"数据库更新成功: watch_time={total_watch_time:.2f}, demographics={initial_prediction}, ad_id={ad_id}")
-            else:
-                print("数据库更新失败")
 
-def extract_ad_id(video_path):
-    """从视频路径中提取广告ID"""
-    try:
-        match = re.search(r'ad_(\d+)', video_path)
-        if match:
-            ad_id = int(match.group(1))
-        else:
-            ad_id = os.path.basename(video_path).split('.')[0]
-        print(f"广告ID: {ad_id}")
-    except Exception as e:
-        print(f"提取广告ID出错: {e}")
-        ad_id = hash(video_path) % 10000
-        print(f"使用备用ID: {ad_id}")
-    return ad_id
 
-def update_database(watch_time, demographics, ad_id):
-    """更新数据库，将观看时间和用户特征写入"""
-    if demographics is None:
-        print("无法识别用户特征")
-        return False
-    
+def update_database(watch_time, prediction, ad_id):
     try:
-        age_group, gender, ethnicity = demographics
-        print(f"准备更新数据库: age={age_group}, gender={gender}, ethnicity={ethnicity}")
-        
+        # 1. 解析传入的 prediction: (age_group, gender, ethnicity)
+        age_group, gender, ethnicity = prediction
+
         db_path = 'advertisements.db'  # 与 dashboard 一致的数据库路径
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        
-        # 检查表是否存在，若不存在则创建 demographics 表
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='demographics'")
-        if not cursor.fetchone():
-            cursor.execute("""
-                CREATE TABLE demographics (
-                    demographics_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    gender TEXT,
-                    age_group TEXT,
-                    ethnicity TEXT
-                )
-            """)
-        
-        # 检查表是否存在，若不存在则创建 viewers 表
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='viewers'")
-        if not cursor.fetchone():
-            cursor.execute("""
-                CREATE TABLE viewers (
-                    viewer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    view_time REAL,
-                    demographics_id INTEGER,
-                    visit_date TEXT,
-                    ad_id INTEGER,
-                    FOREIGN KEY(demographics_id) REFERENCES demographics(demographics_id)
-                )
-            """)
-        
-        # 检查现有 demographics 记录
-        cursor.execute("""
-            SELECT demographics_id FROM demographics 
-            WHERE gender = ? AND age_group = ? AND ethnicity = ?
-        """, (gender, age_group, ethnicity))
-        
+
+        # 2. 查询对应的 demographics_id
+        select_sql = """
+            SELECT demographics_id
+            FROM demographics
+            WHERE age_group = ?
+              AND gender = ?
+              AND ethnicity = ?
+            LIMIT 1
+        """
+        cursor.execute(select_sql, (age_group, gender, ethnicity))
         result = cursor.fetchone()
-        if result:
-            demographics_id = result[0]
-            print(f"找到已有 demographics ID={demographics_id}")
-        else:
-            cursor.execute("""
-                INSERT INTO demographics (gender, age_group, ethnicity)
-                VALUES (?, ?, ?)
-            """, (gender, age_group, ethnicity))
-            demographics_id = cursor.lastrowid
-            print(f"创建新 demographics ID={demographics_id}")
-        
-        # 插入 viewers 记录
+
+        if not result:
+            print(f"未在 demographics 表中找到对应的 id, prediction={prediction}")
+            print("[Eyetracking] Failed updating demographics in db")
+            exit(1)
+            return False
+        demographics_id = result[0]
+
+        # 3. 获取当前日期，格式为 YYYY-MM-DD
         current_date = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute("""
-            INSERT INTO viewers (view_time, demographics_id, visit_date, ad_id)
+
+        # 4. 将观看时长等信息插入到 viewers 表
+        insert_sql = """
+            INSERT INTO viewers (demographics_id, ad_id, view_time, visit_date)
             VALUES (?, ?, ?, ?)
-        """, (float(watch_time), demographics_id, current_date, int(ad_id)))
-        
+        """
+        cursor.execute(insert_sql, (demographics_id, ad_id, round(watch_time, 2), current_date))
         conn.commit()
-        print(f"数据库更新: time={watch_time:.2f}, demographics_id={demographics_id}, ad_id={ad_id}")
+
+        print(f"数据库更新成功: time={watch_time:.2f}, demographics_id={demographics_id}, ad_id={ad_id}, date={current_date}")
         return True
-    
+
     except Exception as e:
         print(f"数据库更新失败: {e}")
         return False
-    
+
     finally:
         if 'conn' in locals():
             conn.close()

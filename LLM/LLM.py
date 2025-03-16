@@ -3,10 +3,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import ad_queue, video_queue
-import json
-import time
-import threading
+from data_integration.data_interface import ad_queue, video_queue, ad_id_queue, demographic_queue
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
@@ -149,7 +146,10 @@ class AdvertisementPipeline:
         """Validate and structure input data"""
         if len(input_data) != 4:
             raise ValueError("Invalid input format. Expected (age_range, gender, race, emotion)")
-          
+
+        demographics = input_data[0], input_data[1], input_data[2]
+        demographic_queue.put(demographics)
+
         return {
             'age_range': input_data[0],
             'gender': input_data[1],
@@ -180,7 +180,8 @@ class AdvertisementPipeline:
     
         # 将选中的视频放入队列
         video_queue.put(selected[0])
-    
+        ad_id_queue.put(selected[0])
+
         # 返回视频信息
         return {
         'file_name': selected[0],
