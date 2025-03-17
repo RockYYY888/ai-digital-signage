@@ -15,6 +15,7 @@ data_integration/__pycache__/server.cpython-311.pyc
 # Ignore Python __pycache__ directories globally (optional, for completeness)
 __pycache__/
 
+*.db
 # Ignore other common files (optional, can be removed if not needed)
 *.pyc
 *.pyo
