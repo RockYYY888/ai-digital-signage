@@ -4,15 +4,11 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import numpy as np
-
 import sqlite3
 from flask import Flask  # 仅用于类型注释或参考
 
-# ================ 数据加载与预处理 ====================
 
 db_path = "advertisements.db"
-conn = sqlite3.connect(db_path)
-
 query = """
 SELECT 
     v.viewer_id,
@@ -27,63 +23,36 @@ FROM viewers v
 JOIN demographics d ON v.demographics_id = d.demographics_id
 JOIN ads a ON v.ad_id = a.ad_id;
 """
-data = pd.read_sql(query, conn)
-conn.close()
 
-# Data preprocessing
-data['visit_date'] = pd.to_datetime(data['visit_date'])
-data['completion_rate'] = data['view_time'] / data['duration']
-data['ad_id'] = 'AD-' + data['ad_id'].astype(str)
+# =============== 工具函数：重新读数据 + 预处理 ===============
+def get_fresh_data():
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql(query, conn)
+    conn.close()
 
-def completion_rate_level(completion_rate):
-    if 0 <= completion_rate <= 0.2:
-        return '0-20%'
-    elif 0.2 < completion_rate <= 0.4:
-        return '20-40%'
-    elif 0.4 < completion_rate <= 0.6:
-        return '40-60%'
-    elif 0.6 < completion_rate <= 0.8:
-        return '60-80%'
-    else:
-        return '80-100%'
+    df['visit_date'] = pd.to_datetime(df['visit_date'])
+    df['completion_rate'] = df['view_time'] / df['duration']
+    df['ad_id'] = 'AD-' + df['ad_id'].astype(str)
 
-data['completion_level'] = data['completion_rate'].apply(completion_rate_level)
+    # 自定义分类函数
+    def completion_rate_level(cr):
+        if 0 <= cr <= 0.2:
+            return '0-20%'
+        elif 0.2 < cr <= 0.4:
+            return '20-40%'
+        elif 0.4 < cr <= 0.6:
+            return '40-60%'
+        elif 0.6 < cr <= 0.8:
+            return '60-80%'
+        else:
+            return '80-100%'
 
-total_visits = data.shape[0]
+    df['completion_level'] = df['completion_rate'].apply(completion_rate_level)
 
-today_date = data['visit_date'].max()
-today_data = data.loc[data['visit_date'] == today_date].copy()
-today_visits = today_data.shape[0]
-today_avg_completion_rate = round(today_data['completion_rate'].mean() * 100, 2)
+    return df
 
-ad_avg_completion_rate = data.groupby('ad_id')['completion_rate'].mean().reset_index()
-ad_avg_completion_rate['ad_id_num'] = ad_avg_completion_rate['ad_id'].str.extract('(\d+)').astype(int)
-ad_avg_completion_rate = ad_avg_completion_rate.sort_values('ad_id_num')
-ad_avg_completion_rate['ad_id'] = 'AD-' + ad_avg_completion_rate['ad_id_num'].astype(str)
-
-gender_completion_counts = data.groupby(['gender', 'completion_level']).size().unstack().fillna(0)
-age_completion_counts = data.groupby(['age_group', 'completion_level']).size().unstack().fillna(0)
-ethnicity_completion_counts = data.groupby(['ethnicity', 'completion_level']).size().unstack().fillna(0)
-
-overall_completion_counts = data['completion_level'].value_counts().reindex(['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'], fill_value=0)
-
-data['year'] = data['visit_date'].dt.isocalendar().year
-data['week'] = data['visit_date'].dt.isocalendar().week
-weekly_ad_avg_completion = data.groupby(['ad_id', 'year', 'week'])['completion_rate'].mean().reset_index()
-weekly_ad_avg_completion['year_week'] = weekly_ad_avg_completion['year'].astype(str) + '-W' + weekly_ad_avg_completion['week'].astype(str).str.zfill(2)
-weekly_ad_avg_completion['ad_id_num'] = weekly_ad_avg_completion['ad_id'].str.extract('(\d+)').astype(int)
-weekly_ad_avg_completion = weekly_ad_avg_completion.sort_values('ad_id_num')
-weekly_ad_avg_completion['ad_id'] = 'AD-' + weekly_ad_avg_completion['ad_id_num'].astype(str)
-
-data['month'] = data['visit_date'].dt.to_period('M').dt.strftime('%Y-%m')
-monthly_ad_avg_completion = data.groupby(['ad_id', 'month'])['completion_rate'].mean().reset_index()
-monthly_ad_avg_completion['ad_id_num'] = monthly_ad_avg_completion['ad_id'].str.extract('(\d+)').astype(int)
-monthly_ad_avg_completion = monthly_ad_avg_completion.sort_values(['ad_id_num', 'month'])
-monthly_ad_avg_completion['ad_id'] = 'AD-' + monthly_ad_avg_completion['ad_id_num'].astype(str)
 
 color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
-
-# =============== 工具函数：构建条形图 ===============
 
 def create_bar_chart(data_counts, title, legend_title, colors):
     fig = go.Figure()
@@ -99,23 +68,20 @@ def create_bar_chart(data_counts, title, legend_title, colors):
         ))
     fig.update_layout(
         title=title,
-        plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+        plot_bgcolor='rgba(255, 255, 255, 0)',
         paper_bgcolor='rgba(255, 255, 255, 0)',
         xaxis={'title': 'Completion Rate Range', 'color': 'white'},
         yaxis={'title': 'Count', 'color': 'white'},
         font={'color': 'white'},
-        dragmode=False  # Disable drag interaction (e.g., box selection for zoom)
+        dragmode=False
     )
     return fig
 
+
 def init_dashboard(server: Flask):
-    """
-    创建 Dash 实例，绑定到传入的 Flask `server`，并返回这个 Dash app。
-    这样可以在同一个端口运行 Flask + Dash，通过 /dashboard/ 访问此页面。
-    """
     dash_app = dash.Dash(
         __name__,
-        server=server,      # 绑定到主 Flask 应用
+        server=server,
         url_base_pathname='/dashboard/'
     )
 
@@ -168,23 +134,96 @@ def init_dashboard(server: Flask):
     </html>
     '''
 
-    # ========== Dash Layout ==========
+    # 顶层先获取一次数据（也可以删掉直接依赖回调，每次都去拿）
+    all_data = get_fresh_data()
+
+    # 拿到当前最新日期、一些初始指标
+    today_date = all_data['visit_date'].max()
+    total_visits = all_data.shape[0]
+    today_data = all_data.loc[all_data['visit_date'] == today_date].copy()
+    today_visits = today_data.shape[0]
+    today_avg_completion_rate = round(today_data['completion_rate'].mean() * 100, 2) if today_visits > 0 else 0
+
+    # 下面几行辅助做图用
+    # 注：为了防止第一次加载空出现错误，这里和原来一样简单处理
+    def completion_rate_level(cr):
+        if 0 <= cr <= 0.2:
+            return '0-20%'
+        elif 0.2 < cr <= 0.4:
+            return '20-40%'
+        elif 0.4 < cr <= 0.6:
+            return '40-60%'
+        elif 0.6 < cr <= 0.8:
+            return '60-80%'
+        else:
+            return '80-100%'
+
+    # 这里展示初始分类分布
+    gender_completion_counts = all_data.groupby(['gender','completion_level']).size().unstack().fillna(0)
+    age_completion_counts = all_data.groupby(['age_group','completion_level']).size().unstack().fillna(0)
+    ethnicity_completion_counts = all_data.groupby(['ethnicity','completion_level']).size().unstack().fillna(0)
+    overall_completion_counts = all_data['completion_level'].value_counts().reindex(
+        ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'], fill_value=0
+    )
+
+    # 做周、月聚合
+    all_data['year'] = all_data['visit_date'].dt.isocalendar().year
+    all_data['week'] = all_data['visit_date'].dt.isocalendar().week
+    weekly_data = all_data.groupby(['ad_id','year','week'])['completion_rate'].mean().reset_index()
+    weekly_data['year_week'] = weekly_data['year'].astype(str) + '-W' + weekly_data['week'].astype(str).str.zfill(2)
+
+    all_data['month'] = all_data['visit_date'].dt.to_period('M').dt.strftime('%Y-%m')
+    monthly_data = all_data.groupby(['ad_id','month'])['completion_rate'].mean().reset_index()
+
+    # 获取所有可选的 Ad 列表做下拉选项
+    unique_ads = sorted(all_data['ad_id'].unique())
+
+    # ====== Dash Layout ======
     dash_app.layout = html.Div([
-        # Header
+        # 顶部大标题
         html.Div([
             html.H3("Advertisement Analytics Dashboard",
-                    style={"margin-bottom": "0px", 'color': '#00ffcc', 'textAlign': 'center', 'width': '100%', 'font-size': '3.5rem', 'letter-spacing': '0.1rem'}),
-        ], id="header", className="row flex-display",
-            style={"margin-bottom": "25px", "display": "flex", "justify-content": "center", "align-items": "center", "width": "100%", 'padding': '20px 0'}),
+                    style={"margin-bottom": "0px", 'color': '#00ffcc',
+                           'textAlign': 'center', 'width': '100%',
+                           'font-size': '3.5rem', 'letter-spacing': '0.1rem'}),
+        ], style={"margin-bottom": "15px", "display": "flex",
+                  "justify-content": "center", "align-items": "center"}),
 
-        # Date picker and basic info
+        # 中间加一个刷新按钮 + 预留icon的占位
         html.Div([
+            html.Span(id='icon-space', children='[Icon Placeholder]',
+                      style={'margin-right': '20px', 'color':'white',
+                             'font-family':'Verdana','font-size':'1.1rem'}),
+            html.Button("刷新", id="refresh-button", n_clicks=0,
+                        style={
+                            'backgroundColor': '#2a3f6f',
+                            'color': 'white',
+                            'border': '1px solid #4a6faf',
+                            'borderRadius': '15px',
+                            'padding': '8px 16px',
+                            'cursor': 'pointer',
+                            'outline': 'none',
+                            'height': '40px',
+                            'lineHeight': '24px',
+                            'fontFamily': 'Verdana',
+                            'display': 'inline-block'
+                        })
+        ], style={'textAlign': 'center', 'marginBottom':'25px'}),
+
+        # 第一行：左侧信息卡 + 中间条形图Tab + 右侧饼图
+        html.Div([
+            # 左侧
             html.Div([
                 html.Div([
-                    html.H6('Total Viewers', style={'textAlign': 'center', 'color': 'white', 'font-family': 'Verdana', 'font-size': '16px'}),
-                    html.P(id='total-viewers-all', children=f"{total_visits:,.0f}",
-                           style={'textAlign': 'center', 'color': 'orange', 'fontSize': 32})
-                ], className="info-card", style={
+                    html.H6('Total Viewers',
+                            style={'textAlign': 'center', 'color': 'white',
+                                   'font-family': 'Verdana',
+                                   'font-size': '16px'}),
+                    html.P(id='total-viewers-all',
+                           children=f"{total_visits:,.0f}",
+                           style={'textAlign': 'center', 'color': 'orange',
+                                  'fontSize': 32})
+                ], style={
                     'backgroundColor': '#1f2c56',
                     'padding': '20px',
                     'borderRadius': '10px',
@@ -192,12 +231,11 @@ def init_dashboard(server: Flask):
                 }),
 
                 html.Div([
-                    html.P('Select Date:', className='fix_label', style={'color': 'white', 'textAlign': 'center'}),
+                    html.P('Select Date:', className='fix_label',
+                           style={'color': 'white', 'textAlign': 'center'}),
                     dcc.DatePickerSingle(
                         id='date-picker',
-                        date=today_date.strftime('%Y-%m-%d'),
-                        min_date_allowed=data['visit_date'].min().strftime('%Y-%m-%d'),
-                        max_date_allowed=data['visit_date'].max().strftime('%Y-%m-%d'),
+                        date=today_date.strftime('%Y-%m-%d') if not pd.isnull(today_date) else None,
                         style={
                             'backgroundColor': '#1f2c56',
                             'color': 'white',
@@ -208,90 +246,130 @@ def init_dashboard(server: Flask):
                             'zIndex': '100'
                         }
                     ),
-                    html.H6('Viewers of Selected Day', style={'textAlign': 'center', 'color': 'white', 'font-family': 'Verdana', 'marginTop': '20px', 'font-size': '16px'}),
-                    html.P(id='total-viewers-selected', children=f"{today_visits:,.0f}",
-                           style={'textAlign': 'center', 'color': 'orange', 'fontSize': 32}),
-                    html.H6('Avg Completion Rate', style={'textAlign': 'center', 'color': 'white', 'font-family': 'Verdana', 'marginTop': '20px', 'font-size': '16px'}),
-                    html.P(id='avg-completion-rate', children=f"{today_avg_completion_rate}%",
-                           style={'textAlign': 'center', 'color': 'orange', 'fontSize': 32}),
-                ], className="info-card", style={
+                    html.H6('Viewers of Selected Day',
+                            style={'textAlign': 'center', 'color': 'white',
+                                   'font-family': 'Verdana', 'marginTop': '20px',
+                                   'font-size': '16px'}),
+                    html.P(id='total-viewers-selected',
+                           children=f"{today_visits:,.0f}",
+                           style={'textAlign': 'center', 'color': 'orange',
+                                  'fontSize': 32}),
+                    html.H6('Avg Completion Rate',
+                            style={'textAlign': 'center', 'color': 'white',
+                                   'font-family': 'Verdana', 'marginTop': '20px',
+                                   'font-size': '16px'}),
+                    html.P(id='avg-completion-rate',
+                           children=f"{today_avg_completion_rate}%",
+                           style={'textAlign': 'center', 'color': 'orange',
+                                  'fontSize': 32}),
+                ], style={
                     'backgroundColor': '#1f2c56',
                     'padding': '20px',
                     'borderRadius': '10px',
                 })
-            ], className="three columns", id="cross-filter-options"),
+            ], className="three columns"),
 
-            # Bar charts with fixed configuration
+            # 中间Tab
             html.Div([
                 dcc.Tabs(id='tabs', value='gender-tab', children=[
                     dcc.Tab(label='Gender Completion', value='gender-tab', children=[
                         dcc.Graph(
                             id='gender-completion-chart',
-                            figure=create_bar_chart(gender_completion_counts, "Gender Completion Rate Distribution", "Gender", color_palette),
+                            figure=create_bar_chart(gender_completion_counts,
+                                                    "Gender Completion Rate Distribution",
+                                                    "Gender",
+                                                    color_palette),
                             config={
                                 'scrollZoom': False,
-                                'displayModeBar': False,  # Hide mode bar to prevent interaction
-                                'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                                'displayModeBar': False,
+                                'modeBarButtonsToRemove': [
+                                    'lasso2d', 'select2d', 'pan2d', 'zoom2d',
+                                    'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'
+                                ]
                             }
                         )
                     ]),
                     dcc.Tab(label='Age Completion', value='age-tab', children=[
                         dcc.Graph(
                             id='age-completion-chart',
-                            figure=create_bar_chart(age_completion_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette),
+                            figure=create_bar_chart(age_completion_counts,
+                                                    "Age Group Completion Rate Distribution",
+                                                    "Age Group",
+                                                    color_palette),
                             config={
                                 'scrollZoom': False,
                                 'displayModeBar': False,
-                                'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                                'modeBarButtonsToRemove': [
+                                    'lasso2d','select2d','pan2d','zoom2d','zoomIn2d',
+                                    'zoomOut2d','autoScale2d','resetScale2d'
+                                ]
                             }
                         )
                     ]),
                     dcc.Tab(label='Ethnicity Completion', value='ethnicity-tab', children=[
                         dcc.Graph(
                             id='ethnicity-completion-chart',
-                            figure=create_bar_chart(ethnicity_completion_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette),
+                            figure=create_bar_chart(ethnicity_completion_counts,
+                                                    "Ethnicity Completion Rate Distribution",
+                                                    "Ethnicity",
+                                                    color_palette),
                             config={
                                 'scrollZoom': False,
                                 'displayModeBar': False,
-                                'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                                'modeBarButtonsToRemove': [
+                                    'lasso2d','select2d','pan2d','zoom2d','zoomIn2d',
+                                    'zoomOut2d','autoScale2d','resetScale2d'
+                                ]
                             }
                         )
                     ]),
-                ], style={'backgroundColor': '#1f2c56', 'color': 'white', 'fontFamily': 'Verdana', 'border': 'none'},
-                         colors={"border": "#1f2c56", "primary": "white", "background": "#1f2c56", "selected": "#192444"}),
-            ], className="create_container four columns"),
+                ], style={'backgroundColor': '#1f2c56', 'color': 'white',
+                          'fontFamily': 'Verdana', 'border': 'none'},
+                         colors={"border": "#1f2c56", "primary": "white",
+                                 "background": "#1f2c56", "selected": "#192444"}),
+            ], className="four columns"),
 
-            # Pie chart
+            # 右侧 饼图
             html.Div([
                 dcc.Graph(id='pie-chart', figure={
-                    'data': [go.Pie(labels=overall_completion_counts.index, values=overall_completion_counts.values, hole=0.3,
-                                    marker={'colors': color_palette}, textinfo='percent', textfont={'size': 16}, textposition='auto')],
+                    'data': [
+                        go.Pie(labels=overall_completion_counts.index,
+                               values=overall_completion_counts.values,
+                               hole=0.3,
+                               marker={'colors': color_palette},
+                               textinfo='percent',
+                               textfont={'size': 16},
+                               textposition='auto')
+                    ],
                     'layout': go.Layout(
                         title='Overall Completion Rate Distribution',
-                        plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+                        plot_bgcolor='rgba(255, 255, 255, 0)',
                         paper_bgcolor='rgba(255, 255, 255, 0)',
                         font={'color': 'white', 'size': 18},
                         height=500,
                         width=500,
                         margin=dict(l=0, r=0, t=50, b=100),
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                        legend=dict(orientation="h",
+                                    yanchor="bottom", y=-0.3,
+                                    xanchor="center", x=0.5),
                         autosize=True
                     )
                 }),
-            ], className="create_container five columns"),
+            ], className="five columns"),
         ], className="row flex-display"),
 
-        # Line chart with custom buttons
+        # 第二行：时间粒度 + 折线图
         html.Div([
             html.Div([
                 html.P('Select Ad:', className='fix_label', style={'color': 'white'}),
                 dcc.Dropdown(id='ad-dropdown',
-                             options=[{'label': ad_id, 'value': ad_id} for ad_id in weekly_ad_avg_completion['ad_id'].unique()],
-                             value=weekly_ad_avg_completion['ad_id'].unique()[0],
-                             style={'background-color': '#1f2c56', 'color': 'white', 'optionHeight': 30}),
+                             options=[{'label': ad, 'value': ad} for ad in unique_ads],
+                             value=unique_ads[0] if unique_ads else None,
+                             style={'background-color': '#1f2c56',
+                                    'color': 'white', 'optionHeight': 30}),
                 html.Div([
                     html.P('Select Time Granularity:', className='fix_label',
-                           style={'color': 'white', 'textAlign': 'center', 'marginBottom': '10px'}),
+                           style={'color': 'white', 'textAlign': 'center','marginBottom': '10px'}),
                     html.Div([
                         html.Button('Daily', id='daily-button', n_clicks=0, style={
                             'backgroundColor': '#2a3f6f',
@@ -304,10 +382,7 @@ def init_dashboard(server: Flask):
                             'cursor': 'pointer',
                             'outline': 'none',
                             'height': '40px',
-                            'lineHeight': '24px',
-                            'display': 'flex',
-                            'alignItems': 'center',
-                            'justifyContent': 'center'
+                            'lineHeight': '24px'
                         }),
                         html.Button('Weekly', id='weekly-button', n_clicks=0, style={
                             'backgroundColor': '#2a3f6f',
@@ -320,10 +395,7 @@ def init_dashboard(server: Flask):
                             'cursor': 'pointer',
                             'outline': 'none',
                             'height': '40px',
-                            'lineHeight': '24px',
-                            'display': 'flex',
-                            'alignItems': 'center',
-                            'justifyContent': 'center'
+                            'lineHeight': '24px'
                         }),
                         html.Button('Monthly', id='monthly-button', n_clicks=0, style={
                             'backgroundColor': '#2a3f6f',
@@ -335,29 +407,33 @@ def init_dashboard(server: Flask):
                             'cursor': 'pointer',
                             'outline': 'none',
                             'height': '40px',
-                            'lineHeight': '24px',
-                            'display': 'flex',
-                            'alignItems': 'center',
-                            'justifyContent': 'center'
+                            'lineHeight': '24px'
                         }),
                     ], style={'display': 'flex', 'justifyContent': 'center'}),
-                ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center'}),
+                ], style={'display': 'flex','flexDirection': 'column','alignItems': 'center'}),
+
                 dcc.Store(id='time-granularity-store', data='daily'),
                 dcc.Graph(
                     id='line-chart',
                     config={
                         'scrollZoom': False,
                         'displayModeBar': True,
-                        'modeBarButtonsToRemove': ['lasso2d', 'select2d', 'pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                        'modeBarButtonsToRemove': [
+                            'lasso2d','select2d','pan2d','zoom2d','zoomIn2d',
+                            'zoomOut2d','autoScale2d','resetScale2d'
+                        ]
                     }
                 ),
                 html.Div(id='slider-container', style={'marginTop': '20px'}),
                 dcc.Store(id='time-axis-store')
             ], className="create_container1 twelve columns"),
         ], className="row flex-display"),
-    ], id="mainContainer", style={"display": "flex", "flex-direction": "column"})
 
-    # ============== 回调函数 ==============
+    ], id="mainContainer",
+        style={"display": "flex","flex-direction": "column"})
+
+
+    # ============== 回调函数部分 ==============
 
     @dash_app.callback(
         [
@@ -366,35 +442,54 @@ def init_dashboard(server: Flask):
             Output('gender-completion-chart', 'figure'),
             Output('age-completion-chart', 'figure'),
             Output('ethnicity-completion-chart', 'figure'),
-            Output('pie-chart', 'figure')
+            Output('pie-chart', 'figure'),
+            Output('total-viewers-all','children')  # 补充：顺便更新总观众数
         ],
-        Input('date-picker', 'date')
+        [
+            Input('date-picker', 'date'),
+            Input('refresh-button','n_clicks')  # 点击刷新也会触发
+        ]
     )
-    def update_all(selected_date):
-        selected_date = pd.to_datetime(selected_date)
-        daily_data = data.loc[data['visit_date'] == selected_date].copy()
+    def update_all(selected_date, refresh_clicks):
+        """
+        每次选择日期 or 点击刷新按钮，就重新读取数据库并更新。
+        """
+        # ---- 1) 重新查询数据库 ----
+        fresh = get_fresh_data()
+
+        # ---- 2) 处理一下全局指标 ----
+        total_visitors = fresh.shape[0]
+
+        if selected_date is None:
+            # 如果 date-picker 还没选，默认今天
+            selected_date = fresh['visit_date'].max()
+        else:
+            selected_date = pd.to_datetime(selected_date)
+
+        daily_data = fresh.loc[fresh['visit_date'] == selected_date].copy()
 
         daily_visits = daily_data.shape[0]
-        daily_avg_completion_rate = round(daily_data['completion_rate'].mean() * 100, 2) if daily_visits > 0 else 0
+        daily_avg_rate = round(daily_data['completion_rate'].mean() * 100, 2) if daily_visits>0 else 0
 
+        # 分布
         daily_data['completion_level'] = daily_data['completion_rate'].apply(completion_rate_level)
-        daily_gender_completion_counts = daily_data.groupby(['gender', 'completion_level']).size().unstack().fillna(0)
-        daily_age_completion_counts = daily_data.groupby(['age_group', 'completion_level']).size().unstack().fillna(0)
-        daily_ethnicity_completion_counts = daily_data.groupby(['ethnicity', 'completion_level']).size().unstack().fillna(0)
-        daily_overall_completion_counts = daily_data['completion_level'].value_counts().reindex(
+        gender_counts = daily_data.groupby(['gender','completion_level']).size().unstack().fillna(0)
+        age_counts = daily_data.groupby(['age_group','completion_level']).size().unstack().fillna(0)
+        eth_counts = daily_data.groupby(['ethnicity','completion_level']).size().unstack().fillna(0)
+        overall_counts = daily_data['completion_level'].value_counts().reindex(
             ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'], fill_value=0
         )
 
-        # Create charts with dragmode='none'
-        gender_chart = create_bar_chart(daily_gender_completion_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
-        age_chart = create_bar_chart(daily_age_completion_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
-        ethnicity_chart = create_bar_chart(daily_ethnicity_completion_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
+        # ---- 3) 生成对应图表 ----
+        g_chart = create_bar_chart(gender_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
+        a_chart = create_bar_chart(age_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
+        e_chart = create_bar_chart(eth_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
 
-        pie_chart = {
+        p_chart = {
             'data': [
                 go.Pie(
-                    labels=daily_overall_completion_counts.index,
-                    values=daily_overall_completion_counts.values,
+                    labels=overall_counts.index,
+                    values=overall_counts.values,
                     hole=0.3,
                     marker={'colors': color_palette},
                     textinfo='percent',
@@ -404,23 +499,26 @@ def init_dashboard(server: Flask):
             ],
             'layout': go.Layout(
                 title='Overall Completion Rate Distribution',
-                plot_bgcolor='rgba(255, 255, 255, 0)',  # 设置图表背景为透明
+                plot_bgcolor='rgba(255, 255, 255, 0)',
                 paper_bgcolor='rgba(255, 255, 255, 0)',
                 font={'color': 'white'},
                 margin=dict(l=0, r=0, t=50, b=100),
-                legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                legend=dict(orientation="h", yanchor="bottom", y=-0.3,
+                            xanchor="center", x=0.5),
                 autosize=True
             )
         }
 
         return (
             f"{daily_visits:,.0f}",
-            f"{daily_avg_completion_rate}%",
-            gender_chart,
-            age_chart,
-            ethnicity_chart,
-            pie_chart
+            f"{daily_avg_rate}%",
+            g_chart,
+            a_chart,
+            e_chart,
+            p_chart,
+            f"{total_visitors:,.0f}"
         )
+
 
     @dash_app.callback(
         Output('time-granularity-store', 'data'),
@@ -442,39 +540,50 @@ def init_dashboard(server: Flask):
             return 'weekly'
         elif button_id == 'monthly-button':
             return 'monthly'
-        return 'daily'  # Default fallback
+        return 'daily'
 
     @dash_app.callback(
         [Output('time-axis-store', 'data'), Output('slider-container', 'children')],
         [Input('ad-dropdown', 'value'), Input('time-granularity-store', 'data')]
     )
     def generate_time_axis(ad_id, time_granularity):
-        filtered_data = data[data['ad_id'] == ad_id]
+        # 重新拿最新数据
+        fresh = get_fresh_data()
+
+        # 做周、月聚合
+        fresh['year'] = fresh['visit_date'].dt.isocalendar().year
+        fresh['week'] = fresh['visit_date'].dt.isocalendar().week
+        weekly_df = fresh.groupby(['ad_id','year','week'])['completion_rate'].mean().reset_index()
+        weekly_df['year_week'] = weekly_df['year'].astype(str) + '-W' + weekly_df['week'].astype(str).str.zfill(2)
+
+        fresh['month'] = fresh['visit_date'].dt.to_period('M').dt.strftime('%Y-%m')
+        monthly_df = fresh.groupby(['ad_id','month'])['completion_rate'].mean().reset_index()
+
+        filtered_data = fresh[fresh['ad_id'] == ad_id]
         time_points = []
 
         if time_granularity == 'daily':
             min_date = filtered_data['visit_date'].min()
             max_date = filtered_data['visit_date'].max()
+            if pd.isnull(min_date) or pd.isnull(max_date):
+                return [], html.Div("NO DATA", style={'color': 'white'})
             all_dates = pd.date_range(min_date, max_date).strftime('%Y-%m-%d')
             time_points = sorted(all_dates)
         elif time_granularity == 'weekly':
-            weekly_data_filtered = weekly_ad_avg_completion[weekly_ad_avg_completion['ad_id'] == ad_id]
+            weekly_data_filtered = weekly_df[weekly_df['ad_id'] == ad_id]
+            if weekly_data_filtered.empty:
+                return [], html.Div("NO DATA", style={'color': 'white'})
             min_week = weekly_data_filtered['year_week'].min()
             max_week = weekly_data_filtered['year_week'].max()
-            all_weeks = []
-            current_week = min_week
-            while current_week <= max_week:
-                all_weeks.append(current_week)
-                year, week_num = map(int, current_week.split('-W'))
-                new_date = pd.Timestamp(f'{year}-01-01') + pd.Timedelta(weeks=week_num)
-                next_year = new_date.isocalendar().year
-                next_week = new_date.isocalendar().week
-                current_week = f'{next_year}-W{str(next_week).zfill(2)}'
-            time_points = sorted(all_weeks)
+            # 简单方式：把所有 unique week 都取出并排序
+            time_points = sorted(weekly_data_filtered['year_week'].unique())
         elif time_granularity == 'monthly':
-            monthly_data_filtered = monthly_ad_avg_completion[monthly_ad_avg_completion['ad_id'] == ad_id]
+            monthly_data_filtered = monthly_df[monthly_df['ad_id'] == ad_id]
+            if monthly_data_filtered.empty:
+                return [], html.Div("NO DATA", style={'color': 'white'})
             min_month = monthly_data_filtered['month'].min()
             max_month = monthly_data_filtered['month'].max()
+            # 生成从 min_month 到 max_month 的所有月
             all_months = pd.date_range(min_month, max_month, freq='MS').strftime('%Y-%m')
             time_points = sorted(all_months)
 
@@ -506,6 +615,17 @@ def init_dashboard(server: Flask):
         if not time_points or slider_value is None:
             return go.Figure()
 
+        # 重新拿最新数据
+        fresh = get_fresh_data()
+
+        fresh['year'] = fresh['visit_date'].dt.isocalendar().year
+        fresh['week'] = fresh['visit_date'].dt.isocalendar().week
+        weekly_df = fresh.groupby(['ad_id','year','week'])['completion_rate'].mean().reset_index()
+        weekly_df['year_week'] = weekly_df['year'].astype(str)+'-W'+weekly_df['week'].astype(str).str.zfill(2)
+
+        fresh['month'] = fresh['visit_date'].dt.to_period('M').dt.strftime('%Y-%m')
+        monthly_df = fresh.groupby(['ad_id','month'])['completion_rate'].mean().reset_index()
+
         window_size = 14
         start_idx = max(0, slider_value - window_size + 1)
         end_idx = slider_value + 1
@@ -517,34 +637,29 @@ def init_dashboard(server: Flask):
             min_date = pd.to_datetime(display_time_points[0])
             max_date = pd.to_datetime(display_time_points[-1])
             all_dates = pd.date_range(min_date, max_date)
-            filtered_data_period = data[(data['ad_id'] == ad_id) & (data['visit_date'].isin(all_dates))]
-            agg_data = filtered_data_period.groupby('visit_date')['completion_rate'].mean().reindex(all_dates).fillna(0).reset_index()
-            agg_data.columns = ['visit_date', 'completion_rate']
+            filtered_period = fresh[(fresh['ad_id'] == ad_id) & (fresh['visit_date'].isin(all_dates))]
+            agg_data = filtered_period.groupby('visit_date')['completion_rate'].mean().reindex(all_dates, fill_value=0).reset_index()
+            agg_data.columns = ['visit_date','completion_rate']
             x_data = agg_data['visit_date']
             y_data = agg_data['completion_rate'] * 100
-            title_suffix = 'Daily Completion Rate Trend (In Targeted Displaying Mode)'
+            title_suffix = 'Daily Completion Rate Trend'
         elif time_granularity == 'weekly':
-            weekly_data_filtered = weekly_ad_avg_completion[
-                (weekly_ad_avg_completion['ad_id'] == ad_id) &
-                (weekly_ad_avg_completion['year_week'].isin(display_time_points))
-                ]
-            all_weeks_series = pd.Series(display_time_points)
-            agg_data = weekly_data_filtered.groupby('year_week')['completion_rate'].mean().reindex(all_weeks_series).fillna(0).reset_index()
-            agg_data.columns = ['year_week', 'completion_rate']
-            x_data = agg_data['year_week']
-            y_data = agg_data['completion_rate'] * 100
-            title_suffix = 'Weekly Completion Rate Trend (In Targeted Displaying Mode)'
-        else:  # monthly
-            monthly_data_filtered = monthly_ad_avg_completion[
-                (monthly_ad_avg_completion['ad_id'] == ad_id) &
-                (monthly_ad_avg_completion['month'].isin(display_time_points))
-                ]
-            all_months_series = pd.Series(display_time_points)
-            agg_data = monthly_data_filtered.groupby('month')['completion_rate'].mean().reindex(all_months_series).fillna(0).reset_index()
-            agg_data.columns = ['month', 'completion_rate']
-            x_data = agg_data['month']
-            y_data = agg_data['completion_rate'] * 100
-            title_suffix = 'Monthly Completion Rate Trend (In Targeted Displaying Mode)'
+            filtered_weekly = weekly_df[(weekly_df['ad_id'] == ad_id) &
+                                        (weekly_df['year_week'].isin(display_time_points))]
+            # 用 pandas 的 Categorical 来确保顺序
+            cats = pd.Categorical(filtered_weekly['year_week'], categories=display_time_points, ordered=True)
+            aggregated = filtered_weekly.groupby(cats)['completion_rate'].mean().fillna(0).reset_index()
+            x_data = aggregated['year_week']
+            y_data = aggregated['completion_rate']*100
+            title_suffix = 'Weekly Completion Rate Trend'
+        else:
+            filtered_monthly = monthly_df[(monthly_df['ad_id'] == ad_id) &
+                                          (monthly_df['month'].isin(display_time_points))]
+            cats = pd.Categorical(filtered_monthly['month'], categories=display_time_points, ordered=True)
+            aggregated = filtered_monthly.groupby(cats)['completion_rate'].mean().fillna(0).reset_index()
+            x_data = aggregated['month']
+            y_data = aggregated['completion_rate']*100
+            title_suffix = 'Monthly Completion Rate Trend'
 
         fig.add_trace(go.Scatter(
             x=x_data, y=y_data,
@@ -554,7 +669,7 @@ def init_dashboard(server: Flask):
             name='Completion Rate'
         ))
         fig.update_layout(
-            title={'text': f'{ad_id} {title_suffix}', 'y': 0.9, 'x': 0.5},
+            title={'text': f'{ad_id} - {title_suffix}', 'y': 0.9, 'x': 0.5},
             xaxis={'title': 'Time', 'gridcolor': '#2a3f6f', 'color': 'white'},
             yaxis={'title': 'Completion Rate (%)', 'gridcolor': '#2a3f6f', 'color': 'white'},
             plot_bgcolor='#1f2c56',
@@ -566,5 +681,4 @@ def init_dashboard(server: Flask):
         )
         return fig
 
-    # 返回 Dash 实例
     return dash_app
