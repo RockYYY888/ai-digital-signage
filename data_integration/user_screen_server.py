@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, Response, request, Blueprint
-from data_integration.data_interface import video_queue, ad_queue  
+from data_integration.data_interface import video_queue, ad_queue
 from queue import Empty
 from pathlib import Path
 import json

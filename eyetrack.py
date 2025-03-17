@@ -27,7 +27,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
     try:
         predictor = dlib.shape_predictor("eyetracking/shape_predictor_68_face_landmarks.dat")
     except Exception as e:
-        print(f"加载面部特征预测器出错: {e}")
+        print(f"Error loading facial feature predictor: {e}")
         return
 
     # 初始化
@@ -42,7 +42,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
     try:
         while True:
-            # 如果线程未激活，暂停并重置计时
+            # If the thread is not active, pause and reset the timer
             if not eye_tracking_active.is_set():
                 with watching_lock:
                     start_time = None
@@ -63,14 +63,14 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
                 try:
                     landmarks = predictor(gray, face)
                     eye_distance = calculate_eye_distance(landmarks)
-                    if eye_distance > 8:  # 根据需要调整阈值
+                    if eye_distance > 8:  # Adjust the threshold as needed
                         is_watching = True
                         break
                 except Exception as e:
-                    print(f"面部分析错误: {e}")
+                    print(f"Facial analysis errors: {e}")
                     continue
 
-            # 更新 total_watch_time
+            # update total_watch_time
             with watching_lock:
                 if is_watching:
                     if start_time is None:
@@ -82,8 +82,8 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
                     start_time = None
 
             time.sleep(0.03)
-            # 这里就直接打印 context.total_watch_time
-            print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
+            # Just print it here context.total_watch_time
+            #print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
 
     except Exception as e:
         print("[Eyetracking] Fatal error:", e)
@@ -96,14 +96,14 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
 def update_database(watch_time, prediction, ad_id):
     try:
-        # 1. 解析传入的 prediction: (age_group, gender, ethnicity)
+        # 1. Parsing the incoming prediction: (age_group, gender, ethnicity)
         age_group, gender, ethnicity = prediction
 
         db_path = 'advertisements.db'  # 与 dashboard 一致的数据库路径
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # 2. 查询对应的 demographics_id
+        # 2. Query the corresponding demographics_id
         select_sql = """
             SELECT demographics_id
             FROM demographics
@@ -116,16 +116,16 @@ def update_database(watch_time, prediction, ad_id):
         result = cursor.fetchone()
 
         if not result:
-            print(f"未在 demographics 表中找到对应的 id, prediction={prediction}")
+            print(f"No corresponding id found in demographics table, prediction={prediction}")
             print("[Eyetracking] Failed updating demographics in db")
             exit(1)
             return False
         demographics_id = result[0]
 
-        # 3. 获取当前日期，格式为 YYYY-MM-DD
+        # 3. Get the current date in the format of YYYY-MM-DD
         current_date = datetime.now().strftime('%Y-%m-%d')
 
-        # 4. 将观看时长等信息插入到 viewers 表
+        # 4. Insert viewing time and other information into the viewers table
         insert_sql = """
             INSERT INTO viewers (demographics_id, ad_id, view_time, visit_date)
             VALUES (?, ?, ?, ?)
@@ -133,11 +133,11 @@ def update_database(watch_time, prediction, ad_id):
         cursor.execute(insert_sql, (demographics_id, ad_id, round(watch_time, 2), current_date))
         conn.commit()
 
-        print(f"数据库更新成功: time={watch_time:.2f}, demographics_id={demographics_id}, ad_id={ad_id}, date={current_date}")
+        print(f"Database update successful: time={watch_time:.2f}, demographics_id={demographics_id}, ad_id={ad_id}, date={current_date}")
         return True
 
     except Exception as e:
-        print(f"数据库更新失败: {e}")
+        print(f"Database update failed: {e}")
         return False
 
     finally:
