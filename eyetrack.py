@@ -83,7 +83,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
             time.sleep(0.03)
             # 这里就直接打印 context.total_watch_time
-            print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
+            # print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
 
     except Exception as e:
         print("[Eyetracking] Fatal error:", e)
