@@ -160,7 +160,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                 last_detection_time = time.time()
                 current_time = time.time()
 
-            time.sleep(0.1)
+            time.sleep(0.5)
 
     except Exception as e:
         print(f"[CV] Unexpected error in thread: {e}")
