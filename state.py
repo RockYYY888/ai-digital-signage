@@ -168,7 +168,8 @@ if __name__ == "__main__":
     context = Context()
     pipeline = AdvertisementPipeline()
 
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap_index = int(input("Input camera index: "))
+    cap = cv2.VideoCapture(cap_index, cv2.CAP_DSHOW)
     if not cap.isOpened():
         print("Error: cannot open camera!")
         exit(1)
