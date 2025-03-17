@@ -66,11 +66,10 @@ class AdRotating(State):
                 processing_thread.join()  # 等待线程完成
                 self.llm_text_generated_event.wait()  # 等待广告文本生成
 
-                # 只有在跑完这个视频后才查询是否切换到下一个状态
-                self.context.default_video_completed.wait()
-                self.context.default_video_completed.clear()
-
                 if not self.context.ad_text_queue.empty():
+                    # 只有在跑完这个视频后才查询是否切换到下一个状态
+                    self.context.default_video_completed.wait()
+                    self.context.default_video_completed.clear()
                     return PersonalizedADDisplaying(self.context)
                 else:
                     print("[Error] Ad generation failed, returning to Ad Rotating.")
