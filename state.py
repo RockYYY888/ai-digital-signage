@@ -102,7 +102,8 @@ class PersonalizedADDisplaying(State):
     def handle(self):
         with self.context.state_lock:
             self.context.eye_tracking_active.set()
-            print("[State] Eye tracking activated for personalized ad.")\
+            print("[State] Eye tracking activated for personalized ad.")
+                
             
             if not self.context.ad_text_queue.empty():
                 debug_ad_text = self.context.ad_text_queue.get_nowait()
