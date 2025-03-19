@@ -29,18 +29,16 @@ def stream():
         last_video = None
         while True:
             try:
-                if not video_queue.empty() and not ad_queue.empty():
+                queue_empty = video_queue.empty()  # 检查 video_queue 是否为空
+                if not queue_empty and not ad_queue.empty():
                     video = video_queue.get_nowait()
                     ad_text = ad_queue.get_nowait()
                     if video != last_video:
                         last_video = video
-                        yield f"data: {json.dumps({'video': video, 'ad_text': ad_text})}\n\n"
-                elif not video_queue.empty() and ad_queue.empty():
-                    queue_status = {
-                        'video_size': video_queue.qsize(),
-                        'ad_size': ad_queue.qsize()
-                    }
-                    yield f"data: {json.dumps({'queue_status': queue_status})}\n\n"
+                        yield f"data: {json.dumps({'video': video, 'ad_text': ad_text, 'queue_empty': queue_empty})}\n\n"
+                else:
+                    # 即使没有新视频，也发送 queue_empty 状态
+                    yield f"data: {json.dumps({'queue_empty': queue_empty})}\n\n"
             except Empty:
                 pass
             time.sleep(1)

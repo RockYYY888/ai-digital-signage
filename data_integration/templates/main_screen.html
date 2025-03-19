@@ -29,7 +29,7 @@
             height: 100%;
             object-fit: contain;
         }
-        #scrolling-text {
+        .subtitle {
             position: absolute;
             bottom: 0;
             width: 100%;
@@ -38,7 +38,7 @@
             overflow: hidden;
             z-index: 10;
         }
-        #scrolling-text-content {
+        .subtitle > div {
             position: absolute;
             white-space: nowrap;
             font-size: 1.2em;
@@ -49,14 +49,9 @@
             box-sizing: border-box;
             color: white;
         }
-
         @keyframes scroll {
-            from { 
-                left: 100%;
-            }
-            to { 
-                left: -100%;
-            }
+            from { left: 100%; }
+            to { left: -100%; }
         }
     </style>
 </head>
@@ -65,24 +60,31 @@
     <div id="main-container">
         <div id="video-container">
             <video id="videoPlayer" autoplay muted>
-                <source src="/videos/0001.mp4" type="video/mp4">
+                <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
-            <div id="scrolling-text">
-                <div id="scrolling-text-content"></div>
+            <!-- 默认字幕容器 -->
+            <div id="default-subtitle-container" class="subtitle">
+                <div id="default-subtitle-text"></div>
+            </div>
+            <!-- 个性化广告字幕容器 -->
+            <div id="personalized-ad-subtitle-container" class="subtitle">
+                <div id="personalized-ad-subtitle-text"></div>
             </div>
         </div>
     </div>
 
     <script>
         const videoPlayer = document.getElementById('videoPlayer');
-        const scrollingText = document.getElementById('scrolling-text');
-        const scrollingTextContent = document.getElementById('scrolling-text-content');
-        const videoContainer = document.getElementById('video-container');
+        const defaultSubtitleContainer = document.getElementById('default-subtitle-container');
+        const defaultSubtitleText = document.getElementById('default-subtitle-text');
+        const adSubtitleContainer = document.getElementById('personalized-ad-subtitle-container');
+        const adSubtitleText = document.getElementById('personalized-ad-subtitle-text');
+
         let currentVideo = "videos/0001.mp4";
-        let isDefaultMode = true;
         let isPlayingPersonalizedAd = false;
         let pendingAd = null;
-        const pixelsPerSecond = 120; // 调整滚动速度
+        let showDefaultSubtitle = false; // Control default subtitle display
+        const pixelsPerSecond = 120;    // Scrolling speed
 
         videoPlayer.addEventListener('ended', handleVideoEnd);
         videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
@@ -91,90 +93,86 @@
             const min = 1;
             const max = 77;
             const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-            const paddedNum = String(randomNum).padStart(4, '0');
-            return `videos/${paddedNum}.mp4`;
+            return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
         }
 
         function handleVideoLoaded() {
-            if (!scrollingTextContent.textContent) {
-                scrollingText.style.display = 'none';
-                return;
+            if (isPlayingPersonalizedAd) {
+                adSubtitleContainer.style.display = 'block';
+                startScrolling(adSubtitleText);
+            } else {
+                adSubtitleContainer.style.display = 'none';
+                if (showDefaultSubtitle) {
+                    defaultSubtitleContainer.style.display = 'block';
+                    startScrolling(defaultSubtitleText);
+                } else {
+                    defaultSubtitleContainer.style.display = 'none';
+                }
             }
+        }
 
-            scrollingText.style.display = 'block';
-            void scrollingText.offsetWidth;
-
-            const textWidth = scrollingTextContent.offsetWidth;
-            const containerWidth = scrollingText.offsetWidth;
+        function startScrolling(subtitleElement) {
+            const textWidth = subtitleElement.offsetWidth;
+            const containerWidth = subtitleElement.parentElement.offsetWidth;
             const scrollDistance = containerWidth + textWidth;
             const scrollDuration = scrollDistance / pixelsPerSecond;
 
-            scrollingTextContent.style.animation = `scroll ${scrollDuration}s linear infinite`;
-            scrollingTextContent.style.left = '100%';
+            subtitleElement.style.animation = `scroll ${scrollDuration}s linear infinite`;
+            subtitleElement.style.left = '100%';
         }
 
         function handleVideoEnd() {
-            scrollingTextContent.style.animation = '';
-            scrollingText.style.display = 'none';
-            scrollingTextContent.textContent = '';
+            defaultSubtitleText.style.animation = '';
+            adSubtitleText.style.animation = '';
+            defaultSubtitleContainer.style.display = 'none';
+            adSubtitleContainer.style.display = 'none';
 
             const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
 
-            // 只在个性化广告结束时发送信号
-            if (adType === 'personalized') {
-                fetch('/user-screen/video-ended', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ video: currentVideo, ad_type: adType }),
-                })
-                .then(response => response.json())
-                .then(data => console.log('Backend response:', data))
-                .catch(error => console.error('Failed to send request:', error));
-            }
+            fetch('/user-screen/video-ended', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ video: currentVideo, ad_type: adType }),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Backend response:', data))
+            .catch(error => console.error('Failed to send request:', error));
 
             if (isPlayingPersonalizedAd) {
                 isPlayingPersonalizedAd = false;
-                isDefaultMode = true;
                 loadAndPlayVideo(getRandomVideo());
             } else if (pendingAd) {
-                // 在开始播放个性化广告时发送默认广告结束信号
-                fetch('/user-screen/video-ended', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ video: currentVideo, ad_type: 'default' }),
-                })
-                .then(response => response.json())
-                .then(data => console.log('Backend response:', data))
-                .catch(error => console.error('Failed to send request:', error));
-
                 loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
-                pendingAd = null;
+                pendingAd = null; // Clear pendingAd after playing the ad
             } else {
-                isDefaultMode = true;
                 loadAndPlayVideo(getRandomVideo());
             }
         }
 
         function loadAndPlayVideo(videoPath, adText = null) {
             currentVideo = videoPath;
-            const newVideoSrc = `/static/${currentVideo}`;
-            videoPlayer.loop = false;
-            videoPlayer.src = newVideoSrc;
+            videoPlayer.src = `/static/${videoPath}`;
             videoPlayer.load();
 
             if (adText) {
-                scrollingTextContent.textContent = adText;
+                adSubtitleText.textContent = adText;
                 isPlayingPersonalizedAd = true;
+                defaultSubtitleContainer.style.display = 'none';
             } else {
-                scrollingTextContent.textContent = '';
+                isPlayingPersonalizedAd = false;
+                adSubtitleContainer.style.display = 'none';
+                if (showDefaultSubtitle) {
+                    defaultSubtitleText.textContent = pendingAd
+                        ? 'Personalized ads have been generated, the next video will be shown to you'
+                        : 'The face has been detected and personalized advertising content is being generated';
+                    defaultSubtitleContainer.style.display = 'block';
+                    startScrolling(defaultSubtitleText);
+                } else {
+                    defaultSubtitleContainer.style.display = 'none';
+                }
             }
 
-            videoPlayer.play()
-                .catch(error => console.error("Playback failed:", error));
+            videoPlayer.play().catch(error => console.error('Playback failed:', error));
         }
 
         const eventSource = new EventSource('/user-screen/stream');
@@ -182,6 +180,29 @@
             const data = JSON.parse(event.data);
             if (data.video && data.ad_text) {
                 pendingAd = { video: data.video, ad_text: data.ad_text };
+                showDefaultSubtitle = true; // Ensure subtitle stays visible until ad plays
+                console.log('Pending ad updated:', pendingAd);
+                if (!isPlayingPersonalizedAd) {
+                    defaultSubtitleText.textContent = 'Personalized ads have been generated, the next video will be shown to you';
+                    defaultSubtitleContainer.style.display = 'block';
+                    startScrolling(defaultSubtitleText);
+                }
+            }
+            if (data.queue_empty !== undefined) {
+                if (!pendingAd) { // Only update if no pending ad
+                    showDefaultSubtitle = !data.queue_empty;
+                    console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle, 'isPlayingPersonalizedAd:', isPlayingPersonalizedAd);
+                    if (!isPlayingPersonalizedAd) {
+                        if (showDefaultSubtitle) {
+                            defaultSubtitleText.textContent = 'The face has been detected and personalized advertising content is being generated';
+                            defaultSubtitleContainer.style.display = 'block';
+                            startScrolling(defaultSubtitleText);
+                        } else {
+                            defaultSubtitleText.style.animation = '';
+                            defaultSubtitleContainer.style.display = 'none';
+                        }
+                    }
+                }
             }
         };
 
@@ -191,5 +212,6 @@
 
         loadAndPlayVideo(getRandomVideo());
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'922b545469b644e2',t:'MTc0MjM3MDEwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
