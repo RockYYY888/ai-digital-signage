@@ -31,10 +31,10 @@
         }
         .subtitle {
             position: absolute;
-            bottom: 0;
+            top: 0;
             width: 100%;
             height: 40px;
-            display: none;
+            visibility: hidden;
             overflow: hidden;
             z-index: 10;
         }
@@ -64,7 +64,7 @@
             </video>
             <!-- 默认字幕容器 -->
             <div id="default-subtitle-container" class="subtitle">
-                <div id="default-subtitle-text"></div>
+                <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
             </div>
             <!-- 个性化广告字幕容器 -->
             <div id="personalized-ad-subtitle-container" class="subtitle">
@@ -83,32 +83,19 @@
         let currentVideo = "videos/0001.mp4";
         let isPlayingPersonalizedAd = false;
         let pendingAd = null;
-        let showDefaultSubtitle = false; // Control default subtitle display
-        const pixelsPerSecond = 120;    // Scrolling speed
+        let showDefaultSubtitle = false; // 控制默认字幕显示的全局状态
+        const pixelsPerSecond = 120;    // 滚动速度
+
+        // 初始化时启动默认字幕的滚动动画
+        startScrolling(defaultSubtitleText);
 
         videoPlayer.addEventListener('ended', handleVideoEnd);
-        videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
 
         function getRandomVideo() {
             const min = 1;
             const max = 77;
             const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
             return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
-        }
-
-        function handleVideoLoaded() {
-            if (isPlayingPersonalizedAd) {
-                adSubtitleContainer.style.display = 'block';
-                startScrolling(adSubtitleText);
-            } else {
-                adSubtitleContainer.style.display = 'none';
-                if (showDefaultSubtitle) {
-                    defaultSubtitleContainer.style.display = 'block';
-                    startScrolling(defaultSubtitleText);
-                } else {
-                    defaultSubtitleContainer.style.display = 'none';
-                }
-            }
         }
 
         function startScrolling(subtitleElement) {
@@ -122,11 +109,6 @@
         }
 
         function handleVideoEnd() {
-            defaultSubtitleText.style.animation = '';
-            adSubtitleText.style.animation = '';
-            defaultSubtitleContainer.style.display = 'none';
-            adSubtitleContainer.style.display = 'none';
-
             const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
 
             fetch('/user-screen/video-ended', {
@@ -143,7 +125,7 @@
                 loadAndPlayVideo(getRandomVideo());
             } else if (pendingAd) {
                 loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
-                pendingAd = null; // Clear pendingAd after playing the ad
+                pendingAd = null;
             } else {
                 loadAndPlayVideo(getRandomVideo());
             }
@@ -155,21 +137,18 @@
             videoPlayer.load();
 
             if (adText) {
+                // 播放个性化广告
                 adSubtitleText.textContent = adText;
                 isPlayingPersonalizedAd = true;
-                defaultSubtitleContainer.style.display = 'none';
+                defaultSubtitleContainer.style.visibility = 'hidden';
+                adSubtitleContainer.style.visibility = 'visible';
+                startScrolling(adSubtitleText);
             } else {
+                // 播放默认视频
                 isPlayingPersonalizedAd = false;
-                adSubtitleContainer.style.display = 'none';
-                if (showDefaultSubtitle) {
-                    defaultSubtitleText.textContent = pendingAd
-                        ? 'Personalized ads have been generated, the next video will be shown to you'
-                        : 'The face has been detected and personalized advertising content is being generated';
-                    defaultSubtitleContainer.style.display = 'block';
-                    startScrolling(defaultSubtitleText);
-                } else {
-                    defaultSubtitleContainer.style.display = 'none';
-                }
+                adSubtitleContainer.style.visibility = 'hidden';
+                // 默认视频播放时始终显示默认字幕，除非队列为空且没有pendingAd
+                defaultSubtitleContainer.style.visibility = (showDefaultSubtitle || pendingAd) ? 'visible' : 'hidden';
             }
 
             videoPlayer.play().catch(error => console.error('Playback failed:', error));
@@ -180,28 +159,18 @@
             const data = JSON.parse(event.data);
             if (data.video && data.ad_text) {
                 pendingAd = { video: data.video, ad_text: data.ad_text };
-                showDefaultSubtitle = true; // Ensure subtitle stays visible until ad plays
                 console.log('Pending ad updated:', pendingAd);
+                // 如果当前播放的是默认视频，且pendingAd更新，则显示默认字幕
                 if (!isPlayingPersonalizedAd) {
-                    defaultSubtitleText.textContent = 'Personalized ads have been generated, the next video will be shown to you';
-                    defaultSubtitleContainer.style.display = 'block';
-                    startScrolling(defaultSubtitleText);
+                    defaultSubtitleContainer.style.visibility = 'visible';
                 }
             }
             if (data.queue_empty !== undefined) {
-                if (!pendingAd) { // Only update if no pending ad
-                    showDefaultSubtitle = !data.queue_empty;
-                    console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle, 'isPlayingPersonalizedAd:', isPlayingPersonalizedAd);
-                    if (!isPlayingPersonalizedAd) {
-                        if (showDefaultSubtitle) {
-                            defaultSubtitleText.textContent = 'The face has been detected and personalized advertising content is being generated';
-                            defaultSubtitleContainer.style.display = 'block';
-                            startScrolling(defaultSubtitleText);
-                        } else {
-                            defaultSubtitleText.style.animation = '';
-                            defaultSubtitleContainer.style.display = 'none';
-                        }
-                    }
+                showDefaultSubtitle = !data.queue_empty;
+                console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle, 'isPlayingPersonalizedAd:', isPlayingPersonalizedAd);
+                // 仅在不播放个性化广告时更新默认字幕可见性
+                if (!isPlayingPersonalizedAd) {
+                    defaultSubtitleContainer.style.visibility = (showDefaultSubtitle || pendingAd) ? 'visible' : 'hidden';
                 }
             }
         };
@@ -212,6 +181,5 @@
 
         loadAndPlayVideo(getRandomVideo());
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'922b545469b644e2',t:'MTc0MjM3MDEwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
