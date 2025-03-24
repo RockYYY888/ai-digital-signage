@@ -8,23 +8,23 @@ watching_lock = threading.Lock()
 class AdPool:
     def __init__(self):
         self.current_ad = None
-        self.current_ads_list = []  # 存储广告列表
+        self.current_ads_list = []  # Store the list of ads
         self.lock = threading.Lock()
-        self.db_file = 'advertisements.db'  # 确保路径正确
-        # 初始化时加载所有广告
+        self.db_file = 'advertisements.db'  # Ensure the path is correct
+        # Load all ads on initialization
         self.load_all_ads()
 
     def load_all_ads(self):
-        """加载数据库中的所有广告"""
+        """Load all ads from the database"""
         connection = sqlite3.connect(self.db_file)
         cursor = connection.cursor()
         try:
             cursor.execute("SELECT ad_content FROM ads;")
             results = cursor.fetchall()
-            self.current_ads_list = []  # 清空现有列表
+            self.current_ads_list = []  # Clear existing list
             for result in results:
                 ad_path = result[0]
-                # 更新为指向 ad_pool/videos 文件夹
+                # Update to point to the ad_pool/videos folder
                 absolute_ad_path = os.path.join(os.path.dirname(__file__), ad_path)  
                 if os.path.exists(absolute_ad_path):
                     self.current_ads_list.append((absolute_ad_path, 1.0))
@@ -38,7 +38,7 @@ class AdPool:
             connection.close()
 
     def update_ads_for_demographic(self, age_group, gender, ethnicity):
-        """根据人群特征更新广告池"""
+        """Update the ad pool based on demographic characteristics"""
         with self.lock:
             ads_data = get_targeted_videos_with_ads(age_group, gender, ethnicity)
             print(f"Ads data: {ads_data}")
@@ -56,17 +56,17 @@ class AdPool:
                 print(f"Updated ad pool: {self.current_ads_list}")
             else:
                 print(f"No ads found for demographic: {age_group}, {gender}, {ethnicity}")
-                self.load_all_ads()  # 回退到加载所有广告
+                self.load_all_ads()  # Fallback to loading all ads
 
     def get_random_ad(self):
-        """从广告池中随机选择一个广告"""
+        """Randomly select an ad from the ad pool"""
         with self.lock:
             if not self.current_ads_list:
                 return None
-            # 随机选择一个广告
+            # Randomly select an ad
             self.current_ad = random.choice([path for path, _ in self.current_ads_list])
             print(f"Selected ad: {self.current_ad}")
-            # 重置观看时间
+            # Reset watch time
             global total_watch_time
             with watching_lock:
                 total_watch_time = 0
