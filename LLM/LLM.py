@@ -32,7 +32,7 @@ class AdvertisementGenerator:
     def __init__(self, token):
         self.tokenizer = None
         self.model = None
-        self.token = token  # 保存 token
+        self.token = token  
         self.load_model_and_tokenizer()
 
     @lru_cache(maxsize=1)
@@ -41,11 +41,11 @@ class AdvertisementGenerator:
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 "meta-llama/Llama-3.2-1B-Instruct",
-                token=self.token  # 使用 token 加载分词器
+                token=self.token   
             )
             self.model = AutoModelForCausalLM.from_pretrained(
                 "meta-llama/Llama-3.2-1B-Instruct",
-                token=self.token  # 使用 token 加载模型
+                token=self.token  
             )
 
             # Configure tokenizer special tokens
@@ -132,7 +132,7 @@ class AdvertisementPipeline:
     """Orchestration class for ad generation pipeline"""
 
     def __init__(self, token):
-        self.generator = AdvertisementGenerator(token)  # 传递 token
+        self.generator = AdvertisementGenerator(token)  # deliver token
         self.debug_mode = False
 
     def parse_demographics(self, input_data):
@@ -203,8 +203,8 @@ class AdvertisementPipeline:
         print(f"{video_info['file_name']}")
         print(ad_text)
 
-# 初始化 pipeline 时直接传入 token
-# 将 'your_huggingface_token_here' 替换为你的实际 Hugging Face token
+# Directly pass in the token when initializing the pipeline
+# Replace 'your_huggingface_token_here' with your actual Hugging Face token
 load_dotenv()
 token = os.getenv("HF_TOKEN")
 pipeline = AdvertisementPipeline(token=token)
