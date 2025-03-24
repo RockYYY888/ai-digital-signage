@@ -50,6 +50,8 @@ def get_fresh_data():
     data['completion_level'] = data['completion_rate'].apply(completion_rate_level)
     return data
 
+    
+
 # 颜色调色板
 color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
 
@@ -78,6 +80,43 @@ def create_bar_chart(data_counts, title, legend_title, colors):
     )
     return fig
 
+def create_no_data_figure(title, legend_title, all_groups, colors):
+    fig = go.Figure()
+    
+    # 添加虚拟痕迹以显示图例
+    for i, group in enumerate(all_groups):
+        fig.add_trace(go.Bar(
+            x=[],  # 空X轴数据
+            y=[],  # 空Y轴数据
+            name=group,  # 图例名称
+            marker_color=colors[i % len(colors)],  # 颜色
+            showlegend=True,  # 显示图例
+            legendgrouptitle_text=legend_title  # 图例标题
+        ))
+    
+    # 添加“NO DATA”提示
+    fig.add_annotation(
+        text="NO DATA",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5,  # 居中显示
+        showarrow=False,
+        font=dict(size=24, color="white")
+    )
+    
+    # 更新图表布局
+    fig.update_layout(
+        title={'text': title, 'font': {'color': 'white'}},  # 标题颜色为白色
+        plot_bgcolor='rgba(255, 255, 255, 0)',  # 透明背景
+        paper_bgcolor='rgba(255, 255, 255, 0)',  # 透明背景
+        xaxis={'visible': False},  # 隐藏X轴
+        yaxis={'visible': False},  # 隐藏Y轴
+        legend=dict(
+            title=legend_title,
+            font=dict(color='white'),  # 图例字体颜色为白色
+            bgcolor='rgba(255, 255, 255, 0)'  # 图例背景透明
+        )
+    )
+    return fig
 # =============== 初始化仪表盘 ===============
 
 def init_dashboard(server: Flask):
@@ -284,7 +323,6 @@ def init_dashboard(server: Flask):
     ], id="mainContainer", style={"display": "flex", "flex-direction": "column"})
 
     # ============== 回调函数 ==============
-
     @dash_app.callback(
         [
             Output('total-viewers-selected', 'children'),
@@ -294,8 +332,8 @@ def init_dashboard(server: Flask):
             Output('ethnicity-completion-chart', 'figure'),
             Output('pie-chart', 'figure'),
             Output('total-viewers-all', 'children'),
-            Output('ad-dropdown', 'options'),  # 新增输出
-            Output('ad-dropdown', 'value')     # 新增输出
+            Output('ad-dropdown', 'options'),
+            Output('ad-dropdown', 'value')
         ],
         [
             Input('date-picker', 'date'),
@@ -303,12 +341,49 @@ def init_dashboard(server: Flask):
         ]
     )
     def update_all(selected_date, refresh_clicks):
-        """更新所有图表和指标，支持刷新，并动态更新 ad-dropdown"""
         fresh = get_fresh_data()
         total_visits = fresh.shape[0]
 
-        selected_date = pd.to_datetime(selected_date)
-        daily_data = fresh.loc[fresh['visit_date'] == selected_date].copy()
+        selected_date = pd.to_datetime(selected_date).date()
+        daily_data = fresh.loc[fresh['visit_date'].dt.date == selected_date].copy()
+
+        print(f"Selected date: {selected_date}")
+        print(f"Daily data shape: {daily_data.shape}")
+
+        all_genders = ['Male', 'Female']
+        all_age_groups = ['17-35', '35-50', '50+']
+        all_ethnicities = ['White', 'Black', 'Asian', 'Indian', 'Other']
+        all_completion_levels = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']
+
+        if daily_data.empty:
+            print(f"No data for selected date: {selected_date}")
+            no_data_gender = create_no_data_figure(
+                "Gender Completion Rate Distribution", "Gender", all_genders, color_palette
+            )
+            no_data_age = create_no_data_figure(
+                "Age Group Completion Rate Distribution", "Age Group", all_age_groups, color_palette
+            )
+            no_data_eth = create_no_data_figure(
+                "Ethnicity Completion Rate Distribution", "Ethnicity", all_ethnicities, color_palette
+            )
+            no_data_pie = create_no_data_figure(
+                "Overall Completion Rate Distribution", "Completion Level", all_completion_levels, color_palette
+            )
+
+            ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
+            ad_value = ad_options[0]['value'] if ad_options else None
+
+            return (
+                "0",
+                "0%",
+                no_data_gender,
+                no_data_age,
+                no_data_eth,
+                no_data_pie,
+                f"{total_visits:,.0f}",
+                ad_options,
+                ad_value
+            )
 
         daily_visits = daily_data.shape[0]
         daily_avg_rate = round(daily_data['completion_rate'].mean() * 100, 2) if daily_visits > 0 else 0
@@ -316,34 +391,61 @@ def init_dashboard(server: Flask):
         daily_data['completion_level'] = daily_data['completion_rate'].apply(
             lambda cr: '0-20%' if cr <= 0.2 else '20-40%' if cr <= 0.4 else '40-60%' if cr <= 0.6 else '60-80%' if cr <= 0.8 else '80-100%'
         )
-        gender_counts = daily_data.groupby(['gender', 'completion_level']).size().unstack().fillna(0)
-        age_counts = daily_data.groupby(['age_group', 'completion_level']).size().unstack().fillna(0)
-        eth_counts = daily_data.groupby(['ethnicity', 'completion_level']).size().unstack().fillna(0)
-        overall_counts = daily_data['completion_level'].value_counts().reindex(
-            ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'], fill_value=0
-        )
+
+        gender_counts = daily_data.groupby(['gender', 'completion_level']).size().unstack(fill_value=0)
+        gender_counts = gender_counts.reindex(index=all_genders, columns=all_completion_levels, fill_value=0)
+        age_counts = daily_data.groupby(['age_group', 'completion_level']).size().unstack(fill_value=0)
+        age_counts = age_counts.reindex(index=all_age_groups, columns=all_completion_levels, fill_value=0)
+        eth_counts = daily_data.groupby(['ethnicity', 'completion_level']).size().unstack(fill_value=0)
+        eth_counts = eth_counts.reindex(index=all_ethnicities, columns=all_completion_levels, fill_value=0)
+        overall_counts = daily_data['completion_level'].value_counts().reindex(all_completion_levels, fill_value=0)
 
         gender_chart = create_bar_chart(gender_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
         age_chart = create_bar_chart(age_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
         eth_chart = create_bar_chart(eth_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
 
-        pie_chart = {
-            'data': [go.Pie(labels=overall_counts.index, values=overall_counts.values, hole=0.3,
-                            marker={'colors': color_palette}, textinfo='percent', textfont={'size': 16}, textposition='auto')],
-            'layout': go.Layout(
-                title='Overall Completion Rate Distribution',
-                plot_bgcolor='rgba(255, 255, 255, 0)',
-                paper_bgcolor='rgba(255, 255, 255, 0)',
-                font={'color': 'white'},
-                margin=dict(l=0, r=0, t=50, b=100),
-                legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-                autosize=True
-            )
-        }
+        # 修改饼状图逻辑：只显示非零值的完成率区间
+        nonzero_counts = overall_counts[overall_counts > 0]  # 过滤掉值为0的区间
+        if nonzero_counts.empty:
+            # 如果所有值都为0，显示“No Data”
+            pie_chart = {
+                'data': [],
+                'layout': go.Layout(
+                    title='Overall Completion Rate Distribution',
+                    annotations=[dict(text='NO DATA', x=0.5, y=0.5, font_size=20, showarrow=False, font_color='white')],
+                    plot_bgcolor='rgba(255, 255, 255, 0)',
+                    paper_bgcolor='rgba(255, 255, 255, 0)',
+                    font={'color': 'white'},
+                    margin=dict(l=0, r=0, t=50, b=100),
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                    autosize=True
+                )
+            }
+        else:
+            # 只显示非零值的数据
+            pie_chart = {
+                'data': [go.Pie(
+                    labels=nonzero_counts.index,
+                    values=nonzero_counts.values,
+                    hole=0.3,
+                    marker={'colors': color_palette[:len(nonzero_counts)]},  # 动态调整颜色长度
+                    textinfo='percent',
+                    textfont={'size': 16},
+                    textposition='auto'
+                )],
+                'layout': go.Layout(
+                    title='Overall Completion Rate Distribution',
+                    plot_bgcolor='rgba(255, 255, 255, 0)',
+                    paper_bgcolor='rgba(255, 255, 255, 0)',
+                    font={'color': 'white'},
+                    margin=dict(l=0, r=0, t=50, b=100),
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                    autosize=True
+                )
+            }
 
-        # 动态更新 ad-dropdown 选项，按数字顺序排序
         ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
-        ad_value = sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))[0]  # 默认选择第一个
+        ad_value = ad_options[0]['value'] if ad_options else None
 
         return (
             f"{daily_visits:,.0f}",
