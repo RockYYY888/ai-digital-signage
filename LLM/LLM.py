@@ -5,6 +5,7 @@ import random
 import re
 from functools import lru_cache
 from data_integration.data_interface import ad_queue, video_queue, ad_id_queue, demographic_queue
+from util import get_resource_path
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
@@ -205,7 +206,8 @@ class AdvertisementPipeline:
 
 # 初始化 pipeline 时直接传入 token
 # 将 'your_huggingface_token_here' 替换为你的实际 Hugging Face token
-load_dotenv()
+env_path = get_resource_path(".env")
+load_dotenv(dotenv_path=env_path)
 token = os.getenv("HF_TOKEN")
 pipeline = AdvertisementPipeline(token=token)
 

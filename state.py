@@ -14,6 +14,9 @@ from data_integration.data_interface import secondary_screen_signal_queue, ad_id
 from eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
 from dotenv import load_dotenv
 
+from util import get_resource_path
+
+
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
@@ -166,7 +169,8 @@ def index():
 
 if __name__ == "__main__":
     context = Context()
-    load_dotenv()
+    env_path = get_resource_path(".env")
+    load_dotenv(dotenv_path=env_path)
     token = os.getenv("HF_TOKEN")
     if not token:
         raise ValueError("Hugging Face token unfounded, set it in .env field HF_TOKEN")
