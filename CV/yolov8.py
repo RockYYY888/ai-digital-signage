@@ -11,17 +11,17 @@ from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping,
 from data_integration.data_interface import secondary_screen_signal_queue, frame_queue
 from util import get_resource_path
 
-# 设备设置
+# Device settings
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# 图像预处理
+# Image preprocessing
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# 加载模型
+# Load models
 model_emotion = EmotionClassifier(num_classes=4).to(device)
 model_demographic = FaceAttributeModel(num_age_classes=4, num_gender_classes=2, num_race_classes=5).to(device)
 checkpoint_path = get_resource_path('CV/best_face_attribute_model.pth')
@@ -31,39 +31,19 @@ checkpoint2 = torch.load(checkpoint_path2, map_location=device)
 model_demographic.load_state_dict(checkpoint['model_state_dict'])
 model_emotion.load_state_dict(checkpoint2['model_state_dict'])
 
-# 初始化 YOLO 人脸检测器
+# Initialize YOLO face detector
 face_detector = YOLO(get_resource_path("CV/yolov8l-face.pt"), verbose=False)
 
 def analyze_frame(frame):
-    """分析单帧以检测人脸并生成预测结果"""
-    # 人脸检测
-    # print("[DEBUG] analyze_frame called.")
-    # if frame is None:
-    #     print("[DEBUG] Input frame is None!")
-    # else:
-    #     print(f"[DEBUG] Input frame shape: {frame.shape}, dtype: {frame.dtype}")
-
-    # 人脸检测
-    # print("[DEBUG] Running YOLO face_detector with conf=0.86...")
+    """Analyze a single frame to detect faces and generate predictions."""
+    # Face detection
     results = face_detector(frame, conf=0.86)
-
-    # 打印 YOLO 返回的原始结果可视化（需要确保 results[0].boxes 存在）
-    # 如果想查看每个box的置信度，可以打印 results[0].boxes.conf
-    # if results:
-    #     print(f"[DEBUG] YOLO boxes count: {len(results[0].boxes.xyxy)}")
-    #     if len(results[0].boxes.xyxy) > 0:
-    #         # print(f"[DEBUG] boxes: {results[0].boxes.xyxy}")
-    #         print(f"[DEBUG] confidences: {results[0].boxes.conf}")
-    #     else:
-    #         print(f"[DEBUG] YOLO got {len(results[0].boxes.xyxy)} bounding boxes.")
-    # else:
-    #     print("[DEBUG] YOLO returned an empty results list.")
-
+    
     if not results or len(results[0].boxes.xyxy) == 0:
         print("[CV] No face detected at this frame.")
         return None, None
 
-    # 处理检测到的第一个人脸
+    # Process the first detected face
     box = results[0].boxes.xyxy[0]
     padding = 35
     x1, y1, x2, y2 = map(int, box)
@@ -73,13 +53,13 @@ def analyze_frame(frame):
     y2 = min(frame.shape[0], y2 + padding)
     cropped_image = frame[y1:y2, x1:x2]
 
-    # 转换为 PIL 图像
+    # Convert to PIL image
     pil_image = Image.fromarray(cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB))
 
-    # 预测 demographics
+    # Predict demographics
     age_label, gender_label, race_label = predict_demographics(model_demographic, pil_image)
 
-    # 预测情绪
+    # Predict emotion
     emotion_pred = predict2(model_emotion, pil_image)
     emotion_label = emotion_mapping.get(emotion_pred, "Unknown")
     combined_prediction = (age_label, gender_label, race_label, emotion_label)
@@ -89,7 +69,7 @@ def analyze_frame(frame):
     return combined_prediction, pil_image
 
 def predict_demographics(model, image):
-    """预测年龄、性别和种族"""
+    """Predict age, gender, and race."""
     model.eval()
     image = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -118,41 +98,26 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
 
     try:
         while True:
-            # print("[CV] top of loop - face_detection_active =", face_detection_active.is_set())
             if not face_detection_active.is_set():
-                # print("[CV] YOLO Face detection paused.")
                 time.sleep(2)
                 continue
 
-            # print("[CV] Attempting to capture frame...")
             ret, frame = cap.read()
             if not ret or not cap.isOpened():
                 print("[CV] Failed to capture frame or camera closed. Exiting loop.")
                 break
-            # print("[CV] Frame captured successfully.")
-
-            # cv2.imshow("debug", frame)
-            # if cv2.waitKey(1) & 0xFF == 27:
-            #     break
 
             current_time = time.time()
             time_since_last = current_time - last_detection_time
             if time_since_last >= detection_interval:
                 try:
-                    # print("[CV] Calling analyze_frame...")
                     prediction, cropped_image = analyze_frame(frame)
-                    # print("[CV] analyze_frame returned successfully.")
-                    # print("[CV] Frame analyzed successfully.")
                     if prediction:
                         try:
-                            # print("[CV] Converting image format...")
                             cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
-                            # print("[CV] Putting to frame_queue...")
                             frame_queue.put_nowait(cropped_image_bgr)
-                            # print("[CV] Putting to detected_face_queue...")
                             detected_face_queue.put_nowait((cropped_image_bgr, prediction))
-                            face_detection_active.clear()  # 暂停人脸检测
-                            # print("[CV] Face detected and added to queue.")
+                            face_detection_active.clear()  # Pause face detection
                         except queue.Full:
                             print("[CV] Queue full, skipping frame.")
                 except Exception as e:
@@ -166,10 +131,8 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
     except Exception as e:
         print(f"[CV] Unexpected error in thread: {e}")
     finally:
-        # print("[CV] Releasing camera resources...")
         cap.release()
         cv2.destroyAllWindows()
-        # print("[CV] Thread terminated.")
 
 if __name__ == '__main__':
     print(cv2.getBuildInformation())
