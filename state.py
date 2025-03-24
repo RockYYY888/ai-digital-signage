@@ -176,7 +176,7 @@ if __name__ == "__main__":
         raise ValueError("Hugging Face token unfounded, set it in .env field HF_TOKEN")
     pipeline = AdvertisementPipeline(token=token)
 
-    cap_index = int(input("Input camera index: "))
+    cap_index = int(input("Input camera index (by default 0): "))
     cap = cv2.VideoCapture(cap_index)
     if not cap.isOpened():
         print("Error: cannot open camera!")
