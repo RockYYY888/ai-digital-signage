@@ -6,12 +6,12 @@ from dash.dependencies import Input, Output
 import sqlite3
 from flask import Flask
 from util import get_resource_path
-# ================ 数据加载与预处理函数 ====================
+# ================ Data loading and preprocessing functions ====================
 
 db_path = get_resource_path("advertisements.db")
 
 def get_fresh_data():
-    """从数据库获取最新数据并进行预处理"""
+    """Get the latest data from the database and preprocess it"""
     conn = sqlite3.connect(db_path)
     query = """
     SELECT 
@@ -30,7 +30,7 @@ def get_fresh_data():
     data = pd.read_sql(query, conn)
     conn.close()
 
-    # 数据预处理
+    # Data preprocessing
     data['visit_date'] = pd.to_datetime(data['visit_date'])
     data['completion_rate'] = data['view_time'] / data['duration']
     data['ad_id'] = 'AD-' + data['ad_id'].astype(str)
@@ -51,10 +51,10 @@ def get_fresh_data():
     return data
 
 
-# 颜色调色板
+# Color Palette
 color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
 
-# =============== 工具函数：构建条形图 ===============
+# =============== Utility function: Building a bar chart ===============
 
 def create_bar_chart(data_counts, title, legend_title, colors):
     fig = go.Figure()
@@ -82,51 +82,51 @@ def create_bar_chart(data_counts, title, legend_title, colors):
 def create_no_data_figure(title, legend_title, all_groups, colors):
     fig = go.Figure()
 
-    # 添加虚拟痕迹以显示图例
+    # Add virtual traces to show legend
     for i, group in enumerate(all_groups):
         fig.add_trace(go.Bar(
-            x=[],  # 空X轴数据
-            y=[],  # 空Y轴数据
-            name=group,  # 图例名称
-            marker_color=colors[i % len(colors)],  # 颜色
-            showlegend=True,  # 显示图例
-            legendgrouptitle_text=legend_title  # 图例标题
+            x=[],  # Empty X-axis data
+            y=[],  # Empty Y-axis data
+            name=group,  # Legend Name
+            marker_color=colors[i % len(colors)],  # color
+            showlegend=True,  # Show Legend
+            legendgrouptitle_text=legend_title  # Legend Title
         ))
 
-    # 添加“NO DATA”提示
+    # Add "NO DATA" hint
     fig.add_annotation(
         text="NO DATA",
         xref="paper", yref="paper",
-        x=0.5, y=0.5,  # 居中显示
+        x=0.5, y=0.5,  # Center display
         showarrow=False,
         font=dict(size=24, color="white")
     )
 
-    # 更新图表布局
+    # Update chart layout
     fig.update_layout(
-        title={'text': title, 'font': {'color': 'white'}},  # 标题颜色为白色
-        plot_bgcolor='rgba(255, 255, 255, 0)',  # 透明背景
-        paper_bgcolor='rgba(255, 255, 255, 0)',  # 透明背景
-        xaxis={'visible': False},  # 隐藏X轴
-        yaxis={'visible': False},  # 隐藏Y轴
+        title={'text': title, 'font': {'color': 'white'}},  
+        plot_bgcolor='rgba(255, 255, 255, 0)',  
+        paper_bgcolor='rgba(255, 255, 255, 0)',  
+        xaxis={'visible': False},  
+        yaxis={'visible': False},  
         legend=dict(
             title=legend_title,
-            font=dict(color='white'),  # 图例字体颜色为白色
-            bgcolor='rgba(255, 255, 255, 0)'  # 图例背景透明
+            font=dict(color='white'),  
+            bgcolor='rgba(255, 255, 255, 0)'  
         )
     )
     return fig
-# =============== 初始化仪表盘 ===============
+# =============== Initialize the dashboard ===============
 
 def init_dashboard(server: Flask):
-    """创建并返回 Dash 应用，支持动态数据刷新"""
+    """Create and return a Dash application that supports dynamic data refresh"""
     dash_app = dash.Dash(
         __name__,
         server=server,
         url_base_pathname='/dashboard/'
     )
 
-    # 自定义 HTML 模板（保持不变）
+    # Custom HTML templates
     dash_app.index_string = '''
     <!DOCTYPE html>
     <html>
@@ -175,7 +175,7 @@ def init_dashboard(server: Flask):
     </html>
     '''
 
-    # 获取初始数据用于布局初始化
+    # Get initial data for layout initialization
     data = get_fresh_data()
     total_visits = data.shape[0]
     today_date = data['visit_date'].max()
@@ -183,7 +183,7 @@ def init_dashboard(server: Flask):
     today_visits = today_data.shape[0]
     today_avg_completion_rate = round(today_data['completion_rate'].mean() * 100, 2) if today_visits > 0 else 0
 
-    # 初始周度和月度数据
+    # Initial weekly and monthly data
     data['year'] = data['visit_date'].dt.isocalendar().year
     data['week'] = data['visit_date'].dt.isocalendar().week
     weekly_ad_avg_completion = data.groupby(['ad_id', 'year', 'week'])['completion_rate'].mean().reset_index()
@@ -284,7 +284,7 @@ def init_dashboard(server: Flask):
         html.Div([
             html.Div([
                 html.P('Select Ad:', className='fix_label', style={'color': 'white'}),
-                dcc.Dropdown(id='ad-dropdown',  # 初始为空，动态更新
+                dcc.Dropdown(id='ad-dropdown',  # Initially empty, dynamically updated
                              style={'background-color': '#1f2c56', 'color': 'white', 'optionHeight': 30}),
                 html.Div([
                     html.P('Select Time Granularity:', className='fix_label',
@@ -321,7 +321,7 @@ def init_dashboard(server: Flask):
         ], className="row flex-display"),
     ], id="mainContainer", style={"display": "flex", "flex-direction": "column"})
 
-    # ============== 回调函数 ==============
+    # ============== Callback Function ==============
     @dash_app.callback(
         [
             Output('total-viewers-selected', 'children'),
@@ -403,10 +403,10 @@ def init_dashboard(server: Flask):
         age_chart = create_bar_chart(age_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
         eth_chart = create_bar_chart(eth_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
 
-        # 修改饼状图逻辑：只显示非零值的完成率区间
-        nonzero_counts = overall_counts[overall_counts > 0]  # 过滤掉值为0的区间
+        # Modify the pie chart logic: only show the completion rate interval with non-zero values
+        nonzero_counts = overall_counts[overall_counts > 0]  # Filter out intervals with a value of 0
         if nonzero_counts.empty:
-            # 如果所有值都为0，显示“No Data”
+            # If all values ​​are 0, display "No Data"
             pie_chart = {
                 'data': [],
                 'layout': go.Layout(
@@ -421,13 +421,13 @@ def init_dashboard(server: Flask):
                 )
             }
         else:
-            # 只显示非零值的数据
+            # Only display data with non-zero values
             pie_chart = {
                 'data': [go.Pie(
                     labels=nonzero_counts.index,
                     values=nonzero_counts.values,
                     hole=0.3,
-                    marker={'colors': color_palette[:len(nonzero_counts)]},  # 动态调整颜色长度
+                    marker={'colors': color_palette[:len(nonzero_counts)]},  # Dynamically adjust color length
                     textinfo='percent',
                     textfont={'size': 16},
                     textposition='auto'
@@ -485,7 +485,7 @@ def init_dashboard(server: Flask):
         [Input('ad-dropdown', 'value'), Input('time-granularity-store', 'data')]
     )
     def generate_time_axis(ad_id, time_granularity):
-        """生成时间轴和滑块，支持刷新"""
+        """Generate timeline and slider, support refresh"""
         fresh = get_fresh_data()
         filtered_data = fresh[fresh['ad_id'] == ad_id]
         time_points = []
@@ -553,7 +553,7 @@ def init_dashboard(server: Flask):
         ]
     )
     def update_line_chart(ad_id, time_granularity, slider_value, time_points):
-        """更新折线图，支持刷新并保持旧版逻辑"""
+        """Update line chart to support refresh and keep old version logic"""
         if not time_points or slider_value is None:
             return go.Figure()
 
@@ -625,8 +625,8 @@ def init_dashboard(server: Flask):
         Input('time-granularity-store', 'data')
     )
     def display_granularity(granularity):
-        """显示当前时间粒度"""
+        """Display the current time granularity"""
         return f"Current granularity: {granularity}"
 
-    return dash_app  # 正确返回 Dash 实例
+    return dash_app  # Correctly return Dash instance
 

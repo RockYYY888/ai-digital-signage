@@ -11,13 +11,14 @@ watching_lock = threading.Lock()
 total_watch_time = 0
 
 def extract_number(filename):
-    match = re.search(r"(\d+)\.mp4$", filename)  # 匹配文件名中的数字部分
+    """Extract the numeric part from the filename."""
+    match = re.search(r"(\d+)\.mp4$", filename)  # Match the numeric part in the filename
     if match:
-        return str(int(match.group(1)))  # 转换为整数去掉前导 0，再转换回字符串
+        return str(int(match.group(1)))  # Convert to integer to remove leading zeros, then back to string
     return None
 
 def calculate_eye_distance(landmarks):
-    """计算双眼之间的距离"""
+    """Calculate the distance between the eyes."""
     left_eye = (landmarks.part(36).x, landmarks.part(36).y)
     right_eye = (landmarks.part(45).x, landmarks.part(45).y)
     return np.linalg.norm(np.array(right_eye) - np.array(left_eye))
@@ -30,7 +31,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
         print(f"Error loading facial feature predictor: {e}")
         return
 
-    # 初始化
+    # Initialization
     with watching_lock:
         context.total_watch_time = 0.0
 
@@ -100,7 +101,7 @@ def update_database(watch_time, prediction, ad_id):
         # 1. Parsing the incoming prediction: (age_group, gender, ethnicity)
         age_group, gender, ethnicity = prediction
 
-        db_path = 'advertisements.db'  # 与 dashboard 一致的数据库路径
+        db_path = 'advertisements.db'  # Consistent database path with dashboard
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 

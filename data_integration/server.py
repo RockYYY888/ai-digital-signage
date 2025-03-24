@@ -10,7 +10,7 @@ from flask import Blueprint
 from util import get_resource_path
 
 secondary_screen_app = Blueprint(
-    "secondary_screen",  # Blueprint 名称
+    "secondary_screen",  # Blueprint name
     __name__,  # import_name
     template_folder=get_resource_path("data_integration/templates"),
     static_folder=get_resource_path("static")
@@ -26,7 +26,7 @@ def stream():
 
 @secondary_screen_app.route('/face_image')
 def face_image():
-    """返回检测到人脸的单张图片"""
+    """Returns a single image of the detected face"""
     if not frame_queue.empty():
         # print(f"[DEBUG] Server : Queue size: {frame_queue.qsize()}")
         frame = frame_queue.get()
@@ -34,12 +34,12 @@ def face_image():
 
         _, buffer = cv2.imencode('.jpg', frame)
         return Response(buffer.tobytes(), mimetype='image/jpeg')
-    # 使用绝对路径加载默认图片
+    # Load default image using absolute path
     default_image_path = os.path.join(secondary_screen_app.static_folder, 'no_face.jpg')
     if os.path.exists(default_image_path):
         with open(default_image_path, 'rb') as f:
             return Response(f.read(), mimetype='image/jpeg')
-    # 如果文件不存在，返回空响应
+    # Return empty response if file does not exist
     print(f"Warning: {default_image_path} not found")
     return Response(b'', mimetype='image/jpeg')
 

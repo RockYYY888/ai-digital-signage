@@ -20,12 +20,12 @@ from util import get_resource_path
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
-        self.face_detection_active.set()  # 默认启用人脸检测
-        self.detected_face_queue = queue.Queue(maxsize=1)  # 仅存储最新人脸
-        self.ad_text_queue = queue.Queue(maxsize=1)  # 仅存储最新广告文本
-        self.state_lock = threading.Lock()  # 状态转换锁
+        self.face_detection_active.set()  # Default: enable face detection
+        self.detected_face_queue = queue.Queue(maxsize=1)  # Store only the latest face
+        self.ad_text_queue = queue.Queue(maxsize=1)  # Store only the latest ad text
+        self.state_lock = threading.Lock()  # Lock for state transitions
         self.eye_tracking_active = threading.Event()
-        self.default_video_completed = threading.Event()  # 新增：默认广告播放完成信号
+        self.default_video_completed = threading.Event()  # New: signal for default ad playback completion
         self.personalized_video_completed = threading.Event()
         self.eye_tracking_active.clear()
         self.total_watch_time = 0.0
@@ -50,14 +50,14 @@ class AdRotating(State):
 
     def handle(self):
         with self.context.state_lock:
-            self.context.face_detection_active.set()  # 进入AD Rotation开启yolo线程的摄像头调用
+            self.context.face_detection_active.set()  # Enable camera usage by the yolo thread upon entering AD Rotation
             # print("[AD R] Set face_detection_active true")
             if self.is_first:
                 print("[State] Ad Rotating: Displaying generic ad.")
                 self.is_first = False
 
             if not self.context.detected_face_queue.empty():
-                self.context.face_detection_active.clear()  # 暂停人脸检测
+                self.context.face_detection_active.clear()  # Pause face detection
                 frame, prediction = self.context.detected_face_queue.get()
                 # if not self.context.detected_face_queue.empty():
                 #     print("not empty!!!!!!!!!!!!!!!!!!!!!!!")
@@ -66,11 +66,11 @@ class AdRotating(State):
                 print("[State] LLM Processing: Generating ad text.")
                 processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
                 processing_thread.start()
-                processing_thread.join()  # 等待线程完成
-                self.llm_text_generated_event.wait()  # 等待广告文本生成
+                processing_thread.join()  # Wait for the thread to complete
+                self.llm_text_generated_event.wait()  # Wait for ad text generation
 
                 if not self.context.ad_text_queue.empty():
-                    # 只有在跑完这个视频后才查询是否切换到下一个状态
+                    # Only query whether to switch to the next state after this video finishes playing
                     self.context.default_video_completed.wait()
                     self.context.default_video_completed.clear()
                     return PersonalizedADDisplaying(self.context)
@@ -90,9 +90,9 @@ class AdRotating(State):
                 self.context.ad_text_queue.put_nowait(ad_text)
             except queue.Full:
                 # print("[ERROR] Queue is full")
-                pass  # 如果队列满，丢弃旧数据
+                pass  # Discard old data if the queue is full
         else:
-            print("[Error] LLM failed outputing")
+            print("[Error] LLM failed outputting")
         self.llm_text_generated_event.set()
 
 class PersonalizedADDisplaying(State):
@@ -106,8 +106,8 @@ class PersonalizedADDisplaying(State):
         with self.context.state_lock:
             self.context.eye_tracking_active.set()
             print("[State] Eye tracking activated for personalized ad.")
-                
-            
+
+
             if not self.context.ad_text_queue.empty():
                 debug_ad_text = self.context.ad_text_queue.get_nowait()
                 # print(f"[State] Displaying personalized ad with text: {debug_ad_text}")
@@ -116,7 +116,7 @@ class PersonalizedADDisplaying(State):
             else:
                 print("[Error] No ad text available for personalized ad display")
 
-            self.context.personalized_video_completed.wait()  # 等待个性化广告播放完成
+            self.context.personalized_video_completed.wait()  # Wait for personalized ad playback to complete
             self.context.eye_tracking_active.clear()
 
             if not ad_id_queue.empty():
@@ -143,12 +143,12 @@ class PersonalizedADDisplaying(State):
                 exit(1)
 
             # print("[State] Eye tracking stopped.")
-            self.context.personalized_video_completed.clear()  # 重置信号
+            self.context.personalized_video_completed.clear()  # Reset the signal
             secondary_screen_signal_queue.put("wait")
 
         return AdRotating(self.context, True)
 
-# 创建 Flask 主应用
+# Create the main Flask application
 main_app = Flask(__name__)
 
 main_app.register_blueprint(secondary_screen_app, url_prefix='/secondary-screen')
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     from data_integration.user_screen_server import set_context
     set_context(context)
 
-    # 运行Flask app
+    # Run the Flask app
     flask_thread = threading.Thread(target=main_app.run, kwargs={
         "host": "127.0.0.1",
         "port": 5000,
@@ -199,7 +199,7 @@ if __name__ == "__main__":
     webbrowser.open("http://127.0.0.1:5000/secondary-screen/")
     webbrowser.open("http://127.0.0.1:5000/dashboard/")
 
-    # 启动 CV 线程
+    # Start the CV thread
     cv_thread = threading.Thread(
         target=cv_thread_func,
         args=(cap, context.detected_face_queue, context.face_detection_active)
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     eye_tracking_thread.daemon = True
     eye_tracking_thread.start()
 
-    # 运行状态机
+    # Run the state machine
     current_state = AdRotating(context, True)
     # prev_state = str(current_state)
     while True:
@@ -222,4 +222,4 @@ if __name__ == "__main__":
         current_state = current_state.handle()
         # if (prev_state != str(current_state)):
         #     print("Current state: " + str(current_state) + ", Prev state: " + str(prev_state))
-        time.sleep(0.5)  # 状态机节奏控制
+        time.sleep(0.5)  # Control the state machine's pace
