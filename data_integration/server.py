@@ -7,11 +7,13 @@ import os
 
 from flask import Blueprint
 
+from util import get_resource_path
+
 secondary_screen_app = Blueprint(
     "secondary_screen",  # Blueprint 名称
     __name__,  # import_name
-    template_folder="templates",
-    static_folder="static"
+    template_folder=get_resource_path("data_integration/templates"),
+    static_folder=get_resource_path("static")
 )
 
 @secondary_screen_app.route('/')
@@ -26,10 +28,10 @@ def stream():
 def face_image():
     """返回检测到人脸的单张图片"""
     if not frame_queue.empty():
-        print(f"[DEBUG] Server : Queue size: {frame_queue.qsize()}")
+        # print(f"[DEBUG] Server : Queue size: {frame_queue.qsize()}")
         frame = frame_queue.get()
-        print("[server.py]:Found a frame of face.")
-        
+        # print("[server.py]:Found a frame of face.")
+
         _, buffer = cv2.imencode('.jpg', frame)
         return Response(buffer.tobytes(), mimetype='image/jpeg')
     # 使用绝对路径加载默认图片

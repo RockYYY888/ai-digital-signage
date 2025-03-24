@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from ad_pool.video_selection import *
 import random
@@ -7,12 +8,10 @@ from data_integration.data_interface import ad_queue, video_queue, ad_id_queue, 
 
 # Load the model and tokenizer globally
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
-tokenizer = None
-model = None
 
 class AdvertisementGenerator:
     """Class to encapsulate advertisement generation functionality"""
-  
+
     EMOTION_TONE_MAP = {
         "sad": "empathetic and comforting",
         "angry": "assertive yet respectful",
@@ -21,35 +20,37 @@ class AdvertisementGenerator:
     }
 
     GENERATION_PARAMS = {
-"max_new_tokens": 60, # The maximum number of tokens generated, controlling the length of the output text. Setting it to 120 means generating up to 120 tokens.
-"min_new_tokens": 10, # The minimum number of tokens generated, ensuring that the output text is not too short. Setting it to 30 means generating at least 30 tokens.
-"temperature": 0.7, # Controls the randomness of the generated text. Lower values ​​(such as 0.4) make the output more deterministic and conservative, and higher values ​​(such as 1.0) make the output more creative.
-"top_p": 0.9, # Nucleus sampling parameter, controlling the range of tokens considered during generation. 0.9 means only considering tokens with cumulative probabilities in the top 90%, balancing diversity and quality.
-"repetition_penalty": 1.2, # Parameter for penalizing duplicate tokens. Values ​​greater than 1.0 (such as 1.2) will reduce duplicate content, and values ​​less than 1.0 will increase duplicate content.
-"do_sample": True, # Whether to use sampling methods to generate text. When set to True, use sampling (such as temperature and top_p) to generate more random text; when False, use greedy search to generate deterministic text.
-"num_beams": 1, # The number of beams for beam search. The larger the value, the higher the quality of the generated text may be, but the computational cost is also higher. Setting it to 4 means using 4 beams for search.
-#"length_penalty": 0.5, # Controls the penalty factor for the length of the generated text. Values ​​greater than 1.0 encourage the generation of long text, and values ​​less than 1.0 encourage the generation of short text. 1.0 means no additional penalty is imposed.
-#"no_repeat_ngram_size": 3 # The size of n-grams that prohibit repetition. Setting it to 3 means prohibiting the generation of combinations containing repeated 3 tokens, reducing repetition.
-}
+        "max_new_tokens": 60,
+        "min_new_tokens": 10,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "repetition_penalty": 1.2,
+        "do_sample": True,
+        "num_beams": 1,
+    }
 
-
-    def __init__(self):
+    def __init__(self, token):
         self.tokenizer = None
         self.model = None
+        self.token = token  # 保存 token
         self.load_model_and_tokenizer()
-      
-    """When calling repeatedly with the same parameters, the cached value is returned directly to avoid repeated calculations"""
-    @lru_cache(maxsize=1)    
+
+    @lru_cache(maxsize=1)
     def load_model_and_tokenizer(self):
-        """Load the model and tokenizer."""
-        global tokenizer, model
+        """Load the model and tokenizer using the provided token."""
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
-            self.model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
-          
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                "meta-llama/Llama-3.2-1B-Instruct",
+                token=self.token  # 使用 token 加载分词器
+            )
+            self.model = AutoModelForCausalLM.from_pretrained(
+                "meta-llama/Llama-3.2-1B-Instruct",
+                token=self.token  # 使用 token 加载模型
+            )
+
             # Configure tokenizer special tokens
             self.configure_special_tokens()
-          
+
         except Exception as e:
             raise RuntimeError(f"Model loading failed: {e}")
 
@@ -59,18 +60,18 @@ class AdvertisementGenerator:
             self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         if not self.tokenizer.eos_token:
             self.tokenizer.add_special_tokens({'eos_token': '[EOS]'})
-      
+
         self.model.config.pad_token_id = self.tokenizer.pad_token_id
         self.model.config.eos_token_id = self.tokenizer.eos_token_id
 
     def build_system_prompt(self):
         """Generate system prompt template"""
         return (
-        "You are a skilled copywriter at a global ad agency. Your only job is to deliver ad content matching my exact needs. "
-        "Output must be in double quotes, strictly 20-30 words, no more, no less. "
-        "If the text exceeds 30 words or falls below 20, adjust it before outputting. "
-        "No extra text or comments allowed—only the ad content in quotes."
-    )
+            "You are a skilled copywriter at a global ad agency. Your only job is to deliver ad content matching my exact needs. "
+            "Output must be in double quotes, strictly 20-30 words, no more, no less. "
+            "If the text exceeds 30 words or falls below 20, adjust it before outputting. "
+            "No extra text or comments allowed—only the ad content in quotes."
+        )
 
     def build_user_prompt(self, demographics, product, context):
         """Construct user prompt from inputs"""
@@ -79,44 +80,36 @@ class AdvertisementGenerator:
         product_name = product
 
         return (
-        f"Write a one-sentence creative ad text for {product_name}, strictly 20-30 words. "
-        f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
-        f"Use a {tone} tone. Highlight unique features. Background: {context_text}. "
-        f"Ensure 20-30 words, adjust if needed, and return only the ad content in double quotes."
-    )
+            f"Write a one-sentence creative ad text for {product_name}, strictly 20-30 words. "
+            f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
+            f"Use a {tone} tone. Highlight unique features. Background: {context_text}. "
+            f"Ensure 20-30 words, adjust if needed, and return only the ad content in double quotes."
+        )
 
     def construct_messages(self, demographics, product, context):
         """Build complete message structure for LLM input"""
         return [
             {"role": "system", "content": self.build_system_prompt()},
             {"role": "user", "content": self.build_user_prompt(demographics, product, context)},
-            #{"role": "assistant", "content": "You are a senior copywriter at a multinational advertising agency."}
-        ] 
+        ]
 
     def generate_ad_text(self, messages):
         """Generate a response for the input text using messages format."""
-        #------------------
-        # By using 'apply_chat_template':
-        # 1. Automatically add bos_token at the beginning of the entire conversation and eos_token at the end
-        # 2. apply_chat_template() will correctly insert delimiters based on the role of the message.
-        # e.g. : [INST] and [/INST] are for user messages, <<SYS>> and <</SYS>> are for system messages.
-        #------------------
         try:
             inputs = self.tokenizer.apply_chat_template(
-                messages, 
+                messages,
                 return_tensors="pt"
             )
-          
+
             outputs = self.model.generate(
                 inputs,
                 **self.GENERATION_PARAMS,
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id
             )
-            
-          
+
             return self.process_output(outputs)
-          
+
         except Exception as e:
             raise RuntimeError(f"Text generation failed: {e}")
 
@@ -137,9 +130,9 @@ class AdvertisementGenerator:
 
 class AdvertisementPipeline:
     """Orchestration class for ad generation pipeline"""
-  
-    def __init__(self):
-        self.generator = AdvertisementGenerator()
+
+    def __init__(self, token):
+        self.generator = AdvertisementGenerator(token)  # 传递 token
         self.debug_mode = False
 
     def parse_demographics(self, input_data):
@@ -164,30 +157,24 @@ class AdvertisementPipeline:
             demographics["gender"],
             demographics["race"]
         )
-      
+
         if not videos:
             raise ValueError("No matching videos found")
-    
-        # 提取视频文件名和权重
-        video_files = [video[0] for video in videos]  # 文件名在元组的第0个位置
-        weights = [video[2] for video in videos]      # 权重在元组的第2个位置
-    
-        # 使用加权随机选择
+
+        video_files = [video[0] for video in videos]
+        weights = [video[2] for video in videos]
+
         selected_video = random.choices(video_files, weights=weights, k=1)[0]
-    
-        # 找到选中的完整视频条目
         selected = next(video for video in videos if video[0] == selected_video)
-    
-        # 将选中的视频放入队列
+
         video_queue.put(selected[0])
         ad_id_queue.put(selected[0])
 
-        # 返回视频信息
         return {
-        'file_name': selected[0],
-        'description': selected[1],
-        'weight': selected[2],
-        'product': selected[3]
+            'file_name': selected[0],
+            'description': selected[1],
+            'weight': selected[2],
+            'product': selected[3]
         }
 
     def print_debug_info(self, video_info):
@@ -204,7 +191,7 @@ class AdvertisementPipeline:
             video_info = self.select_video(demographics)
             messages = self.generator.construct_messages(demographics, video_info['product'], video_info['description'])
             ad_text = self.generator.generate_ad_text(messages)
-            ad_queue.put(ad_text) 
+            ad_queue.put(ad_text)
             self.output_results(video_info, ad_text)
             return ad_text
         except Exception as e:
@@ -212,18 +199,17 @@ class AdvertisementPipeline:
 
     def output_results(self, video_info, ad_text):
         """Format and display results"""
-        # print("**Advertising Information:**")
-        print(f"{video_info['product']}") #: {video_info['description']}")
+        print(f"{video_info['product']}")
         print(f"{video_info['file_name']}")
-        # print("\n**Personalized Advertising Message:**")
         print(ad_text)
 
-# Initialize pipeline when module loads
-pipeline = AdvertisementPipeline()
+# 初始化 pipeline 时直接传入 token
+# 将 'your_huggingface_token_here' 替换为你的实际 Hugging Face token
+load_dotenv()
+token = os.getenv("HF_TOKEN")
+pipeline = AdvertisementPipeline(token=token)
 
 if __name__ == "__main__":
-    # Example usage
-    # Start Flask thread
     test_input = ('50+', 'Male', 'Indian', 'sad')
-    pipeline.debug_mode = True  # Enable for debugging
+    pipeline.debug_mode = True
     pipeline.generate_advertisement(test_input)

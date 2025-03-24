@@ -9,6 +9,7 @@ import queue
 from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
 from data_integration.data_interface import secondary_screen_signal_queue, frame_queue
+from util import get_resource_path
 
 # 设备设置
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -23,15 +24,15 @@ transform = transforms.Compose([
 # 加载模型
 model_emotion = EmotionClassifier(num_classes=4).to(device)
 model_demographic = FaceAttributeModel(num_age_classes=4, num_gender_classes=2, num_race_classes=5).to(device)
-checkpoint_path = 'CV/best_face_attribute_model.pth'
-checkpoint_path2 = 'CV/best_project_model.pth'
+checkpoint_path = get_resource_path('CV/best_face_attribute_model.pth')
+checkpoint_path2 = get_resource_path('CV/best_project_model.pth')
 checkpoint = torch.load(checkpoint_path, map_location=device)
 checkpoint2 = torch.load(checkpoint_path2, map_location=device)
 model_demographic.load_state_dict(checkpoint['model_state_dict'])
 model_emotion.load_state_dict(checkpoint2['model_state_dict'])
 
 # 初始化 YOLO 人脸检测器
-face_detector = YOLO("CV/yolov8l-face.pt", verbose=False)
+face_detector = YOLO(get_resource_path("CV/yolov8l-face.pt"), verbose=False)
 
 def analyze_frame(frame):
     """分析单帧以检测人脸并生成预测结果"""
@@ -148,7 +149,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                             cropped_image_bgr = cv2.cvtColor(np.array(cropped_image), cv2.COLOR_RGB2BGR)
                             # print("[CV] Putting to frame_queue...")
                             frame_queue.put_nowait(cropped_image_bgr)
-                            print("[CV] Putting to detected_face_queue...")
+                            # print("[CV] Putting to detected_face_queue...")
                             detected_face_queue.put_nowait((cropped_image_bgr, prediction))
                             face_detection_active.clear()  # 暂停人脸检测
                             # print("[CV] Face detected and added to queue.")
@@ -160,7 +161,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
                 last_detection_time = time.time()
                 current_time = time.time()
 
-            time.sleep(0.5)
+            time.sleep(1.0)
 
     except Exception as e:
         print(f"[CV] Unexpected error in thread: {e}")

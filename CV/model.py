@@ -14,8 +14,8 @@ from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_We
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 batch_size = 72
-csv_file = 'CV/utk_dataset_metadata.csv'
-img_dir = 'CV/UTKFace'
+csv_file = get_resource_path('CV/utk_dataset_metadata.csv')
+img_dir = get_resource_path('CV/UTKFace')
 
 # data augmentation
 train_transforms = transforms.Compose([
@@ -41,8 +41,8 @@ val_transform2 = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
 ])
-train_dir = 'CV/fer2013/train'
-val_dir = 'CV/fer2013/test'
+train_dir = get_resource_path('CV/fer2013/train')
+val_dir = get_resource_path('CV/fer2013/test')
 
 dataset = UTKFaceDataset(
     csv_file=csv_file,
@@ -318,8 +318,8 @@ if __name__ == '__main__':
     best_val_acc = 0.0  # Initialize best validation accuracy
     start_epoch = 0  # Starting epoch
 
-    last_checkpoint = 'CV/best_face_attribute_model.pth'
-    best_model_path = 'CV/best_face_attribute_model.pth'
+    last_checkpoint = get_resource_path('CV/best_face_attribute_model.pth')
+    best_model_path = get_resource_path('CV/best_face_attribute_model.pth')
 
     if os.path.exists(last_checkpoint):
         print('Loading checkpoint...')

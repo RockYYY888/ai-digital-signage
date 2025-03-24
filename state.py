@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 import queue
@@ -11,8 +12,7 @@ from data_integration.user_screen_server import user_screen
 from Dashboard.dashboard import init_dashboard
 from data_integration.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
 from eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
-
-
+from dotenv import load_dotenv
 
 class Context:
     def __init__(self):
@@ -56,10 +56,10 @@ class AdRotating(State):
             if not self.context.detected_face_queue.empty():
                 self.context.face_detection_active.clear()  # 暂停人脸检测
                 frame, prediction = self.context.detected_face_queue.get()
-                if not self.context.detected_face_queue.empty():
-                    print("not empty!!!!!!!!!!!!!!!!!!!!!!!")
-                if self.context.detected_face_queue.empty():
-                    print("empty!!!!!!!!!!")
+                # if not self.context.detected_face_queue.empty():
+                #     print("not empty!!!!!!!!!!!!!!!!!!!!!!!")
+                # if self.context.detected_face_queue.empty():
+                #     print("empty!!!!!!!!!!")
                 print("[State] LLM Processing: Generating ad text.")
                 processing_thread = threading.Thread(target=self.process_frame, args=(prediction,))
                 processing_thread.start()
@@ -86,7 +86,7 @@ class AdRotating(State):
             try:
                 self.context.ad_text_queue.put_nowait(ad_text)
             except queue.Full:
-                print("[ERROR] Queue is full")
+                # print("[ERROR] Queue is full")
                 pass  # 如果队列满，丢弃旧数据
         else:
             print("[Error] LLM failed outputing")
@@ -107,7 +107,7 @@ class PersonalizedADDisplaying(State):
             
             if not self.context.ad_text_queue.empty():
                 debug_ad_text = self.context.ad_text_queue.get_nowait()
-                print(f"[State] Displaying personalized ad with text: {debug_ad_text}")
+                # print(f"[State] Displaying personalized ad with text: {debug_ad_text}")
                 # Optionally, send the ad_text to the secondary screen or another system
                 # For example: secondary_screen_signal_queue.put(ad_text)
             else:
@@ -139,7 +139,7 @@ class PersonalizedADDisplaying(State):
                 print("[Eyetracking] Fatal. Database update failed]")
                 exit(1)
 
-            print("[State] Eye tracking stopped.")
+            # print("[State] Eye tracking stopped.")
             self.context.personalized_video_completed.clear()  # 重置信号
             secondary_screen_signal_queue.put("wait")
 
@@ -166,10 +166,14 @@ def index():
 
 if __name__ == "__main__":
     context = Context()
-    pipeline = AdvertisementPipeline()
+    load_dotenv()
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        raise ValueError("Hugging Face token unfounded, set it in .env field HF_TOKEN")
+    pipeline = AdvertisementPipeline(token=token)
 
     cap_index = int(input("Input camera index: "))
-    cap = cv2.VideoCapture(cap_index, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(cap_index)
     if not cap.isOpened():
         print("Error: cannot open camera!")
         exit(1)
@@ -208,10 +212,10 @@ if __name__ == "__main__":
 
     # 运行状态机
     current_state = AdRotating(context, True)
-    prev_state = str(current_state)
+    # prev_state = str(current_state)
     while True:
-        prev_state = str(current_state)
+        # prev_state = str(current_state)
         current_state = current_state.handle()
-        if (prev_state != str(current_state)):
-            print("Current state: " + str(current_state) + ", Prev state: " + str(prev_state))
+        # if (prev_state != str(current_state)):
+        #     print("Current state: " + str(current_state) + ", Prev state: " + str(prev_state))
         time.sleep(0.5)  # 状态机节奏控制

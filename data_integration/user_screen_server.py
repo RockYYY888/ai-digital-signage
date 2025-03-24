@@ -1,15 +1,15 @@
 from flask import Flask, jsonify, render_template, Response, request, Blueprint
 from data_integration.data_interface import video_queue, ad_queue
 from queue import Empty
-from pathlib import Path
+from util import get_resource_path
 import json
 import time
 
 user_screen = Blueprint(
     "user_screen",  # Blueprint 名称（必须是字符串）
     __name__,  # 让 Flask 知道这个 Blueprint 属于哪个模块
-    template_folder="templates",  # 指定 HTML 模板路径
-    static_folder="static"  # 指定静态文件路径
+    template_folder=get_resource_path("data_integration/templates"),  # 指定 HTML 模板路径
+    static_folder=get_resource_path("static")  # 指定静态文件路径
 )
 
 # 全局变量存储 context
@@ -47,9 +47,9 @@ def stream():
 @user_screen.route('/video-ended', methods=['POST'])
 def video_ended():
     data = request.json
-    video = data.get('video')
+    # video = data.get('video')
     ad_type = data.get('ad_type')  # 新增字段：广告类型
-    print(f"[Server] Received video ended notification for: {video}, type: {ad_type}")
+    # print(f"[Server] Received video ended notification for: {video}, type: {ad_type}")
     if context:
         if ad_type == 'default':
             context.default_video_completed.set()  # 设置默认广告结束信号

@@ -7,6 +7,7 @@ import numpy as np
 import os
 import pandas as pd
 from torch.utils.data import DataLoader
+from util import get_resource_path
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {device}')
@@ -107,8 +108,8 @@ class UTKFaceDataset(Dataset):
 
 
 if __name__ == '__main__':
-    csv_file = 'CV/utk_dataset_metadata.csv'
-    img_dir = 'UTKFace'
+    csv_file = get_resource_path('CV/utk_dataset_metadata.csv')
+    img_dir = get_resource_path('UTKFace')
 
     # create dataset entity
     dataset = UTKFaceDataset(
