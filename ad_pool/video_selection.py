@@ -1,8 +1,7 @@
-import os
 import sqlite3
-
+from util import get_resource_path
 # Database configuration
-db_file = 'advertisements.db'
+db_file = get_resource_path('advertisements.db')
 
 def get_targeted_videos_with_ads(age_group, gender, ethnicity):
     """
