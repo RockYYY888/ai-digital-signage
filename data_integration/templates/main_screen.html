@@ -38,10 +38,10 @@
             z-index: 10;
         }
         .default-subtitle {
-            top: 0; /* 默认字幕在顶部 */
+            top: 0; /* Default subtitles are at the top */
         }
         .ad-subtitle {
-            bottom: 0; /* 个性化广告字幕在底部 */
+            bottom: 0; /* Personalized ad subtitles at the bottom */
         }
         .subtitle > div {
             position: absolute;
@@ -67,11 +67,11 @@
             <video id="videoPlayer" autoplay muted>
                 <source src="/static/videos/0001.mp4" type="video/mp4">
             </video>
-            <!-- 默认字幕容器 -->
+            <!-- Default subtitle container -->
             <div id="default-subtitle-container" class="subtitle default-subtitle">
                 <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
             </div>
-            <!-- 个性化广告字幕容器 -->
+            <!-- Personalized ad subtitle container -->
             <div id="personalized-ad-subtitle-container" class="subtitle ad-subtitle">
                 <div id="personalized-ad-subtitle-text"></div>
             </div>
@@ -88,48 +88,48 @@
         let currentVideo = "videos/0001.mp4";
         let isPlayingPersonalizedAd = false;
         let pendingAd = null;
-        let showDefaultSubtitle = false; // 控制默认字幕显示的全局状态
-        const pixelsPerSecond = 120;    // 滚动速度
+        let showDefaultSubtitle = false; // Controls the global state of the default subtitle display
+        const pixelsPerSecond = 120;    // Scroll speed
 
         videoPlayer.addEventListener('ended', handleVideoEnd);
 
-        // 启动字幕滚动的函数
+        // Function to start subtitle scrolling
         function startScrolling(subtitleElement) {
             const textWidth = subtitleElement.offsetWidth;
             const containerWidth = subtitleElement.parentElement.offsetWidth;
             const scrollDistance = containerWidth + textWidth;
             const scrollDuration = scrollDistance / pixelsPerSecond;
             subtitleElement.style.animation = `scroll ${scrollDuration}s linear infinite`;
-            subtitleElement.style.left = '100%'; // 确保从最右边开始
+            subtitleElement.style.left = '100%'; // Make sure to start from the far right
         }
 
-        // 重置并启动字幕滚动的函数
+        // Function to reset and start subtitle scrolling
         function resetAndStartScrolling(subtitleElement) {
-            subtitleElement.style.animation = 'none'; // 先移除动画
-            subtitleElement.offsetHeight; // 触发重排，确保动画重置生效
-            startScrolling(subtitleElement); // 重新应用动画
+            subtitleElement.style.animation = 'none'; // Remove the animation first
+            subtitleElement.offsetHeight; // Trigger reflow to ensure animation reset takes effect
+            startScrolling(subtitleElement); // Reapply animation
         }
 
-        // 停止字幕滚动的函数
+        // Function to stop subtitle scrolling
         function stopScrolling(subtitleElement) {
             subtitleElement.style.animation = 'none';
         }
 
-        // 更新默认字幕可见性和动画的函数
+        // Functions that update default subtitle visibility and animation
         function updateDefaultSubtitleVisibility() {
             const shouldShow = !isPlayingPersonalizedAd && (showDefaultSubtitle || pendingAd);
             const currentVisibility = defaultSubtitleContainer.style.visibility;
 
             if (shouldShow) {
                 if (currentVisibility === 'hidden' || currentVisibility === '') {
-                    // 从隐藏变为显示时，重置并启动动画
+                    // When changing from hidden to visible, reset and start the animation
                     defaultSubtitleContainer.style.visibility = 'visible';
                     resetAndStartScrolling(defaultSubtitleText);
                 }
-                // 如果已经显示，则不做任何操作，保持动画继续滚动
+                // If it is already displayed, do nothing and keep the animation scrolling
             } else {
                 defaultSubtitleContainer.style.visibility = 'hidden';
-                stopScrolling(defaultSubtitleText); // 隐藏时停止动画
+                stopScrolling(defaultSubtitleText); // Stop animation when hiding
             }
         }
 
@@ -169,18 +169,18 @@
             videoPlayer.load();
 
             if (adText) {
-                // 播放个性化广告
+                // Play personalized ads
                 adSubtitleText.textContent = adText;
                 isPlayingPersonalizedAd = true;
-                updateDefaultSubtitleVisibility(); // 隐藏默认字幕
+                updateDefaultSubtitleVisibility(); // Hide default subtitles
                 adSubtitleContainer.style.visibility = 'visible';
-                resetAndStartScrolling(adSubtitleText); // 显示广告字幕并从右开始滚动
+                resetAndStartScrolling(adSubtitleText); // Display ad subtitles and scroll from the right
             } else {
-                // 播放默认视频
+                // Play default video
                 isPlayingPersonalizedAd = false;
                 adSubtitleContainer.style.visibility = 'hidden';
-                stopScrolling(adSubtitleText); // 隐藏广告字幕并停止动画
-                updateDefaultSubtitleVisibility(); // 根据条件显示默认字幕
+                stopScrolling(adSubtitleText); // Hide ad captions and stop animation
+                updateDefaultSubtitleVisibility(); // Display default subtitles based on conditions
             }
 
             videoPlayer.play().catch(error => console.error('Playback failed:', error));
@@ -205,7 +205,7 @@
             console.error('EventSource error:', error);
         };
 
-        // 初始化时加载第一个随机视频
+        // Load the first random video during initialization
         loadAndPlayVideo(getRandomVideo());
     </script>
 </body>
