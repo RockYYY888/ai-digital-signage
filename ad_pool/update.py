@@ -1,8 +1,9 @@
 import os
 import csv
 import sqlite3
+from util import get_resource_path
 
-db_file = 'advertisements.db' 
+db_file = get_resource_path('advertisements.db')
 mapping_file = 'mapping.csv'   
 video_folder = 'videos' 
 

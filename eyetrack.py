@@ -6,6 +6,7 @@ import time
 import threading
 import sqlite3
 from datetime import datetime
+from util import get_resource_path
 
 watching_lock = threading.Lock()
 total_watch_time = 0
@@ -101,7 +102,7 @@ def update_database(watch_time, prediction, ad_id):
         # 1. Parsing the incoming prediction: (age_group, gender, ethnicity)
         age_group, gender, ethnicity = prediction
 
-        db_path = 'advertisements.db'  # Consistent database path with dashboard
+        db_path = get_resource_path('advertisements.db')  # Consistent database path with dashboard
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
