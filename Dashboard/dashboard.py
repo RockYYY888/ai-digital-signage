@@ -85,12 +85,13 @@ def create_no_data_figure(title, legend_title, all_groups, colors):
     # Add virtual traces to show legend
     for i, group in enumerate(all_groups):
         fig.add_trace(go.Bar(
-            x=[],  # Empty X-axis data
-            y=[],  # Empty Y-axis data
+            x=[''],  # Empty X-axis data
+            y=[0],  # Empty Y-axis data
             name=group,  # Legend Name
             marker_color=colors[i % len(colors)],  # color
             showlegend=True,  # Show Legend
-            legendgrouptitle_text=legend_title  # Legend Title
+            legendgrouptitle_text=legend_title,  # Legend Title
+            visible='legendonly' 
         ))
 
     # Add "NO DATA" hint
@@ -421,17 +422,34 @@ def init_dashboard(server: Flask):
                 )
             }
         else:
-            # Only display data with non-zero values
+            pie_data = [go.Pie(
+                labels=nonzero_counts.index,
+                values=nonzero_counts.values,
+                hole=0.3,
+                marker={'colors': color_palette[:len(nonzero_counts)]},
+                textinfo='percent',
+                textfont={'size': 16},
+                textposition='auto',
+                name="Completion Level"
+            )]
+
+            zero_labels = overall_counts[overall_counts == 0].index
+            for label in zero_labels:
+                pie_data.append(
+                    go.Pie(
+                        labels=[label],
+                        values=[1], 
+                        marker={'colors': ['rgba(0,0,0,0)']}, 
+                        textinfo="none",
+                        hoverinfo="none",
+                        showlegend=True,
+                        name="Completion Level",
+                        sort=False
+                    )
+                )
+
             pie_chart = {
-                'data': [go.Pie(
-                    labels=nonzero_counts.index,
-                    values=nonzero_counts.values,
-                    hole=0.3,
-                    marker={'colors': color_palette[:len(nonzero_counts)]},  # Dynamically adjust color length
-                    textinfo='percent',
-                    textfont={'size': 16},
-                    textposition='auto'
-                )],
+                'data': pie_data,
                 'layout': go.Layout(
                     title='Overall Completion Rate Distribution',
                     plot_bgcolor='rgba(255, 255, 255, 0)',
