@@ -4,7 +4,7 @@ This repo is for [P2024‑08] AI‑Powered Digital Signage for Targeted and Pers
 ## Introduction
 This project aims to develop an AI digital signage capable of collecting users' facial and emotional data via a camera, enabling the recommendation of personalized advertisements tailored to individual preferences, thereby enhancing the fluidity and comfort of the shopping experience for users.
 
-## Start up the project.
+## Start up the project
 #### We have provided multiple entrance for user to execute the project
 ##### 1. For windows users:
 Run the .exe file in PowerShell with administrative privileges.
@@ -67,30 +67,32 @@ Speed: 16.6ms preprocess, 303.1ms inference, 22.1ms postprocess per image at sha
 [CV] Putting to detected_face_queue...
 [State] LLM Processing: Generating ad text.
 ```
-Three browser windows will show up as below:   
-- Dashboard is to show the watching data for the stackholder.    
+Three browser windows will show up as below: 
+
+- Main screen will display advertisements and show to the users.
 - Secondary screen shows the demographic data, emotion data and user's image.    
-- Main screen will display advertisements.
-#### Dashboard
-<img src="./images/dashboard4.png" alt="project_sketch" style="zoom:75%;" />
+- Dashboard is to show the watching data for the stackholder.    
 
 #### Main Screen
-- Ad rotating state
+- Ad rotating state: randomly display advertisements
 
 <img src="./images/ad2.jpg" alt="project_sketch" style="zoom:75%;" />
 
-- Targeted video displaying state
+- Targeted video displaying state: display personalized advertisements according to the demographic data and emotional data
 
 <img src="./images/target.jpeg" alt="project_sketch" style="zoom:75%;" />
 
 #### Secondary screen
-- Ad rotating state
+- Ad rotating state: no face detected
 
 <img src="./images/second2.png" alt="project_sketch" style="zoom:75%;" />
 
-- Targeted video displaying state
+- Targeted video displaying state: display demographic data and emotional data analyze result
 
 <img src="./images/face.png" alt="project_sketch" style="zoom:75%;" />
+
+#### Dashboard
+<img src="./images/dashboard4.png" alt="project_sketch" style="zoom:75%;" />
 
 #### If you have any confusion about the project, please contact us:
 scyal8@nottingham.edu.cn
@@ -102,24 +104,4 @@ scyal8@nottingham.edu.cn
 
 ### License
 
-The MIT License (MIT)
-
-Copyright (c) <2025> GRP Team 06
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+[The MIT License (MIT)](LICENSE).
