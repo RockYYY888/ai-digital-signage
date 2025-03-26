@@ -94,16 +94,16 @@ Speed: 16.6ms preprocess, 303.1ms inference, 22.1ms postprocess per image at sha
 [State] LLM Processing: Generating ad text.
 ```
 Three browser windows will show up as below, dashboard, secondary screen and user screen:
-- dashboard
+- Dashboard
 <img src="./images/dashboard4.png" alt="project_sketch" style="zoom:75%;" />
-- secondary screen(ad rotating state)
+- Secondary screen(ad rotating state)
 <img src="./images/second2.png" alt="project_sketch" style="zoom:75%;" />
-- secondary screen(targeted video state)
+- Secondary screen(targeted video state)
 <img src="./images/second.png" alt="project_sketch" style="zoom:75%;" />
 
-- ad rotating displaying
+- Ad rotating displaying
 <img src="./images/ad2.jpg" alt="project_sketch" style="zoom:75%;" />
-- targeted video displaying
+- Targeted video displaying
 <img src="./images/target.jpeg" alt="project_sketch" style="zoom:75%;" />
 
 #### If you have any confusion about the project, please contact us:
