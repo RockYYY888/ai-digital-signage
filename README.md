@@ -96,13 +96,16 @@ Speed: 16.6ms preprocess, 303.1ms inference, 22.1ms postprocess per image at sha
 Three browser windows will show up as below, dashboard, secondary screen and user screen:
 - Dashboard
 <img src="./images/dashboard4.png" alt="project_sketch" style="zoom:75%;" />
+
 - Secondary screen(ad rotating state)
 <img src="./images/second2.png" alt="project_sketch" style="zoom:75%;" />
+
 - Secondary screen(targeted video state)
 <img src="./images/second.png" alt="project_sketch" style="zoom:75%;" />
 
 - Ad rotating displaying
 <img src="./images/ad2.jpg" alt="project_sketch" style="zoom:75%;" />
+
 - Targeted video displaying
 <img src="./images/target.jpeg" alt="project_sketch" style="zoom:75%;" />
 
