@@ -28,17 +28,22 @@ def stream():
 def face_image():
     """Returns a single image of the detected face"""
     if not frame_queue.empty():
-        # print(f"[DEBUG] Server : Queue size: {frame_queue.qsize()}")
+        # Get the first frame
         frame = frame_queue.get()
-        # print("[server.py]:Found a frame of face.")
+        # Clear the remaining items in the queue
+        while not frame_queue.empty():
+            frame_queue.get()
+        # print("[server.py]:Found a frame of face and cleared queue.")
 
         _, buffer = cv2.imencode('.jpg', frame)
         return Response(buffer.tobytes(), mimetype='image/jpeg')
+    
     # Load default image using absolute path
     default_image_path = os.path.join(secondary_screen_app.static_folder, 'no_face.jpg')
     if os.path.exists(default_image_path):
         with open(default_image_path, 'rb') as f:
             return Response(f.read(), mimetype='image/jpeg')
+    
     # Return empty response if file does not exist
     print(f"Warning: {default_image_path} not found")
     return Response(b'', mimetype='image/jpeg')
