@@ -6,6 +6,12 @@ from dash.dependencies import Input, Output
 import sqlite3
 from flask import Flask
 from util import get_resource_path
+import sqlite3
+from flask import Flask
+import threading
+
+import webbrowser
+
 # ================ Data loading and preprocessing functions ====================
 
 db_path = get_resource_path("advertisements.db")
@@ -58,6 +64,7 @@ color_palette = ["#FF6B6B", "#FFD930", "#6BCB77", "#4D96FF", "#9955FF"]
 
 def create_bar_chart(data_counts, title, legend_title, colors):
     fig = go.Figure()
+    
     for i, group in enumerate(data_counts.index):
         fig.add_trace(go.Bar(
             x=data_counts.columns,
@@ -66,57 +73,172 @@ def create_bar_chart(data_counts, title, legend_title, colors):
             marker_color=colors[i % len(colors)],
             legendgroup=legend_title,
             showlegend=True,
-            legendgrouptitle_text=legend_title
+            legendgrouptitle_text=legend_title if i == 0 else None
         ))
+    
     fig.update_layout(
-        title=title,
+        title={
+            'text': title,
+            'x': 0.5, 
+            'xanchor': 'center',
+            'font': {'color': 'white'}
+        },
         plot_bgcolor='rgba(255, 255, 255, 0)',
         paper_bgcolor='rgba(255, 255, 255, 0)',
         xaxis={'title': 'Completion Rate Range', 'color': 'white'},
         yaxis={'title': 'Count', 'color': 'white'},
         font={'color': 'white'},
-        dragmode=False
+        dragmode=False,
+        legend=dict(
+            font=dict(color='white'),
+            bgcolor='rgba(255, 255, 255, 0)',
+            groupclick="toggleitem"  
+        )
     )
     return fig
 
 def create_no_data_figure(title, legend_title, all_groups, colors):
     fig = go.Figure()
 
-    # Add virtual traces to show legend
     for i, group in enumerate(all_groups):
         fig.add_trace(go.Bar(
-            x=[''],  # Empty X-axis data
-            y=[0],  # Empty Y-axis data
-            name=group,  # Legend Name
-            marker_color=colors[i % len(colors)],  # color
-            showlegend=True,  # Show Legend
-            legendgrouptitle_text=legend_title,  # Legend Title
+            x=[''], 
+            y=[0],  
+            name=group,  
+            marker_color=colors[i % len(colors)],  
+            showlegend=True,  
+            legendgrouptitle_text=legend_title if i == 0 else None,
+            legendgroup=legend_title,
             visible='legendonly' 
         ))
 
-    # Add "NO DATA" hint
     fig.add_annotation(
         text="NO DATA",
         xref="paper", yref="paper",
-        x=0.5, y=0.5,  # Center display
+        x=0.5, y=0.5, 
         showarrow=False,
         font=dict(size=24, color="white")
     )
 
-    # Update chart layout
     fig.update_layout(
-        title={'text': title, 'font': {'color': 'white'}},  
+        title={
+            'text': title, 
+            'font': {'color': 'white'},
+            'x': 0.5,  
+            'xanchor': 'center'
+        },  
         plot_bgcolor='rgba(255, 255, 255, 0)',  
         paper_bgcolor='rgba(255, 255, 255, 0)',  
         xaxis={'visible': False},  
         yaxis={'visible': False},  
         legend=dict(
-            title=legend_title,
+            title=None,  
             font=dict(color='white'),  
-            bgcolor='rgba(255, 255, 255, 0)'  
+            bgcolor='rgba(255, 255, 255, 0)',
+            groupclick="toggleitem" 
         )
     )
     return fig
+
+def create_pie_chart(data_counts=None, show_no_data=False):
+    all_levels = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']
+    colors = ["#FF6B6B", "#4D96FF", "#6BCB77", "#9955FF", "#FFD930"]
+    
+    if show_no_data or data_counts is None or data_counts.sum() == 0:
+        fig = go.Figure()
+        
+        fig.add_annotation(
+            text="NO DATA",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5,  
+            showarrow=False,
+            font=dict(size=24, color="white")
+        )
+        
+        for i, level in enumerate(all_levels):
+            fig.add_trace(go.Scatter(
+                x=[None], 
+                y=[None], 
+                mode='markers',
+                marker=dict(color=colors[i], size=10),
+                name=level,
+                showlegend=True
+            ))
+    else:
+        filtered_data = {k: v for k, v in data_counts.items() if v > 0}
+        
+        if not filtered_data:  
+            fig = go.Figure()
+            fig.add_annotation(
+                text="NO DATA",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5,
+                showarrow=False,
+                font=dict(size=24, color="white")
+            )
+            
+            for i, level in enumerate(all_levels):
+                fig.add_trace(go.Scatter(
+                    x=[None], 
+                    y=[None],
+                    mode='markers',
+                    marker=dict(color=colors[i], size=10),
+                    name=level,
+                    showlegend=True
+                ))
+        else:
+            fig = go.Figure(go.Pie(
+                labels=list(filtered_data.keys()),
+                values=list(filtered_data.values()),
+                hole=0.3,
+                marker=dict(colors=[colors[all_levels.index(k)] for k in filtered_data.keys()]),
+                textinfo='percent',
+                textfont={'size': 16},
+                textposition='auto',
+                showlegend=True
+            ))
+            
+            missing_levels = [level for level in all_levels if level not in filtered_data]
+            for level in missing_levels:
+                i = all_levels.index(level)
+                fig.add_trace(go.Scatter(
+                    x=[None], 
+                    y=[None],
+                    mode='markers',
+                    marker=dict(color=colors[i], size=10),
+                    name=level,
+                    showlegend=True
+                ))
+    
+    fig.update_layout(
+        title={
+            'text': 'Overall Completion Rate Distribution',
+            'x': 0.5,  
+            'xanchor': 'center',
+            'font': {'color': 'white'}
+        },
+        plot_bgcolor='rgba(255, 255, 255, 0)',
+        paper_bgcolor='rgba(255, 255, 255, 0)',
+        font={'color': 'white'},
+        margin=dict(l=0, r=0, t=50, b=120),  
+        legend=dict(
+            orientation="h",  
+            yanchor="bottom",
+            y=-0.45, 
+            xanchor="center",
+            x=0.5,
+            font=dict(color='white'),
+            bgcolor='rgba(255, 255, 255, 0)',
+            itemsizing='constant'  
+        ),
+        autosize=True,
+        showlegend=True,
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False)
+    )
+    
+    return fig
+
 # =============== Initialize the dashboard ===============
 
 def init_dashboard(server: Flask):
@@ -211,9 +333,12 @@ def init_dashboard(server: Flask):
                          'lineHeight': '24px',
                          'fontFamily': 'Verdana',
                          'display': 'inline-block',
-                         'margin-left': '20px'
+                         'margin-left': '20px',
+                         'position': 'absolute',
+                         'right': '20px',
+                         'top': '20px'
                      })
-        ], style={"margin-bottom": "15px", "display": "flex", "justify-content": "center", "align-items": "center"}),
+        ], style={"margin-bottom": "15px", "display": "flex", "justify-content": "center", "align-items": "center", "position": "relative"}),
 
         # Date picker and basic info
         html.Div([
@@ -366,9 +491,9 @@ def init_dashboard(server: Flask):
             no_data_eth = create_no_data_figure(
                 "Ethnicity Completion Rate Distribution", "Ethnicity", all_ethnicities, color_palette
             )
-            no_data_pie = create_no_data_figure(
-                "Overall Completion Rate Distribution", "Completion Level", all_completion_levels, color_palette
-            )
+            
+            # 使用新的饼图创建函数
+            pie_chart = create_pie_chart(show_no_data=True)
 
             ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
             ad_value = ad_options[0]['value'] if ad_options else None
@@ -379,7 +504,7 @@ def init_dashboard(server: Flask):
                 no_data_gender,
                 no_data_age,
                 no_data_eth,
-                no_data_pie,
+                pie_chart,
                 f"{total_visits:,.0f}",
                 ad_options,
                 ad_value
@@ -398,68 +523,16 @@ def init_dashboard(server: Flask):
         age_counts = age_counts.reindex(index=all_age_groups, columns=all_completion_levels, fill_value=0)
         eth_counts = daily_data.groupby(['ethnicity', 'completion_level']).size().unstack(fill_value=0)
         eth_counts = eth_counts.reindex(index=all_ethnicities, columns=all_completion_levels, fill_value=0)
+        
+        # 获取完成率区间的计数
         overall_counts = daily_data['completion_level'].value_counts().reindex(all_completion_levels, fill_value=0)
 
         gender_chart = create_bar_chart(gender_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
         age_chart = create_bar_chart(age_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
         eth_chart = create_bar_chart(eth_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
-
-        # Modify the pie chart logic: only show the completion rate interval with non-zero values
-        nonzero_counts = overall_counts[overall_counts > 0]  # Filter out intervals with a value of 0
-        if nonzero_counts.empty:
-            # If all values ​​are 0, display "No Data"
-            pie_chart = {
-                'data': [],
-                'layout': go.Layout(
-                    title='Overall Completion Rate Distribution',
-                    annotations=[dict(text='NO DATA', x=0.5, y=0.5, font_size=20, showarrow=False, font_color='white')],
-                    plot_bgcolor='rgba(255, 255, 255, 0)',
-                    paper_bgcolor='rgba(255, 255, 255, 0)',
-                    font={'color': 'white'},
-                    margin=dict(l=0, r=0, t=50, b=100),
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-                    autosize=True
-                )
-            }
-        else:
-            pie_data = [go.Pie(
-                labels=nonzero_counts.index,
-                values=nonzero_counts.values,
-                hole=0.3,
-                marker={'colors': color_palette[:len(nonzero_counts)]},
-                textinfo='percent',
-                textfont={'size': 16},
-                textposition='auto',
-                name="Completion Level"
-            )]
-
-            zero_labels = overall_counts[overall_counts == 0].index
-            for label in zero_labels:
-                pie_data.append(
-                    go.Pie(
-                        labels=[label],
-                        values=[1], 
-                        marker={'colors': ['rgba(0,0,0,0)']}, 
-                        textinfo="none",
-                        hoverinfo="none",
-                        showlegend=True,
-                        name="Completion Level",
-                        sort=False
-                    )
-                )
-
-            pie_chart = {
-                'data': pie_data,
-                'layout': go.Layout(
-                    title='Overall Completion Rate Distribution',
-                    plot_bgcolor='rgba(255, 255, 255, 0)',
-                    paper_bgcolor='rgba(255, 255, 255, 0)',
-                    font={'color': 'white'},
-                    margin=dict(l=0, r=0, t=50, b=100),
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-                    autosize=True
-                )
-            }
+        
+        # 使用新的饼图创建函数
+        pie_chart = create_pie_chart(overall_counts)
 
         ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
         ad_value = ad_options[0]['value'] if ad_options else None
@@ -647,4 +720,3 @@ def init_dashboard(server: Flask):
         return f"Current granularity: {granularity}"
 
     return dash_app  # Correctly return Dash instance
-
