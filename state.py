@@ -7,10 +7,10 @@ import cv2
 from flask import Flask
 from CV.yolov8 import cv_thread_func
 from LLM.LLM import AdvertisementPipeline
-from data_integration.server import secondary_screen_app
-from data_integration.user_screen_server import user_screen
+from Server.server import secondary_screen_app
+from Server.user_screen_server import user_screen
 from Dashboard.dashboard import init_dashboard
-from data_integration.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
+from Server.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
 from eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
 from dotenv import load_dotenv
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         print("Error: cannot open camera!")
         exit(1)
 
-    from data_integration.user_screen_server import set_context
+    from Server.user_screen_server import set_context
     set_context(context)
 
     # Run the Flask app

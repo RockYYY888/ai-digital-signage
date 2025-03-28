@@ -8,7 +8,7 @@ import numpy as np
 import queue
 from CV.model import EmotionClassifier, FaceAttributeModel, predict2
 from CV.UTKFaceDataset import age_group_transform, gender_mapping, race_mapping, emotion_mapping
-from data_integration.data_interface import secondary_screen_signal_queue, frame_queue
+from Server.data_interface import secondary_screen_signal_queue, frame_queue
 from util import get_resource_path
 
 # Device settings

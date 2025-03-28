@@ -1,5 +1,5 @@
 import time
-from data_integration.data_interface import secondary_screen_signal_queue
+from Server.data_interface import secondary_screen_signal_queue
 
 # Global variable initialization
 last_prediction = None

@@ -1,6 +1,7 @@
 from torch import nn, optim
 from CV.UTKFaceDataset import *
 from torch.utils.data import DataLoader, random_split, Subset
+from torchvision import datasets, transforms
 from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

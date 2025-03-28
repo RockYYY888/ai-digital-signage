@@ -5,7 +5,7 @@ from ad_pool.video_selection import *
 import random
 import re
 from functools import lru_cache
-from data_integration.data_interface import ad_queue, video_queue, ad_id_queue, demographic_queue
+from Server.data_interface import ad_queue, video_queue, ad_id_queue, demographic_queue
 from util import get_resource_path
 
 # Load the model and tokenizer globally

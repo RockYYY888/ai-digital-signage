@@ -1,7 +1,7 @@
 from flask import render_template, Response
 import json
-from data_integration.data_generator import get_data_stream
-from data_integration.data_interface import frame_queue
+from Server.data_generator import get_data_stream
+from Server.data_interface import frame_queue
 import cv2
 import os
 
@@ -12,7 +12,7 @@ from util import get_resource_path
 secondary_screen_app = Blueprint(
     "secondary_screen",  # Blueprint name
     __name__,  # import_name
-    template_folder=get_resource_path("data_integration/templates"),
+    template_folder=get_resource_path("Server/templates"),
     static_folder=get_resource_path("static")
 )
 

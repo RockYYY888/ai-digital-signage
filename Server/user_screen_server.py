@@ -1,5 +1,5 @@
 from flask import jsonify, render_template, Response, request, Blueprint
-from data_integration.data_interface import video_queue, ad_queue
+from Server.data_interface import video_queue, ad_queue
 from queue import Empty
 from util import get_resource_path
 import json
@@ -8,7 +8,7 @@ import time
 user_screen = Blueprint(
     "user_screen",  # Blueprint name (must be a string)
     __name__,  # Let Flask know which module this Blueprint belongs to
-    template_folder=get_resource_path("data_integration/templates"),  # Specify the HTML template path
+    template_folder=get_resource_path("Server/templates"),  # Specify the HTML template path
     static_folder=get_resource_path("static")  # Specify the static file path
 )
 

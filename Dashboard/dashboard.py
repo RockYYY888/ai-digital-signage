@@ -314,7 +314,7 @@ def init_dashboard(server: Flask):
         html.Div([
             html.H3("Advertisement Analytics Dashboard",
                     style={"margin-bottom": "0px", 'color': '#00ffcc', 'textAlign': 'center', 'width': '100%', 'font-size': '3.5rem', 'letter-spacing': '0.1rem'}),
-            html.Img(src=dash_app.get_asset_url(get_resource_path('refresh.PNG')), id="refresh-button", n_clicks=0,
+            html.Img(src=dash_app.get_asset_url('refresh.PNG'), id="refresh-button", n_clicks=0,
                      style={
                          'backgroundColor': '#2a3f6f',
                          'color': 'white',
