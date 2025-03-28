@@ -11,7 +11,7 @@ from Server.server import secondary_screen_app
 from Server.user_screen_server import user_screen
 from Dashboard.dashboard import init_dashboard
 from Server.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
-from eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
+from eyetracking.eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
 from dotenv import load_dotenv
 
 from util import get_resource_path
@@ -20,6 +20,8 @@ from util import get_resource_path
 class Context:
     def __init__(self):
         self.face_detection_active = threading.Event()
+        self.user_screen_focus = threading.Event()
+        self.user_screen_focus.clear()
         self.face_detection_active.set()  # Default: enable face detection
         self.detected_face_queue = queue.Queue(maxsize=1)  # Store only the latest face
         self.ad_text_queue = queue.Queue(maxsize=1)  # Store only the latest ad text

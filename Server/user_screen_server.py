@@ -23,6 +23,21 @@ def set_context(ctx):
 def index():
     return render_template('main_screen.html', video_name="")
 
+@user_screen.route('/focus', methods=['POST'])
+def focus():
+    data = request.json
+    focus = data.get('focus')
+    if context:
+        if focus:
+            context.user_screen_focus.set()
+            print("[Main Screen] Main screen gained focus.")
+        else:
+            context.user_screen_focus.clear()
+            print("[Main Screen] Main screen lost focus.")
+    else:
+        print("[Error] Context not set in user_screen server.")
+    return jsonify({"status": "success"}), 200
+
 @user_screen.route('/stream')
 def stream():
     def event_stream():

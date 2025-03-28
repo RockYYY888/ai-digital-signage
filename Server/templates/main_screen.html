@@ -93,6 +93,28 @@
 
         videoPlayer.addEventListener('ended', handleVideoEnd);
 
+        // browser get focus
+        window.onfocus = function() {
+            fetch('/user-screen/focus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ focus: true })
+            });
+        };
+
+        // browser lose focus
+        window.onblur = function() {
+            fetch('/user-screen/focus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ focus: false })
+            });
+        };
+
         // Function to start subtitle scrolling
         function startScrolling(subtitleElement) {
             const textWidth = subtitleElement.offsetWidth;

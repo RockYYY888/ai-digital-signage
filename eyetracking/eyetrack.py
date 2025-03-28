@@ -32,7 +32,6 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
         print(f"Error loading facial feature predictor: {e}")
         return
 
-    # Initialization
     with watching_lock:
         context.total_watch_time = 0.0
 
@@ -44,8 +43,13 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
     try:
         while True:
-            # If the thread is not active, pause and reset the timer
             if not eye_tracking_active.is_set():
+                with watching_lock:
+                    start_time = None
+                time.sleep(0.2)
+                continue
+
+            if not context.user_screen_focus.is_set():
                 with watching_lock:
                     start_time = None
                 time.sleep(0.2)
@@ -65,16 +69,15 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
                 try:
                     landmarks = predictor(gray, face)
                     eye_distance = calculate_eye_distance(landmarks)
-                    if eye_distance > 8:  # Adjust the threshold as needed
+                    if eye_distance > 8:  # 可根据需要调整阈值
                         is_watching = True
                         break
                 except Exception as e:
                     print(f"Facial analysis errors: {e}")
                     continue
 
-            # update total_watch_time
             with watching_lock:
-                if is_watching:
+                if is_watching and context.user_screen_focus.is_set():
                     if start_time is None:
                         start_time = current_time
                     else:
@@ -84,9 +87,6 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
                     start_time = None
 
             time.sleep(0.03)
-
-            # Just print it here context.total_watch_time
-            #print(f"[Eyetracking] watch_time = {context.total_watch_time:.2f}")
 
     except Exception as e:
         print("[Eyetracking] Fatal error:", e)
@@ -102,7 +102,7 @@ def update_database(watch_time, prediction, ad_id):
         # 1. Parsing the incoming prediction: (age_group, gender, ethnicity)
         age_group, gender, ethnicity = prediction
 
-        db_path = get_resource_path('advertisements.db')  # Consistent database path with dashboard
+        db_path = get_resource_path('../advertisements.db')  # Consistent database path with dashboard
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
