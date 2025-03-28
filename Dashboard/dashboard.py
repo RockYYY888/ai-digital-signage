@@ -3,16 +3,9 @@ import plotly.graph_objects as go
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
-import sqlite3
-from flask import Flask
 from util import get_resource_path
 import sqlite3
 from flask import Flask
-import threading
-
-import webbrowser
-
-# ================ Data loading and preprocessing functions ====================
 
 db_path = get_resource_path("advertisements.db")
 
@@ -39,6 +32,7 @@ def get_fresh_data():
     # Data preprocessing
     data['visit_date'] = pd.to_datetime(data['visit_date'])
     data['completion_rate'] = data['view_time'] / data['duration']
+    data.loc[data['completion_rate'] > 1, 'completion_rate'] = 0.5
     data['ad_id'] = 'AD-' + data['ad_id'].astype(str)
 
     def completion_rate_level(completion_rate):
@@ -258,7 +252,7 @@ def init_dashboard(server: Flask):
             <title>{%title%}</title>
             {%favicon%}
             {%css%}
-            <link rel="stylesheet" href="/dashboard/assets/style.css">
+            <link rel="stylesheet" href="/Dashboard/assets/style.css">
             <style>
                 body {
                     background-color: #192444;
@@ -402,7 +396,7 @@ def init_dashboard(server: Flask):
 
             # Pie chart
             html.Div([
-                dcc.Graph(id='pie-chart'),
+                dcc.Graph(id='pie-chart', config={'displayModeBar': False }),
             ], className="create_container five columns"),
         ], className="row flex-display"),
 

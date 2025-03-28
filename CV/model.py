@@ -1,14 +1,6 @@
-import torch
-from torch import Tensor, nn, optim
-from torchvision import datasets, transforms, models
-from torch.utils.data import Dataset
-from PIL import Image
-import numpy as np
-import os
-import pandas as pd
-from torch.utils.data import DataLoader
+from torch import nn, optim
 from CV.UTKFaceDataset import *
-from torch.utils.data import Dataset, DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, random_split, Subset
 from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

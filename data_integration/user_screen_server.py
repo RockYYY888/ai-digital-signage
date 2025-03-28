@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, Response, request, Blueprint
+from flask import jsonify, render_template, Response, request, Blueprint
 from data_integration.data_interface import video_queue, ad_queue
 from queue import Empty
 from util import get_resource_path

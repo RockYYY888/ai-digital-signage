@@ -1,9 +1,7 @@
 import torch
-from torch import Tensor
-from torchvision import datasets, transforms
+from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
-import numpy as np
 import os
 import pandas as pd
 from torch.utils.data import DataLoader

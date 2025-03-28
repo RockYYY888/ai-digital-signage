@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, Blueprint
+from flask import render_template, Response
 import json
 from data_integration.data_generator import get_data_stream
 from data_integration.data_interface import frame_queue

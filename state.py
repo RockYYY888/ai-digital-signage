@@ -5,7 +5,7 @@ import queue
 import webbrowser
 import cv2
 from flask import Flask
-from CV.yolov8 import cv_thread_func, analyze_frame
+from CV.yolov8 import cv_thread_func
 from LLM.LLM import AdvertisementPipeline
 from data_integration.server import secondary_screen_app
 from data_integration.user_screen_server import user_screen

@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from ad_pool.video_selection import *

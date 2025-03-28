@@ -3,7 +3,6 @@ import random
 import sqlite3
 from ad_pool.video_selection import get_targeted_videos_with_ads
 import threading
-import time
 from util import get_resource_path
 
 watching_lock = threading.Lock()
