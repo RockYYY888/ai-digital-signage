@@ -492,7 +492,7 @@ def init_dashboard(server: Flask):
                 "Ethnicity Completion Rate Distribution", "Ethnicity", all_ethnicities, color_palette
             )
             
-            # 使用新的饼图创建函数
+            # use new function to create pie chart
             pie_chart = create_pie_chart(show_no_data=True)
 
             ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
@@ -524,14 +524,14 @@ def init_dashboard(server: Flask):
         eth_counts = daily_data.groupby(['ethnicity', 'completion_level']).size().unstack(fill_value=0)
         eth_counts = eth_counts.reindex(index=all_ethnicities, columns=all_completion_levels, fill_value=0)
         
-        # 获取完成率区间的计数
+        # fetch the completion rate
         overall_counts = daily_data['completion_level'].value_counts().reindex(all_completion_levels, fill_value=0)
 
         gender_chart = create_bar_chart(gender_counts, "Gender Completion Rate Distribution", "Gender", color_palette)
         age_chart = create_bar_chart(age_counts, "Age Group Completion Rate Distribution", "Age Group", color_palette)
         eth_chart = create_bar_chart(eth_counts, "Ethnicity Completion Rate Distribution", "Ethnicity", color_palette)
         
-        # 使用新的饼图创建函数
+        # new pie chart function
         pie_chart = create_pie_chart(overall_counts)
 
         ad_options = [{'label': ad_id, 'value': ad_id} for ad_id in sorted(fresh['ad_id'].unique(), key=lambda x: int(x.split('-')[1]))]
