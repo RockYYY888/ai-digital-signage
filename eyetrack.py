@@ -1,3 +1,9 @@
+# Copyright (c) 2025 Team2024.06
+# All rights reserved.
+#
+# This file is part of Targeted Digital Signage.
+# Licensed under the MIT license.
+# See the LICENSE file in the project root for full license information.
 import re
 import cv2
 import dlib
