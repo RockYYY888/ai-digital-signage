@@ -472,8 +472,8 @@ def init_dashboard(server: Flask):
         selected_date = pd.to_datetime(selected_date).date()
         daily_data = fresh.loc[fresh['visit_date'].dt.date == selected_date].copy()
 
-        print(f"Selected date: {selected_date}")
-        print(f"Daily data shape: {daily_data.shape}")
+        # print(f"Selected date: {selected_date}")
+        # print(f"Daily data shape: {daily_data.shape}")
 
         all_genders = ['Male', 'Female']
         all_age_groups = ['17-35', '35-50', '50+']

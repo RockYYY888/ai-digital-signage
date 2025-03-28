@@ -5,6 +5,7 @@
 # Licensed under the MIT license.
 # See the LICENSE file in the project root for full license information.
 import os
+import random
 import threading
 import time
 import queue
@@ -19,6 +20,7 @@ from Dashboard.dashboard import init_dashboard
 from Server.data_interface import secondary_screen_signal_queue, ad_id_queue, demographic_queue
 from eyetracking.eyetrack import eye_tracking_thread_func, update_database, extract_number, watching_lock
 from dotenv import load_dotenv
+from multiprocessing import Process
 
 from util import get_resource_path
 
@@ -175,6 +177,15 @@ def index():
     </ul>
     """
 
+# Define the range of usable ports
+MIN_PORT = 5000
+MAX_PORT = 8000
+
+# Set the seed to the current timestamp in seconds
+current_time = int(time.time())  # Unix timestamp in seconds
+random.seed(current_time)
+random_port = random.randint(MIN_PORT, MAX_PORT)
+
 if __name__ == "__main__":
     context = Context()
     env_path = get_resource_path(".env")
@@ -196,16 +207,16 @@ if __name__ == "__main__":
     # Run the Flask app
     flask_thread = threading.Thread(target=main_app.run, kwargs={
         "host": "127.0.0.1",
-        "port": 5000,
+        "port": random_port,
         "threaded": True,
         "debug": False
     })
     flask_thread.daemon = True
     flask_thread.start()
 
-    webbrowser.open("http://127.0.0.1:5000/user-screen/")
-    webbrowser.open("http://127.0.0.1:5000/secondary-screen/")
-    webbrowser.open("http://127.0.0.1:5000/dashboard/")
+    webbrowser.open(f"http://127.0.0.1:{random_port}/user-screen/")
+    webbrowser.open(f"http://127.0.0.1:{random_port}/secondary-screen/")
+    webbrowser.open(f"http://127.0.0.1:{random_port}/dashboard/")
 
     # Start the CV thread
     cv_thread = threading.Thread(

@@ -70,173 +70,201 @@
 </head>
 
 <body>
-    <div id="main-container">
-        <div id="video-container">
-            <video id="videoPlayer" autoplay muted>
-                <source src="/static/videos/0001.mp4" type="video/mp4">
-            </video>
-            <!-- Default subtitle container -->
-            <div id="default-subtitle-container" class="subtitle default-subtitle">
-                <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
-            </div>
-            <!-- Personalized ad subtitle container -->
-            <div id="personalized-ad-subtitle-container" class="subtitle ad-subtitle">
-                <div id="personalized-ad-subtitle-text"></div>
-            </div>
+<div id="main-container">
+    <div id="video-container">
+        <video id="videoPlayer" autoplay muted>
+            <source src="/static/videos/0001.mp4" type="video/mp4">
+        </video>
+        <!-- Default subtitle container -->
+        <div id="default-subtitle-container" class="subtitle default-subtitle">
+            <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
+        </div>
+        <!-- Personalized ad subtitle container -->
+        <div id="personalized-ad-subtitle-container" class="subtitle ad-subtitle">
+            <div id="personalized-ad-subtitle-text"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        const videoPlayer = document.getElementById('videoPlayer');
-        const defaultSubtitleContainer = document.getElementById('default-subtitle-container');
-        const defaultSubtitleText = document.getElementById('default-subtitle-text');
-        const adSubtitleContainer = document.getElementById('personalized-ad-subtitle-container');
-        const adSubtitleText = document.getElementById('personalized-ad-subtitle-text');
+<script>
+    const videoPlayer = document.getElementById('videoPlayer');
+    const defaultSubtitleContainer = document.getElementById('default-subtitle-container');
+    const defaultSubtitleText = document.getElementById('default-subtitle-text');
+    const adSubtitleContainer = document.getElementById('personalized-ad-subtitle-container');
+    const adSubtitleText = document.getElementById('personalized-ad-subtitle-text');
 
-        let currentVideo = "videos/0001.mp4";
-        let isPlayingPersonalizedAd = false;
-        let pendingAd = null;
-        let showDefaultSubtitle = false; // Controls the global state of the default subtitle display
-        const pixelsPerSecond = 120;    // Scroll speed
+    let currentVideo = "videos/0001.mp4";
+    let isPlayingPersonalizedAd = false;
+    let pendingAd = null;
+    let showDefaultSubtitle = false; // Controls the global state of the default subtitle display
+    const pixelsPerSecond = 120;    // Scroll speed
 
-        videoPlayer.addEventListener('ended', handleVideoEnd);
+    videoPlayer.addEventListener('ended', handleVideoEnd);
 
-        // browser get focus
-        window.onfocus = function() {
-            fetch('/user-screen/focus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ focus: true })
-            });
-        };
+    // Browser get focus
+    window.onfocus = function() {
+        fetch('/user-screen/focus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ focus: true })
+        });
+    };
 
-        // browser lose focus
-        window.onblur = function() {
-            fetch('/user-screen/focus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ focus: false })
-            });
-        };
+    // Browser lose focus
+    window.onblur = function() {
+        fetch('/user-screen/focus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ focus: false })
+        });
+    };
 
-        // Function to start subtitle scrolling
-        function startScrolling(subtitleElement) {
-            const textWidth = subtitleElement.offsetWidth;
-            const containerWidth = subtitleElement.parentElement.offsetWidth;
-            const scrollDistance = containerWidth + textWidth;
-            const scrollDuration = scrollDistance / pixelsPerSecond;
-            subtitleElement.style.animation = `scroll ${scrollDuration}s linear infinite`;
-            subtitleElement.style.left = '100%'; // Make sure to start from the far right
-        }
+    // Function to start subtitle scrolling
+    function startScrolling(subtitleElement) {
+        const textWidth = subtitleElement.offsetWidth;
+        const containerWidth = subtitleElement.parentElement.offsetWidth;
+        const scrollDistance = containerWidth + textWidth;
+        const scrollDuration = scrollDistance / pixelsPerSecond;
+        subtitleElement.style.animation = `scroll ${scrollDuration}s linear infinite`;
+        subtitleElement.style.left = '100%'; // Make sure to start from the far right
+    }
 
-        // Function to reset and start subtitle scrolling
-        function resetAndStartScrolling(subtitleElement) {
-            subtitleElement.style.animation = 'none'; // Remove the animation first
-            subtitleElement.offsetHeight; // Trigger reflow to ensure animation reset takes effect
-            startScrolling(subtitleElement); // Reapply animation
-        }
+    // Function to reset and start subtitle scrolling
+    function resetAndStartScrolling(subtitleElement) {
+        subtitleElement.style.animation = 'none'; // Remove the animation first
+        subtitleElement.offsetHeight; // Trigger reflow to ensure animation reset takes effect
+        startScrolling(subtitleElement); // Reapply animation
+    }
 
-        // Function to stop subtitle scrolling
-        function stopScrolling(subtitleElement) {
-            subtitleElement.style.animation = 'none';
-        }
+    // Function to stop subtitle scrolling
+    function stopScrolling(subtitleElement) {
+        subtitleElement.style.animation = 'none';
+    }
 
-        // Functions that update default subtitle visibility and animation
-        function updateDefaultSubtitleVisibility() {
-            const shouldShow = !isPlayingPersonalizedAd && (showDefaultSubtitle || pendingAd);
-            const currentVisibility = defaultSubtitleContainer.style.visibility;
+    // Function to update default subtitle visibility and animation
+    function updateDefaultSubtitleVisibility() {
+        const shouldShow = !isPlayingPersonalizedAd && (showDefaultSubtitle || pendingAd);
+        const currentVisibility = defaultSubtitleContainer.style.visibility;
 
-            if (shouldShow) {
-                if (currentVisibility === 'hidden' || currentVisibility === '') {
-                    // When changing from hidden to visible, reset and start the animation
-                    defaultSubtitleContainer.style.visibility = 'visible';
-                    resetAndStartScrolling(defaultSubtitleText);
-                }
-                // If it is already displayed, do nothing and keep the animation scrolling
-            } else {
-                defaultSubtitleContainer.style.visibility = 'hidden';
-                stopScrolling(defaultSubtitleText); // Stop animation when hiding
+        if (shouldShow) {
+            if (currentVisibility === 'hidden' || currentVisibility === '') {
+                // When changing from hidden to visible, reset and start the animation
+                defaultSubtitleContainer.style.visibility = 'visible';
+                resetAndStartScrolling(defaultSubtitleText);
             }
+            // If it is already displayed, do nothing and keep the animation scrolling
+        } else {
+            defaultSubtitleContainer.style.visibility = 'hidden';
+            stopScrolling(defaultSubtitleText); // Stop animation when hiding
         }
+    }
 
-        function getRandomVideo() {
-            const min = 1;
-            const max = 77;
-            const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-            return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
-        }
+    function getRandomVideo() {
+        const min = 1;
+        const max = 77;
+        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+        return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
+    }
 
-        function handleVideoEnd() {
-            const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
+    function handleVideoEnd() {
+        const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
 
-            fetch('/user-screen/video-ended', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ video: currentVideo, ad_type: adType }),
-            })
+        fetch('/user-screen/video-ended', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video: currentVideo, ad_type: adType }),
+        })
             .then(response => response.json())
             .then(data => console.log('Backend response:', data))
             .catch(error => console.error('Failed to send request:', error));
 
-            if (isPlayingPersonalizedAd) {
-                isPlayingPersonalizedAd = false;
-                loadAndPlayVideo(getRandomVideo());
-            } else if (pendingAd) {
-                loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
-                pendingAd = null;
-            } else {
-                loadAndPlayVideo(getRandomVideo());
-            }
+        if (isPlayingPersonalizedAd) {
+            isPlayingPersonalizedAd = false;
+            loadAndPlayVideo(getRandomVideo());
+        } else if (pendingAd) {
+            loadAndPlayVideo(pendingAd.video, pendingAd.ad_text);
+            pendingAd = null;
+        } else {
+            loadAndPlayVideo(getRandomVideo());
+        }
+        saveState(); // Save state
+    }
+
+    function loadAndPlayVideo(videoPath, adText = null) {
+        currentVideo = videoPath;
+        videoPlayer.src = `/static/${videoPath}`;
+        videoPlayer.load();
+
+        if (adText) {
+            // Play personalized ads
+            adSubtitleText.textContent = adText;
+            isPlayingPersonalizedAd = true;
+            updateDefaultSubtitleVisibility(); // Hide default subtitles
+            adSubtitleContainer.style.visibility = 'visible';
+            resetAndStartScrolling(adSubtitleText); // Display ad subtitles and scroll from the right
+        } else {
+            // Play default video
+            isPlayingPersonalizedAd = false;
+            adSubtitleContainer.style.visibility = 'hidden';
+            stopScrolling(adSubtitleText); // Hide ad captions and stop animation
+            updateDefaultSubtitleVisibility(); // Display default subtitles based on conditions
         }
 
-        function loadAndPlayVideo(videoPath, adText = null) {
-            currentVideo = videoPath;
-            videoPlayer.src = `/static/${videoPath}`;
-            videoPlayer.load();
+        videoPlayer.play().catch(error => console.error('Playback failed:', error));
+        saveState(); // Save state
+    }
 
-            if (adText) {
-                // Play personalized ads
-                adSubtitleText.textContent = adText;
-                isPlayingPersonalizedAd = true;
-                updateDefaultSubtitleVisibility(); // Hide default subtitles
-                adSubtitleContainer.style.visibility = 'visible';
-                resetAndStartScrolling(adSubtitleText); // Display ad subtitles and scroll from the right
-            } else {
-                // Play default video
-                isPlayingPersonalizedAd = false;
-                adSubtitleContainer.style.visibility = 'hidden';
-                stopScrolling(adSubtitleText); // Hide ad captions and stop animation
-                updateDefaultSubtitleVisibility(); // Display default subtitles based on conditions
-            }
+    // Save state to localStorage
+    function saveState() {
+        localStorage.setItem('currentVideo', currentVideo);
+        localStorage.setItem('isPlayingPersonalizedAd', isPlayingPersonalizedAd.toString());
+        localStorage.setItem('pendingAd', JSON.stringify(pendingAd));
+    }
 
-            videoPlayer.play().catch(error => console.error('Playback failed:', error));
+    // Load state from localStorage
+    function loadState() {
+        const savedVideo = localStorage.getItem('currentVideo');
+        const savedIsPersonalized = localStorage.getItem('isPlayingPersonalizedAd') === 'true';
+        const savedPendingAd = JSON.parse(localStorage.getItem('pendingAd'));
+
+        if (savedVideo) {
+            currentVideo = savedVideo;
+            isPlayingPersonalizedAd = savedIsPersonalized;
+            pendingAd = savedPendingAd;
+            loadAndPlayVideo(currentVideo, pendingAd ? pendingAd.ad_text : null);
+        } else {
+            loadAndPlayVideo(getRandomVideo());
         }
+    }
 
-        const eventSource = new EventSource('/user-screen/stream');
-        eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.video && data.ad_text) {
-                pendingAd = { video: data.video, ad_text: data.ad_text };
-                console.log('Pending ad updated:', pendingAd);
-                updateDefaultSubtitleVisibility();
-            }
-            if (data.queue_empty !== undefined) {
-                showDefaultSubtitle = !data.queue_empty;
-                console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle);
-                updateDefaultSubtitleVisibility();
-            }
-        };
+    const eventSource = new EventSource('/user-screen/stream');
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.video && data.ad_text) {
+            pendingAd = { video: data.video, ad_text: data.ad_text };
+            console.log('Pending ad updated:', pendingAd);
+            updateDefaultSubtitleVisibility();
+        }
+        if (data.queue_empty !== undefined) {
+            showDefaultSubtitle = !data.queue_empty;
+            console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle);
+            updateDefaultSubtitleVisibility();
+        }
+        saveState(); // Save state when new data is received
+    };
 
-        eventSource.onerror = function(error) {
-            console.error('EventSource error:', error);
-        };
+    eventSource.onerror = function(error) {
+        console.error('EventSource error:', error);
+    };
 
-        // Load the first random video during initialization
-        loadAndPlayVideo(getRandomVideo());
-    </script>
+    // Restore state on page load
+    window.onload = function() {
+        loadState();
+    };
+</script>
 </body>
 </html>

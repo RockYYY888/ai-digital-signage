@@ -45,7 +45,7 @@
       height: 100%;
       background-color: #1f2c56;
       display: flex;
-      flex-direction: column;  
+      flex-direction: column;
       justify-content: flex-start;
       align-items: center;
       position: relative;
@@ -53,8 +53,8 @@
     }
 
     #image-container {
-      width: 100%;  
-      height: 100%;  
+      width: 100%;
+      height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -77,12 +77,12 @@
     }
 
     #camera-status {
-      width: 100%;  
-      margin-top: 1px;  
-      text-align: center; 
-      color: #ffcc00;  
-      font-size: 1rem; 
-      line-height: 1.4;  
+      width: 100%;
+      margin-top: 1px;
+      text-align: center;
+      color: #ffcc00;
+      font-size: 1rem;
+      line-height: 1.4;
     }
 
     /* Right status area */
@@ -129,12 +129,12 @@
       color: white;
       margin: 20px;
       text-align: left;
-      position: relative; 
+      position: relative;
       left: 50px;
     }
 
     #watching-time span {
-      color: orange; 
+      color: orange;
     }
 
     #status-text {
@@ -160,46 +160,46 @@
     .status-text-green { color: #32cd32; }
     .status-text-red { color: #ff4d4d; }
 
-    #additional-info {             
+    #additional-info {
       font-size: 1.5rem;
       color: white;
       margin: 10px 0;
-      text-align: right; 
-      padding-right: 0;  
-      margin-top: -50px;   
+      text-align: right;
+      padding-right: 0;
+      margin-top: -50px;
       position: relative;
-      width: 100%;  
-      left: 100px;     
+      width: 100%;
+      left: 100px;
   }
 
     #additional-info p {
-      margin: 5px 0;                         
-      display: flex;  
-      justify-content: flex-start; 
+      margin: 5px 0;
+      display: flex;
+      justify-content: flex-start;
       align-items: center;
       width: 100%;
     }
 
     #additional-info .label {
-      flex: 0 0 140px;  
-      text-align: right; 
-      color: white;  
-      padding-right: 15px; 
+      flex: 0 0 140px;
+      text-align: right;
+      color: white;
+      padding-right: 15px;
     }
 
     #additional-info span:not(.label) {
-      flex: 1;  
-      text-align: left; 
-      color: orange; 
+      flex: 1;
+      text-align: left;
+      color: orange;
     }
-    
-   
+
+
 
 
     /* Optional: Adding a hover effect */
     #additional-info:hover {
-      /*background-color: #444; */ 
-      cursor: pointer;        
+      /*background-color: #444; */
+      cursor: pointer;
     }
 
     /* New Custom Tooltip (Hover effect) */
@@ -219,7 +219,7 @@
       padding: 5px;
       position: absolute;
       z-index: 1;
-      bottom: -150%; 
+      bottom: -150%;
       left: 50%;
       margin-left: -100px; /* Center the tooltip */
       opacity: 0;
@@ -287,7 +287,7 @@
         <div id="prediction-state" class="hidden">
           <div id="status-heading">ANALYSIS FINISHED</div>
           <div id="status-text">
-            <span class="highlight">Model Analysis:</span> 
+            <span class="highlight">Model Analysis:</span>
             <span id="additional-info">
               <p><span class="label">Age:</span> <span id="age"></span></p>
               <p><span class="label">Gender:</span> <span id="gender"></span></p>
@@ -322,7 +322,7 @@
           emotion: document.getElementById('emotion')
         }
       };
-    
+
       const stateConfig = {
         no_face: {
           showState: 'noFace',
@@ -335,28 +335,28 @@
           statusText: 'Face detected'
         }
       };
-    
+
       function handleStateChange(state) {
         Object.values(elements.states).forEach(el => el.classList.add('hidden'));
         const config = stateConfig[state];
         elements.states[config.showState].classList.remove('hidden');
-    
+
         const isFaceImage = config.image === 'face';
         elements.images.face.classList.toggle('hidden', !isFaceImage);
         elements.images.noFace.classList.toggle('hidden', isFaceImage);
-    
+
         if (isFaceImage) {
           elements.images.face.src = `/secondary-screen/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
         }
       }
-    
+
       const eventSource = new EventSource('/secondary-screen/stream');
       let isFirstMessage = true;
-    
+
       eventSource.onmessage = function(e) {
         try {
           const data = JSON.parse(e.data);
-          
+
           Object.entries({
             age: data.age,
             gender: data.gender,
@@ -365,11 +365,11 @@
           }).forEach(([key, value]) => {
             elements.statusText[key].textContent = value || '';
           });
-    
+
           if (stateConfig[data.status]) {
             handleStateChange(data.status);
           }
-    
+
           if (isFirstMessage) {
             elements.images.noFace.src = "/static/no_face.jpg";
             isFirstMessage = false;
@@ -378,13 +378,13 @@
           console.error("SSE error:", error);
         }
       };
-    
+
       window.addEventListener('beforeunload', () => {
         eventSource.close();
       });
     })();
     </script>
-    
-    
+
+
 </body>
 </html>
