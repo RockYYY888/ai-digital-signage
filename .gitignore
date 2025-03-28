@@ -5,9 +5,9 @@ CV/utk_faces_images/
 # Ignore specific files
 CV/best_face_attribute_model.pth
 CV/best_project_model.pth
-data_integration/__pycache__/data_generator.cpython-311.pyc
-data_integration/__pycache__/data_interface.cpython-311.pyc
-data_integration/__pycache__/server.cpython-311.pyc
+Server/__pycache__/data_generator.cpython-311.pyc
+Server/__pycache__/data_interface.cpython-311.pyc
+Server/__pycache__/server.cpython-311.pyc
 
 # Ignore all .mp4 files
 *.mp4
