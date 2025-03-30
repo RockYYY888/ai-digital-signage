@@ -7,7 +7,13 @@ This project aims to develop an AI digital signage capable of collecting users' 
 ## Start up the project
 #### We have provided multiple entrance for user to execute the project
 ##### 1. For windows users:
-Run the .exe file in PowerShell with administrative privileges.
+Double click the .exe file and input your camera index immediately after the  prompt show up.
+ ```bash
+Using device: cpu/cuda
+cpu/cuda
+Start up. Today's date is: <today's date>
+```
+prompt shows up
 ##### 2. For Mac users:
 Mac users should download our state executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
  ```bash
@@ -46,7 +52,7 @@ Now you could run the program with:
 ```bash
 python state.py
 ```
-A token for the LLM model Llama-3.2-1B is required, we provide you an available Hugging Face token in the .env file.   
+A token for the LLM model Llama-3.2-1B-Instruct is required, we provide you an available Hugging Face token in the .env file.   
 You may need VPN to login the Hugging Face for the first time.
 ***
  The default camera is assigned the index 0. If you have an external camera, please enter 1, you can enter the index according to your requirement.
@@ -71,7 +77,7 @@ Three browser windows will show up as below:
 
 - Main screen will display advertisements and show to the users.
 - Secondary screen shows the demographic data, emotion data and user's image.    
-- Dashboard is to show the watching data for the stackholder.    
+- Dashboard is to show the watching data for the stakeholder. The watch time is recorded only when the user focuses on the main screen. You may click the refresh button to update the data currently displayed on the dashboard.
 
 #### Main Screen
 - Ad rotating state: randomly display advertisements
