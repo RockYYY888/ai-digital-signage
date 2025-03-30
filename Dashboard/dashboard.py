@@ -359,8 +359,6 @@ def init_dashboard(server: Flask):
                     dcc.DatePickerSingle(
                         id='date-picker',
                         date=today_date.strftime('%Y-%m-%d'),
-                        min_date_allowed=data['visit_date'].min().strftime('%Y-%m-%d'),
-                        max_date_allowed=data['visit_date'].max().strftime('%Y-%m-%d'),
                         style={
                             'backgroundColor': '#1f2c56',
                             'color': 'white',
@@ -458,7 +456,9 @@ def init_dashboard(server: Flask):
             Output('pie-chart', 'figure'),
             Output('total-viewers-all', 'children'),
             Output('ad-dropdown', 'options'),
-            Output('ad-dropdown', 'value')
+            Output('ad-dropdown', 'value'),
+            Output('date-picker', 'min_date_allowed'),
+            Output('date-picker', 'max_date_allowed')
         ],
         [
             Input('date-picker', 'date'),
@@ -468,6 +468,9 @@ def init_dashboard(server: Flask):
     def update_all(selected_date, refresh_clicks):
         fresh = get_fresh_data()
         total_visits = fresh.shape[0]
+
+        min_date = fresh['visit_date'].min().strftime('%Y-%m-%d')
+        max_date = fresh['visit_date'].max().strftime('%Y-%m-%d')
 
         selected_date = pd.to_datetime(selected_date).date()
         daily_data = fresh.loc[fresh['visit_date'].dt.date == selected_date].copy()
@@ -507,7 +510,9 @@ def init_dashboard(server: Flask):
                 pie_chart,
                 f"{total_visits:,.0f}",
                 ad_options,
-                ad_value
+                ad_value,
+                min_date,
+                max_date
             )
 
         daily_visits = daily_data.shape[0]
@@ -546,7 +551,9 @@ def init_dashboard(server: Flask):
             pie_chart,
             f"{total_visits:,.0f}",
             ad_options,
-            ad_value
+            ad_value,
+            min_date,
+            max_date
         )
 
     @dash_app.callback(
