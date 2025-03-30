@@ -77,7 +77,7 @@ Three browser windows will show up as below:
 
 - Main screen will display advertisements and show to the users.
 - Secondary screen shows the demographic data, emotion data and user's image.    
-- Dashboard is to show the watching data for the stakeholder. The watch time is recorded only when the user focuses on the main screen. You may click the refresh button to update the data currently displayed on the dashboard.
+- Dashboard is to show the watching data for the stakeholder. The watch time is recorded only when the user focuses on the main screen. You may click refresh button to update the newly arrived data on the dashboard.
 
 #### Main Screen
 - Ad rotating state: randomly display advertisements
