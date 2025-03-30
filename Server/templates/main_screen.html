@@ -72,9 +72,7 @@
 <body>
 <div id="main-container">
     <div id="video-container">
-        <video id="videoPlayer" autoplay muted>
-            <source src="/static/videos/0001.mp4" type="video/mp4">
-        </video>
+        <video id="videoPlayer" autoplay muted></video>
         <!-- Default subtitle container -->
         <div id="default-subtitle-container" class="subtitle default-subtitle">
             <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
@@ -93,9 +91,6 @@
     const adSubtitleContainer = document.getElementById('personalized-ad-subtitle-container');
     const adSubtitleText = document.getElementById('personalized-ad-subtitle-text');
 
-    let currentVideo = "videos/0001.mp4";
-    let isPlayingPersonalizedAd = false;
-    let pendingAd = null;
     let showDefaultSubtitle = false; // Controls the global state of the default subtitle display
     const pixelsPerSecond = 120;    // Scroll speed
 
@@ -169,6 +164,10 @@
         const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
         return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
     }
+
+    let currentVideo = getRandomVideo();
+    let isPlayingPersonalizedAd = false;
+    let pendingAd = null;
 
     function handleVideoEnd() {
         const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
