@@ -246,7 +246,7 @@ def init_dashboard(server: Flask):
     dash_app = dash.Dash(
         __name__,
         server=server,
-        url_base_pathname='/dashboard/'
+        url_base_pathname='/dashboard/',
     )
 
     # Custom HTML templates
@@ -258,7 +258,7 @@ def init_dashboard(server: Flask):
             <title>{%title%}</title>
             {%favicon%}
             {%css%}
-            <link rel="stylesheet" href="/Dashboard/assets/style.css">
+            <link rel="stylesheet" href="style.css">
             <style>
                 body {
                     background-color: #192444;

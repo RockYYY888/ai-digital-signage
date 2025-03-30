@@ -49,14 +49,14 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
     try:
         while True:
-            # If eye tracking is inactive, reset and wait
             if not eye_tracking_active.is_set():
                 with watching_lock:
-                    start_time = None  # Reset only when eye tracking is fully off
+                    if start_time is not None:
+                        context.total_watch_time += (time.time() - start_time)
+                        start_time = None
                 time.sleep(0.2)
                 continue
 
-            # Capture frame only if eye tracking is active
             ret, frame = cap.read()
             if not ret:
                 print("[Eyetracking] Failed to capture frame.")
@@ -64,16 +64,15 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
             current_time = time.time()
 
-            # Check screen focus and watching status
+            # 检查屏幕焦点
             if not context.user_screen_focus.is_set():
                 with watching_lock:
-                    if start_time is not None:  # Pause accumulation, don’t reset
+                    if start_time is not None:
                         context.total_watch_time += (current_time - start_time)
                         start_time = None
                 time.sleep(0.2)
                 continue
 
-            # Process frame for eye tracking
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector(gray)
             is_watching = False
@@ -82,7 +81,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
                 try:
                     landmarks = predictor(gray, face)
                     eye_distance = calculate_eye_distance(landmarks)
-                    if eye_distance > 8:  # Adjustable threshold
+                    if eye_distance > 8:
                         is_watching = True
                         break
                 except Exception as e:
@@ -92,12 +91,12 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
             with watching_lock:
                 if is_watching:
                     if start_time is None:
-                        start_time = current_time  # Start or resume timing
+                        start_time = current_time
                     else:
                         context.total_watch_time += (current_time - start_time)
-                        start_time = current_time  # Update start_time for next interval
+                        start_time = current_time
                 else:
-                    if start_time is not None:  # Pause if user stops watching
+                    if start_time is not None:
                         context.total_watch_time += (current_time - start_time)
                         start_time = None
 
