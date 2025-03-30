@@ -33,7 +33,7 @@ def calculate_eye_distance(landmarks):
 def eye_tracking_thread_func(cap, eye_tracking_active, context):
     detector = dlib.get_frontal_face_detector()
     try:
-        predictor = dlib.shape_predictor("eyetracking/shape_predictor_68_face_landmarks.dat")
+        predictor = dlib.shape_predictor(get_resource_path("eyetracking/shape_predictor_68_face_landmarks.dat"))
     except Exception as e:
         print(f"Error loading facial feature predictor: {e}")
         return
