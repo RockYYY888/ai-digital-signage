@@ -7,3 +7,51 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Third-Party Licenses
+
+This project includes dependencies under the following licenses:
+
+Flask (BSD-3-Clause License)
+Copyright (c) Pallets
+Flask is licensed under the BSD-3-Clause License. The full text of this license can be found at:
+https://opensource.org/licenses/BSD-3-Clause
+
+PyTorch (BSD-3-Clause License)
+Copyright (c) Meta Platforms, Inc.
+PyTorch is licensed under the BSD-3-Clause License. The full text of this license can be found at:
+https://github.com/pytorch/pytorch/blob/main/LICENSE
+
+YOLOv8 (AGPL-3.0 License)
+
+Copyright (c) Ultralytics
+YOLOv8 is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). The full text of this license can be found at:
+https://github.com/ultralytics/ultralytics/blob/main/LICENSE
+
+OpenCV (Apache 2.0 License)
+
+Copyright (c) OpenCV team
+OpenCV is licensed under the Apache License 2.0. The full text of this license can be found at:
+https://opencv.org/license/
+
+Llama 3.2 (Llama 3.2 Community License Agreement)
+Copyright (c) Meta Platforms, Inc.
+Llama 3.2 is licensed under the Llama 3.2 Community License Agreement. The full text of this license is included below:
+
+LLAMA 3.2 COMMUNITY LICENSE AGREEMENT
+Llama 3.2 Version Release Date: September 25, 2024
+
+“Agreement” means the terms and conditions for use, reproduction, distribution and modification of the Llama Materials set forth herein.
+
+“Documentation” means the specifications, manuals and documentation accompanying Llama 3.2 distributed by Meta at https://llama.meta.com/doc/overview.
+
+“Licensee” or “you” means you, or your employer or any other person or entity (if you are entering into this Agreement on such person or entity’s behalf), of the age required under applicable laws, rules or regulations to provide legal consent and that has legal authority to bind your employer or such other person or entity if you are entering in this Agreement on their behalf.
+
+“Llama 3.2” means the foundational large language models and software and algorithms, including machine-learning model code, trained model weights, inference-enabling code, training-enabling code, fine-tuning enabling code and other elements of the foregoing distributed by Meta at https://www.llama.com/llama-downloads.
+
+“Llama Materials” means, collectively, Meta’s proprietary Llama 3.2 and Documentation (and any portion thereof) made available under this Agreement.
+
+“Meta” or “we” means Meta Platforms Ireland Limited (if you are located in or, if you are an entity, your principal place of business is in the EEA or Switzerland) and Meta Platforms, Inc. (if you are located outside of the EEA or Switzerland).
+
+
+
