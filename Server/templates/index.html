@@ -12,9 +12,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secondary Screen</title>
+  <!-- Import Google Fonts for Roboto and Playfair Display -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Base style */
+    /* Base styles for the body */
     body {
       margin: 0;
       background-color: #192444;
@@ -26,6 +27,7 @@
       color: #ffffff;
     }
 
+    /* Container for the entire layout */
     #container {
       display: flex;
       align-items: center;
@@ -39,7 +41,7 @@
       overflow: hidden;
     }
 
-    /* Left camera display area */
+    /* Styles for the left camera display area */
     #camera-view {
       width: 50%;
       height: 100%;
@@ -52,6 +54,7 @@
       border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* Container for the camera image */
     #image-container {
       width: 100%;
       height: 100%;
@@ -60,6 +63,7 @@
       align-items: center;
     }
 
+    /* Styles for the detected face image */
     #face-image {
       width: 70%;
       height: 90%;
@@ -68,6 +72,7 @@
       box-sizing: border-box;
     }
 
+    /* Styles for the placeholder camera image (not used in HTML) */
     #camera-image {
       width: 80%;
       height: 80%;
@@ -76,6 +81,7 @@
       border: 3px dashed #ffcc00;
     }
 
+    /* Status text below the camera image (not used in HTML) */
     #camera-status {
       width: 100%;
       margin-top: 1px;
@@ -85,7 +91,7 @@
       line-height: 1.4;
     }
 
-    /* Right status area */
+    /* Styles for the right status area */
     #status {
       width: 50%;
       height: 100%;
@@ -98,6 +104,7 @@
       text-align: center;
     }
 
+    /* Card containing status information */
     .status-card {
       background-color: #000839;
       border-radius: 12px;
@@ -114,6 +121,7 @@
       box-sizing: border-box;
     }
 
+    /* Heading for the status section */
     #status-heading {
       font-family: 'Playfair Display', serif;
       font-size: 3rem;
@@ -124,6 +132,7 @@
       text-transform: uppercase;
     }
 
+    /* Watching time display (not used in HTML) */
     #watching-time {
       font-size: 1.5rem;
       color: white;
@@ -133,10 +142,12 @@
       left: 50px;
     }
 
+    /* Highlighted span within watching time */
     #watching-time span {
       color: orange;
     }
 
+    /* Main status text */
     #status-text {
       font-family: 'Playfair Display', serif;
       font-size: 1.2rem;
@@ -147,6 +158,7 @@
       margin-bottom: 20px;
     }
 
+    /* Highlighted text style */
     .highlight {
       font-weight: bold;
       font-size: 2rem;
@@ -157,9 +169,11 @@
       display: block;
     }
 
+    /* Color classes for status text */
     .status-text-green { color: #32cd32; }
     .status-text-red { color: #ff4d4d; }
 
+    /* Additional demographic information */
     #additional-info {
       font-size: 1.5rem;
       color: white;
@@ -170,8 +184,9 @@
       position: relative;
       width: 100%;
       left: 100px;
-  }
+    }
 
+    /* Paragraphs within additional info */
     #additional-info p {
       margin: 5px 0;
       display: flex;
@@ -180,6 +195,7 @@
       width: 100%;
     }
 
+    /* Label style within additional info */
     #additional-info .label {
       flex: 0 0 140px;
       text-align: right;
@@ -187,28 +203,27 @@
       padding-right: 15px;
     }
 
+    /* Value style within additional info */
     #additional-info span:not(.label) {
       flex: 1;
       text-align: left;
       color: orange;
     }
 
-
-
-
-    /* Optional: Adding a hover effect */
+    /* Hover effect for additional info */
     #additional-info:hover {
       /*background-color: #444; */
       cursor: pointer;
     }
 
-    /* New Custom Tooltip (Hover effect) */
+    /* Tooltip container */
     .tooltip {
       position: relative;
       display: inline-block;
       cursor: pointer;
     }
 
+    /* Tooltip text (hidden by default) */
     .tooltip .tooltiptext {
       visibility: hidden;
       width: 200px;
@@ -227,25 +242,29 @@
       font-size: 0.8rem;
     }
 
+    /* Show tooltip on hover */
     .tooltip:hover .tooltiptext {
       visibility: visible;
       opacity: 1;
     }
 
-    /* New CSS: Hover and active link effects */
+    /* Hover effect for links */
     a:hover {
       color: #ffffff;  /* Change text color on hover */
       border-bottom: 2px solid #ffffff;  /* Underline effect on hover */
       transform: scale(1.05);  /* Slightly enlarge the link when hovered */
     }
 
+    /* Active state for links */
     a:active {
       color: #ffcc00;  /* Change color when the link is clicked */
       border-bottom: 2px solid #ffcc00;  /* Underline effect on click */
     }
 
+    /* Class to hide elements */
     .hidden { display: none; }
 
+    /* Responsive design for smaller screens */
     @media (max-width: 768px) {
       #container {
         flex-direction: column;
@@ -266,28 +285,34 @@
   </style>
 </head>
 <body>
+  <!-- Main container for the secondary screen layout -->
   <div id="container">
-    <!-- Camera display area -->
+    <!-- Left section: Camera display area -->
     <div id="camera-view">
+      <!-- Container for displaying images -->
       <div id="image-container">
+        <!-- Image for detected face, hidden by default -->
         <img id="face-image" src="/face_image" alt="Detected Face" class="hidden">
+        <!-- Default image when no face is detected -->
         <img id="no-face-image" src="/static/no_face.jpg" alt="No Face Image">
       </div>
     </div>
 
-    <!-- Status display area -->
+    <!-- Right section: Status display area -->
     <div id="status">
+      <!-- Card containing status information -->
       <div class="status-card">
-        <!-- No detection status (default display) -->
+        <!-- Default state: No face detected -->
         <div id="no-face-state">
           <div id="status-heading">AD Rotating</div>
         </div>
 
-        <!-- Detection complete status -->
+        <!-- State when analysis is complete -->
         <div id="prediction-state" class="hidden">
           <div id="status-heading">ANALYSIS FINISHED</div>
           <div id="status-text">
             <span class="highlight">Model Analysis:</span>
+            <!-- Demographic information display -->
             <span id="additional-info">
               <p><span class="label">Age:</span> <span id="age"></span></p>
               <p><span class="label">Gender:</span> <span id="gender"></span></p>
@@ -296,15 +321,14 @@
             </span>
           </div>
         </div>
-
-        <!-- Get feedback status -->
       </div>
     </div>
   </div>
 
-
+  <!-- JavaScript for dynamic updates -->
   <script>
     (function() {
+      // Object to store DOM elements for easy access
       const elements = {
         states: {
           noFace: document.getElementById('no-face-state'),
@@ -323,6 +347,7 @@
         }
       };
 
+      // Configuration for different states
       const stateConfig = {
         no_face: {
           showState: 'noFace',
@@ -336,6 +361,7 @@
         }
       };
 
+      // Function to handle state changes and update UI
       function handleStateChange(state) {
         Object.values(elements.states).forEach(el => el.classList.add('hidden'));
         const config = stateConfig[state];
@@ -346,17 +372,20 @@
         elements.images.noFace.classList.toggle('hidden', isFaceImage);
 
         if (isFaceImage) {
-          elements.images.face.src = `/secondary-screen/face_image?${new Date().getTime()}`; // 添加时间戳避免缓存
+          elements.images.face.src = `/secondary-screen/face_image?${new Date().getTime()}`; // Add timestamp to avoid caching
         }
       }
 
+      // Set up Server-Sent Events (SSE) for real-time updates
       const eventSource = new EventSource('/secondary-screen/stream');
       let isFirstMessage = true;
 
+      // Handle incoming SSE messages
       eventSource.onmessage = function(e) {
         try {
           const data = JSON.parse(e.data);
 
+          // Update status text elements with received data
           Object.entries({
             age: data.age,
             gender: data.gender,
@@ -366,10 +395,12 @@
             elements.statusText[key].textContent = value || '';
           });
 
+          // Update UI based on status
           if (stateConfig[data.status]) {
             handleStateChange(data.status);
           }
 
+          // Set initial no-face image on first message
           if (isFirstMessage) {
             elements.images.noFace.src = "/static/no_face.jpg";
             isFirstMessage = false;
@@ -379,12 +410,11 @@
         }
       };
 
+      // Close SSE connection when the window is unloaded
       window.addEventListener('beforeunload', () => {
         eventSource.close();
       });
     })();
-    </script>
-
-
+  </script>
 </body>
 </html>

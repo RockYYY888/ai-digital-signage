@@ -45,7 +45,11 @@ class AdvertisementGenerator:
 
     @lru_cache(maxsize=1)
     def load_model_and_tokenizer(self):
-        """Load the model and tokenizer using the provided token."""
+        """Load the transformer model and tokenizer using the provided token.
+
+        Raises:
+            RuntimeError: If model or tokenizer loading fails.
+        """
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 "meta-llama/Llama-3.2-1B-Instruct",
@@ -63,7 +67,7 @@ class AdvertisementGenerator:
             raise RuntimeError(f"Model loading failed: {e}")
 
     def configure_special_tokens(self):
-        """Ensure required special tokens are configured"""
+        """Configure special tokens for the tokenizer and model."""
         if not self.tokenizer.pad_token:
             self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         if not self.tokenizer.eos_token:
@@ -73,7 +77,11 @@ class AdvertisementGenerator:
         self.model.config.eos_token_id = self.tokenizer.eos_token_id
 
     def build_system_prompt(self):
-        """Generate system prompt template"""
+        """Build the system prompt for the language model.
+
+        Returns:
+            str: The constructed system prompt.
+        """
         return (
             "You are a skilled copywriter at a global ad agency. Your only job is to deliver ad content matching my exact needs. "
             "Output must be in double quotes, strictly 20-30 words, no more, no less. "
@@ -82,7 +90,16 @@ class AdvertisementGenerator:
         )
 
     def build_user_prompt(self, demographics, product, context):
-        """Construct user prompt from inputs"""
+        """Construct the user prompt for ad generation based on input parameters.
+
+        Args:
+            demographics (dict): Dictionary containing 'race', 'gender', 'age_range', and 'emotion'.
+            product (str): The product name to advertise.
+            context (list): List of strings describing the context.
+
+        Returns:
+            str: The constructed user prompt.
+        """
         tone = self.EMOTION_TONE_MAP.get(demographics['emotion'], "professional")
         context_text = " ".join(context)
         product_name = product
@@ -91,18 +108,37 @@ class AdvertisementGenerator:
             f"Write a one-sentence creative ad text for {product_name}, strictly 20-30 words. "
             f"Target: {demographics['race']} {demographics['gender']}, aged {demographics['age_range']}, feeling {demographics['emotion']}. "
             f"Use a {tone} tone. Highlight unique features. Background: {context_text}. "
-            f"Ensure 20-30 words, adjust if needed, and return only the ad content in double quotes."
+            f"Ensure 20-30 words, adjust if needed, and return only the ad content in quotes."
         )
 
     def construct_messages(self, demographics, product, context):
-        """Build complete message structure for LLM input"""
+        """Construct the message structure for the language model input.
+
+        Args:
+            demographics (dict): Dictionary containing 'race', 'gender', 'age_range', and 'emotion'.
+            product (str): The product name to advertise.
+            context (list): List of strings describing the context.
+
+        Returns:
+            list: List of dictionaries representing the system and user prompts.
+        """
         return [
             {"role": "system", "content": self.build_system_prompt()},
             {"role": "user", "content": self.build_user_prompt(demographics, product, context)},
         ]
 
     def generate_ad_text(self, messages):
-        """Generate a response for the input text using messages format."""
+        """Generate advertisement text using the language model.
+
+        Args:
+            messages (list): List of dictionaries containing the system and user prompts.
+
+        Returns:
+            str: The generated advertisement text.
+
+        Raises:
+            RuntimeError: If text generation fails.
+        """
         try:
             inputs = self.tokenizer.apply_chat_template(
                 messages,
@@ -122,7 +158,14 @@ class AdvertisementGenerator:
             raise RuntimeError(f"Text generation failed: {e}")
 
     def process_output(self, outputs):
-        """Process and clean model output"""
+        """Process and clean the model's output.
+
+        Args:
+            outputs: The raw output from the language model.
+
+        Returns:
+            str: The cleaned advertisement text.
+        """
         response = self.tokenizer.decode(
             outputs[0],
             skip_special_tokens=True,
@@ -132,7 +175,14 @@ class AdvertisementGenerator:
         return self.extract_ad_content(response)
 
     def extract_ad_content(self, text):
-        """Extract content between quotes with improved regex"""
+        """Extract the advertisement content between quotes from the text.
+
+        Args:
+            text (str): The raw text output from the model.
+
+        Returns:
+            str: The extracted advertisement content, or the stripped text if no quotes are found.
+        """
         match = re.search(r'"([^"]+)"', text)
         return match.group(1).strip() if match else text.strip()
 
@@ -144,7 +194,17 @@ class AdvertisementPipeline:
         self.debug_mode = False
 
     def parse_demographics(self, input_data):
-        """Validate and structure input data"""
+        """Parse and validate demographic input data.
+
+        Args:
+            input_data (tuple): Tuple containing (age_range, gender, race, emotion).
+
+        Returns:
+            dict: Structured demographic data.
+
+        Raises:
+            ValueError: If input_data does not contain exactly 4 elements.
+        """
         if len(input_data) != 4:
             raise ValueError("Invalid input format. Expected (age_range, gender, race, emotion)")
 
@@ -159,7 +219,17 @@ class AdvertisementPipeline:
         }
 
     def select_video(self, demographics):
-        """Select appropriate video based on demographics"""
+        """Select a video based on demographic criteria.
+
+        Args:
+            demographics (dict): Dictionary containing 'age_range', 'gender', and 'race'.
+
+        Returns:
+            dict: Information about the selected video including file name, description, weight, and product.
+
+        Raises:
+            ValueError: If no matching videos are found.
+        """
         videos = get_targeted_videos_with_ads(
             demographics["age_range"],
             demographics["gender"],
@@ -186,7 +256,11 @@ class AdvertisementPipeline:
         }
 
     def print_debug_info(self, video_info):
-        """Output debug information if enabled"""
+        """Print debug information about the selected video if debug mode is enabled.
+
+        Args:
+            video_info (dict): Dictionary containing video details (file_name, description, weight, product).
+        """
         if self.debug_mode:
             print(f"Selected Video: {video_info['file_name']}")
             print(f"Description: {video_info['description']}")
@@ -194,6 +268,14 @@ class AdvertisementPipeline:
             print(f"Product: {video_info['product']}\n")
 
     def generate_advertisement(self, input_data):
+        """Generate an advertisement based on input demographics.
+
+        Args:
+            input_data (tuple): Tuple containing (age_range, gender, race, emotion).
+
+        Returns:
+            str: The generated advertisement text, or None if an error occurs.
+        """
         try:
             demographics = self.parse_demographics(input_data)
             video_info = self.select_video(demographics)
@@ -206,7 +288,12 @@ class AdvertisementPipeline:
             print(f"Error generating advertisement: {e}")
 
     def output_results(self, video_info, ad_text):
-        """Format and display results"""
+        """Display the results of the advertisement generation.
+
+        Args:
+            video_info (dict): Dictionary containing video details (file_name, product).
+            ad_text (str): The generated advertisement text.
+        """
         print(f"{video_info['product']}")
         print(f"{video_info['file_name']}")
         print(ad_text)

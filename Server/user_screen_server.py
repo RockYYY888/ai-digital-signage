@@ -4,6 +4,7 @@
 # This file is part of Targeted Digital Signage.
 # Licensed under the MIT license.
 # See the LICENSE file in the project root for full license information.
+
 from flask import jsonify, render_template, Response, request, Blueprint
 from Server.data_interface import video_queue, ad_queue
 from queue import Empty
@@ -22,15 +23,28 @@ user_screen = Blueprint(
 context = None
 
 def set_context(ctx):
+    """Set the global context for the user screen.
+
+    Args:
+        ctx: The context object containing shared state.
+    """
     global context
     context = ctx
 
 @user_screen.route('/')
 def index():
+    """Render the main screen HTML template."""
     return render_template('main_screen.html', video_name="")
 
 @user_screen.route('/focus', methods=['POST'])
 def focus():
+    """Handle focus events for the main screen.
+
+    This function sets or clears the focus event in the shared context.
+    
+    Returns:
+        A JSON response indicating success.
+    """
     data = request.json
     focus = data.get('focus')
     if context:
@@ -46,6 +60,14 @@ def focus():
 
 @user_screen.route('/stream')
 def stream():
+    """Provide a server-sent event stream of video and advertisement data.
+
+    This function continuously checks the video and advertisement queues
+    and streams updates to the client.
+
+    Returns:
+        A streaming HTTP response with event-stream mimetype.
+    """
     def event_stream():
         last_video = None
         while True:
@@ -67,10 +89,16 @@ def stream():
 
 @user_screen.route('/video-ended', methods=['POST'])
 def video_ended():
+    """Handle video completion events.
+
+    This function receives a notification when a video ends and sets
+    the appropriate event in the shared context.
+
+    Returns:
+        A JSON response indicating success.
+    """
     data = request.json
-    # video = data.get('video')
     ad_type = data.get('ad_type')  # New field: advertisement type
-    # print(f"[Server] Received video ended notification for: {video}, type: {ad_type}")
     if context:
         if ad_type == 'default':
             context.default_video_completed.set()  # Set default advertisement end signal

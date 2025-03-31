@@ -24,15 +24,29 @@ secondary_screen_app = Blueprint(
 
 @secondary_screen_app.route('/')
 def index():
+    """Render the main index page.
+
+    Returns:
+        str: Rendered HTML template for the index page.
+    """
     return render_template('/index.html')
 
 @secondary_screen_app.route('/stream')
 def stream():
+    """Stream data as a server-sent event.
+
+    Returns:
+        Response: Flask Response object with server-sent event stream.
+    """
     return Response(data_stream(), mimetype="text/event-stream")
 
 @secondary_screen_app.route('/face_image')
 def face_image():
-    """Returns a single image of the detected face"""
+    """Return a single image of the detected face or a default image if no face is detected.
+
+    Returns:
+        Response: Flask Response object containing the image bytes with 'image/jpeg' mimetype.
+    """
     if not frame_queue.empty():
         # Get the first frame
         frame = frame_queue.get()
@@ -55,6 +69,11 @@ def face_image():
     return Response(b'', mimetype='image/jpeg')
 
 def data_stream():
+    """Generate a server-sent event stream from data updates.
+
+    Yields:
+        str: Server-sent event data in the format 'data: {json}\n\n'.
+    """
     last_sent = None
     for data in get_data_stream():
         if data != last_sent:

@@ -12,7 +12,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Screen</title>
+    <!-- Inline CSS for styling the user screen -->
     <style>
+        /* Base styles for the body */
         body {
             margin: 0;
             display: flex;
@@ -21,22 +23,30 @@
             min-height: 100vh;
             background: #000;
         }
+
+        /* Main container for video and subtitles */
         #main-container {
             width: 100%;
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
+
+        /* Container for the video element */
         #video-container {
             position: relative;
             width: 100%;
             height: 100%;
         }
+
+        /* Styles for the video player */
         video {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
+
+        /* Base styles for subtitle containers */
         .subtitle {
             position: absolute;
             width: 100%;
@@ -45,12 +55,18 @@
             overflow: hidden;
             z-index: 10;
         }
+
+        /* Position default subtitles at the top */
         .default-subtitle {
             top: 0; /* Default subtitles are at the top */
         }
+
+        /* Position personalized ad subtitles at the bottom */
         .ad-subtitle {
             bottom: 0; /* Personalized ad subtitles at the bottom */
         }
+
+        /* Styles for subtitle text within containers */
         .subtitle > div {
             position: absolute;
             white-space: nowrap;
@@ -62,6 +78,8 @@
             box-sizing: border-box;
             color: white;
         }
+
+        /* Animation for scrolling subtitles */
         @keyframes scroll {
             from { left: 100%; }
             to { left: -100%; }
@@ -70,33 +88,42 @@
 </head>
 
 <body>
+<!-- Main container holding video and subtitle elements -->
 <div id="main-container">
+    <!-- Container for video and subtitle overlays -->
     <div id="video-container">
+        <!-- Video player element -->
         <video id="videoPlayer" autoplay muted></video>
         <!-- Default subtitle container -->
         <div id="default-subtitle-container" class="subtitle default-subtitle">
+            <!-- Default subtitle text -->
             <div id="default-subtitle-text">Face detected. Stay tuned for your personalized AD.</div>
         </div>
         <!-- Personalized ad subtitle container -->
         <div id="personalized-ad-subtitle-container" class="subtitle ad-subtitle">
+            <!-- Personalized ad subtitle text -->
             <div id="personalized-ad-subtitle-text"></div>
         </div>
     </div>
 </div>
 
+<!-- JavaScript for video playback and subtitle management -->
 <script>
+    // DOM element references
     const videoPlayer = document.getElementById('videoPlayer');
     const defaultSubtitleContainer = document.getElementById('default-subtitle-container');
     const defaultSubtitleText = document.getElementById('default-subtitle-text');
     const adSubtitleContainer = document.getElementById('personalized-ad-subtitle-container');
     const adSubtitleText = document.getElementById('personalized-ad-subtitle-text');
 
+    // State variables
     let showDefaultSubtitle = false; // Controls the global state of the default subtitle display
-    const pixelsPerSecond = 120;    // Scroll speed
+    const pixelsPerSecond = 120;    // Scroll speed for subtitles
 
+    // Event listener for video end
     videoPlayer.addEventListener('ended', handleVideoEnd);
 
-    // Browser get focus
+    // Notify server when browser gains focus
     window.onfocus = function() {
         fetch('/user-screen/focus', {
             method: 'POST',
@@ -107,7 +134,7 @@
         });
     };
 
-    // Browser lose focus
+    // Notify server when browser loses focus
     window.onblur = function() {
         fetch('/user-screen/focus', {
             method: 'POST',
@@ -118,46 +145,47 @@
         });
     };
 
-    // Function to start subtitle scrolling
+    // Start scrolling animation for a subtitle element
     function startScrolling(subtitleElement) {
         const textWidth = subtitleElement.offsetWidth;
         const containerWidth = subtitleElement.parentElement.offsetWidth;
         const scrollDistance = containerWidth + textWidth;
         const scrollDuration = scrollDistance / pixelsPerSecond;
         subtitleElement.style.animation = `scroll ${scrollDuration}s linear infinite`;
-        subtitleElement.style.left = '100%'; // Make sure to start from the far right
+        subtitleElement.style.left = '100%'; // Ensure starting position is far right
     }
 
-    // Function to reset and start subtitle scrolling
+    // Reset and restart scrolling animation for a subtitle element
     function resetAndStartScrolling(subtitleElement) {
-        subtitleElement.style.animation = 'none'; // Remove the animation first
-        subtitleElement.offsetHeight; // Trigger reflow to ensure animation reset takes effect
+        subtitleElement.style.animation = 'none'; // Clear existing animation
+        subtitleElement.offsetHeight; // Trigger reflow to apply reset
         startScrolling(subtitleElement); // Reapply animation
     }
 
-    // Function to stop subtitle scrolling
+    // Stop scrolling animation for a subtitle element
     function stopScrolling(subtitleElement) {
         subtitleElement.style.animation = 'none';
     }
 
-    // Function to update default subtitle visibility and animation
+    // Update visibility and animation of default subtitle based on state
     function updateDefaultSubtitleVisibility() {
         const shouldShow = !isPlayingPersonalizedAd && (showDefaultSubtitle || pendingAd);
         const currentVisibility = defaultSubtitleContainer.style.visibility;
 
         if (shouldShow) {
             if (currentVisibility === 'hidden' || currentVisibility === '') {
-                // When changing from hidden to visible, reset and start the animation
+                // Show and animate subtitle if previously hidden
                 defaultSubtitleContainer.style.visibility = 'visible';
                 resetAndStartScrolling(defaultSubtitleText);
             }
-            // If it is already displayed, do nothing and keep the animation scrolling
+            // Continue animation if already visible
         } else {
             defaultSubtitleContainer.style.visibility = 'hidden';
-            stopScrolling(defaultSubtitleText); // Stop animation when hiding
+            stopScrolling(defaultSubtitleText); // Stop animation when hidden
         }
     }
 
+    // Generate a random video path
     function getRandomVideo() {
         const min = 1;
         const max = 77;
@@ -165,10 +193,12 @@
         return `videos/${String(randomNum).padStart(4, '0')}.mp4`;
     }
 
+    // State variables for video playback
     let currentVideo = getRandomVideo();
     let isPlayingPersonalizedAd = false;
     let pendingAd = null;
 
+    // Handle video end event and transition to next video
     function handleVideoEnd() {
         const adType = isPlayingPersonalizedAd ? 'personalized' : 'default';
 
@@ -190,41 +220,42 @@
         } else {
             loadAndPlayVideo(getRandomVideo());
         }
-        saveState(); // Save state
+        saveState(); // Persist state after video ends
     }
 
+    // Load and play a video with optional ad text
     function loadAndPlayVideo(videoPath, adText = null) {
         currentVideo = videoPath;
         videoPlayer.src = `/static/${videoPath}`;
         videoPlayer.load();
 
         if (adText) {
-            // Play personalized ads
+            // Handle personalized ad playback
             adSubtitleText.textContent = adText;
             isPlayingPersonalizedAd = true;
-            updateDefaultSubtitleVisibility(); // Hide default subtitles
+            updateDefaultSubtitleVisibility(); // Hide default subtitle
             adSubtitleContainer.style.visibility = 'visible';
-            resetAndStartScrolling(adSubtitleText); // Display ad subtitles and scroll from the right
+            resetAndStartScrolling(adSubtitleText); // Show and animate ad subtitle
         } else {
-            // Play default video
+            // Handle default video playback
             isPlayingPersonalizedAd = false;
             adSubtitleContainer.style.visibility = 'hidden';
-            stopScrolling(adSubtitleText); // Hide ad captions and stop animation
-            updateDefaultSubtitleVisibility(); // Display default subtitles based on conditions
+            stopScrolling(adSubtitleText); // Hide and stop ad subtitle
+            updateDefaultSubtitleVisibility(); // Show default subtitle if applicable
         }
 
         videoPlayer.play().catch(error => console.error('Playback failed:', error));
-        saveState(); // Save state
+        saveState(); // Persist state after loading video
     }
 
-    // Save state to localStorage
+    // Save current state to localStorage
     function saveState() {
         localStorage.setItem('currentVideo', currentVideo);
         localStorage.setItem('isPlayingPersonalizedAd', isPlayingPersonalizedAd.toString());
         localStorage.setItem('pendingAd', JSON.stringify(pendingAd));
     }
 
-    // Load state from localStorage
+    // Load state from localStorage and resume playback
     function loadState() {
         const savedVideo = localStorage.getItem('currentVideo');
         const savedIsPersonalized = localStorage.getItem('isPlayingPersonalizedAd') === 'true';
@@ -240,6 +271,7 @@
         }
     }
 
+    // Set up Server-Sent Events (SSE) for real-time updates
     const eventSource = new EventSource('/user-screen/stream');
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
@@ -253,14 +285,15 @@
             console.log('queue_empty:', data.queue_empty, 'showDefaultSubtitle:', showDefaultSubtitle);
             updateDefaultSubtitleVisibility();
         }
-        saveState(); // Save state when new data is received
+        saveState(); // Persist state on data update
     };
 
+    // Handle SSE errors
     eventSource.onerror = function(error) {
         console.error('EventSource error:', error);
     };
 
-    // Restore state on page load
+    // Restore state when page loads
     window.onload = function() {
         loadState();
     };
