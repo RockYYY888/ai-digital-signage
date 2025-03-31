@@ -7,7 +7,7 @@ This project aims to develop an AI digital signage capable of collecting users' 
 ## Start up the project
 #### We have provided multiple entrance for user to execute the project
 ##### 1. For windows users:
-Double click the .exe file and input your camera index immediately after the  prompt show up.
+Double click the ai_digital_signage_win.exe file and input your camera index immediately after the 
  ```bash
 Using device: cpu/cuda
 cpu/cuda
@@ -15,13 +15,13 @@ Start up. Today's date is: <today's date>
 ```
 prompt shows up
 ##### 2. For Mac users:
-Mac users should download our state executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
+Mac users should download our ai_digital_signage_mac executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
  ```bash
 chmod +x state
 ```
 This command will extract it as a executable file, then users can execute it by clicking  or using the commands below in the terminal:
  ```bash
-/dist/state ; exit;
+/dist/ai_digital_signage_mac ; exit;
 ```
 If a security warning is triggered and you are unable to open the file, please go to the settings and trust the file under "Privacy \& Security" . 
 ##### 3. To run the source code
@@ -57,7 +57,7 @@ You may need VPN to login the Hugging Face for the first time.
 ***
  The default camera is assigned the index 0. If you have an external camera, please enter 1, you can enter the index according to your requirement.
 ```bash
-(base) liang@liangdeMacBook-Air ai-digital-signage % python state.py 
+python state.py 
 Using device: cpu
 cpu
 Start up. Today's date is: 2025-03-24
