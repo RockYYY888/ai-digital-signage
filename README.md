@@ -21,7 +21,7 @@ chmod +x state
 ```
 This command will extract it as a executable file, then users can execute it by clicking  or using the commands below in the terminal:
  ```bash
-/dist/ai_digital_signage_mac ; exit;
+/dist/ai_digital_signage_mac; exit;
 ```
 If a security warning is triggered and you are unable to open the file, please go to the settings and trust the file under "Privacy \& Security" . 
 ##### 3. To run the source code
