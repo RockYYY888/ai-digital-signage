@@ -4,6 +4,7 @@
 # This file is part of Targeted Digital Signage.
 # Licensed under the MIT license.
 # See the LICENSE file in the project root for full license information.
+
 import re
 import cv2
 import dlib
@@ -15,22 +16,54 @@ from datetime import datetime
 from util import get_resource_path
 
 watching_lock = threading.Lock()
-total_watch_time = 0
+"""threading.Lock: Global lock to synchronize access to total watch time across threads."""
 
 def extract_number(filename):
-    """Extract the numeric part from the filename."""
+    """Extract the numeric part from a video filename.
+
+    This function parses a filename to extract the numeric portion before the '.mp4' extension,
+    removing any leading zeros.
+
+    Args:
+        filename (str): The filename to parse (e.g., '001.mp4').
+
+    Returns:
+        str: The extracted number as a string, or None if no match is found.
+    """
     match = re.search(r"(\d+)\.mp4$", filename)  # Match the numeric part in the filename
     if match:
         return str(int(match.group(1)))  # Convert to integer to remove leading zeros, then back to string
     return None
 
+
 def calculate_eye_distance(landmarks):
-    """Calculate the distance between the eyes."""
+    """Calculate the Euclidean distance between the eyes based on facial landmarks.
+
+    Args:
+        landmarks (dlib.full_object_detection): The detected facial landmarks.
+
+    Returns:
+        float: The distance between the left and right eye landmarks.
+    """
     left_eye = (landmarks.part(36).x, landmarks.part(36).y)
     right_eye = (landmarks.part(45).x, landmarks.part(45).y)
     return np.linalg.norm(np.array(right_eye) - np.array(left_eye))
 
+
 def eye_tracking_thread_func(cap, eye_tracking_active, context):
+    """Run eye tracking in a separate thread to monitor user attention.
+
+    This function uses facial landmark detection to determine if a user is watching the screen.
+    It updates the total watch time in the provided context when the user is actively viewing.
+
+    Args:
+        cap (cv2.VideoCapture): The video capture object for the webcam.
+        eye_tracking_active (threading.Event): Event to control when eye tracking is active.
+        context (Context): The shared context object storing total watch time and state.
+
+    Raises:
+        SystemExit: If the webcam fails to capture frames or a fatal error occurs.
+    """
     detector = dlib.get_frontal_face_detector()
     try:
         predictor = dlib.shape_predictor(get_resource_path("eyetracking/shape_predictor_68_face_landmarks.dat"))
@@ -64,7 +97,7 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
 
             current_time = time.time()
 
-            # 检查屏幕焦点
+            # Check screen focus
             if not context.user_screen_focus.is_set():
                 with watching_lock:
                     if start_time is not None:
@@ -110,7 +143,21 @@ def eye_tracking_thread_func(cap, eye_tracking_active, context):
         if cap is not None:
             cap.release()
 
+
 def update_database(watch_time, prediction, ad_id):
+    """Update the database with viewing statistics for an advertisement.
+
+    This function parses the demographic prediction, retrieves the corresponding demographics ID,
+    and inserts the watch time, ad ID, and visit date into the viewers table.
+
+    Args:
+        watch_time (float): The total time the user watched the ad in seconds.
+        prediction (tuple): A tuple of (age_group, gender, ethnicity) from the face detection.
+        ad_id (str): The ID of the advertisement.
+
+    Returns:
+        bool: True if the database update was successful, False otherwise.
+    """
     try:
         # 1. Parsing the incoming prediction: (age_group, gender, ethnicity)
         age_group, gender, ethnicity = prediction
