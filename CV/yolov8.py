@@ -4,6 +4,7 @@
 # This file is part of Targeted Digital Signage.
 # Licensed under the MIT license.
 # See the LICENSE file in the project root for full license information.
+
 import time
 import cv2
 from ultralytics import YOLO
@@ -19,6 +20,7 @@ from util import get_resource_path
 
 # Device settings
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+"""torch.device: The device (CUDA GPU or CPU) used for model inference."""
 
 # Image preprocessing
 transform = transforms.Compose([
@@ -26,10 +28,13 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+"""transforms.Compose: Preprocessing pipeline for resizing, tensor conversion, and normalization of images."""
 
 # Load models
 model_emotion = EmotionClassifier(num_classes=4).to(device)
+"""EmotionClassifier: Model for predicting emotions, loaded onto the selected device."""
 model_demographic = FaceAttributeModel(num_age_classes=4, num_gender_classes=2, num_race_classes=5).to(device)
+"""FaceAttributeModel: Model for predicting demographic attributes, loaded onto the selected device."""
 checkpoint_path = get_resource_path('CV/best_face_attribute_model.pth')
 checkpoint_path2 = get_resource_path('CV/best_project_model.pth')
 checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -39,12 +44,26 @@ model_emotion.load_state_dict(checkpoint2['model_state_dict'])
 
 # Initialize YOLO face detector
 face_detector = YOLO(get_resource_path("CV/yolov8l-face.pt"), verbose=False)
+"""YOLO: Pre-trained YOLO model for face detection, initialized with a specific weights file."""
+
 
 def analyze_frame(frame):
-    """Analyze a single frame to detect faces and generate predictions."""
+    """Analyze a single video frame to detect faces and predict demographic and emotional attributes.
+
+    This function uses a YOLO face detector to identify faces in the frame, crops the detected face,
+    and predicts age, gender, race, and emotion using pre-trained models.
+
+    Args:
+        frame (numpy.ndarray): The input frame in BGR format from OpenCV.
+
+    Returns:
+        tuple: A tuple containing:
+            - combined_prediction (tuple or None): (age_label, gender_label, race_label, emotion_label) or None if no face is detected.
+            - pil_image (PIL.Image or None): The cropped face image or None if no face is detected.
+    """
     # Face detection
     results = face_detector(frame, conf=0.86)
-    
+
     if not results or len(results[0].boxes.xyxy) == 0:
         print("[CV] No face detected at this frame.")
         return None, None
@@ -74,8 +93,20 @@ def analyze_frame(frame):
     secondary_screen_signal_queue.put(combined_prediction)
     return combined_prediction, pil_image
 
+
 def predict_demographics(model, image):
-    """Predict age, gender, and race."""
+    """Predict demographic attributes (age, gender, race) from a face image.
+
+    Args:
+        model (FaceAttributeModel): The pre-trained model for demographic prediction.
+        image (PIL.Image): The input face image in RGB format.
+
+    Returns:
+        tuple: A tuple containing:
+            - age_label (str): Predicted age group.
+            - gender_label (str): Predicted gender.
+            - race_label (str): Predicted race/ethnicity.
+    """
     model.eval()
     image = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -94,7 +125,21 @@ def predict_demographics(model, image):
 
     return age_label, gender_label, race_label
 
+
 def cv_thread_func(cap, detected_face_queue, face_detection_active):
+    """Run computer vision processing in a thread to detect and analyze faces from a video stream.
+
+    This function continuously captures frames from a video source, analyzes them for faces at
+    specified intervals, and queues the results when a face is detected.
+
+    Args:
+        cap (cv2.VideoCapture): The video capture object for the webcam.
+        detected_face_queue (queue.Queue): Queue to store detected face data (image and prediction).
+        face_detection_active (threading.Event): Event to control when face detection is active.
+
+    Raises:
+        SystemExit: If the webcam fails to capture frames or an unrecoverable error occurs.
+    """
     detection_interval = 2
     last_detection_time = time.time()
 
@@ -140,5 +185,7 @@ def cv_thread_func(cap, detected_face_queue, face_detection_active):
         cap.release()
         cv2.destroyAllWindows()
 
+
 if __name__ == '__main__':
+    """Main entry point for testing OpenCV build information."""
     print(cv2.getBuildInformation())
