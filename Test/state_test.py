@@ -1,7 +1,13 @@
+# Copyright (c) 2025 Team2024.06
+# All rights reserved.
+#
+# This file is part of Targeted Digital Signage.
+# Licensed under the MIT license.
+# See the LICENSE file in the project root for full license information.
 import pytest
 
 from unittest.mock import Mock, patch
-from state import Context, AdRotating, PersonalizedADDisplaying, ad_id_queue, demographic_queue  # 导入全局队列
+from state import Context, AdRotating, PersonalizedADDisplaying, ad_id_queue, demographic_queue  
 
 @pytest.mark.timeout(10)
 def test_state_transition_logic():
