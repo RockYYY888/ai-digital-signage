@@ -7,13 +7,13 @@ This project aims to develop an AI digital signage capable of collecting users' 
 ## Start up the project
 #### We have provided multiple entrance for user to execute the project
 ##### 1. For windows users:
-Double click the ai_digital_signage_win.exe file and input your camera index immediately after the 
+Double click the ai_digital_signage_win.exe file and input your camera index(0 is your default camera, 1 is external camera) immediately after the 
  ```bash
 Using device: cpu/cuda
 cpu/cuda
 Start up. Today's date is: <today's date>
 ```
-prompt shows up
+prompt shows up.  Please reserve at least 5GB of available space on your hard drive. When running for the first time, just after observing that the global tokenizer is loaded to 100\%, immediately enter 0 and press Enter and wait for the program to run.
 ##### 2. For Mac users:
 Mac users should download our ai_digital_signage_mac executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
  ```bash
