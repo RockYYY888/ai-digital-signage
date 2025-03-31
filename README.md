@@ -110,4 +110,4 @@ scyal8@nottingham.edu.cn
 
 ### License
 
-[The MIT License (MIT)](LICENSE).
+Click here to see [Licenses](LICENSE).
