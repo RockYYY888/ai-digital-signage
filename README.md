@@ -17,7 +17,7 @@ prompt shows up
 ##### 2. For Mac users:
 Mac users should download our ai_digital_signage_mac executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
  ```bash
-chmod +x state
+chmod +x ai_digital_signage_mac
 ```
 This command will extract it as a executable file, then users can execute it by clicking  or using the commands below in the terminal:
  ```bash
