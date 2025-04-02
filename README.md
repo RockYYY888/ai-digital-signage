@@ -8,28 +8,41 @@ This project aims to develop an AI digital signage capable of collecting users' 
 
 
 ## Start up the project
-#### We have provided multiple entrance for user to execute the project
+
+We have provided multiple entrance for user to execute the project.
+
+In this project, we have provided a Huggingface Personal Token for Llama in `.env` for testing purpose, please do not disclose it to the public.
+
 ##### 1. For windows users:
-Double click the ai_digital_signage_win.exe file and input your camera index(0 is your default camera, 1 is external camera) immediately after the 
+
+Double click the `click_to_start/ai_digital_signage_win.exe` and input your camera index (0 is your default camera, 1 is external camera) immediately after seeing prompt in terminal:
  ```bash
 Using device: cpu/cuda
 cpu/cuda
 Start up. Today's date is: <today's date>
  ```
-prompt shows up.  Please reserve at least 5GB of available space on your hard drive. When running for the first time, just after observing that the global tokenizer is loaded to 100\%, immediately enter 0 and press Enter and wait for the program to run.
+Please reserve at least 5GB of available space on your hard drive. When running for the first time, the user need to wait the resources to be successfully downloaded.
 ##### 2. For Mac users:
-Mac users should download our ai_digital_signage_mac executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
+
+Execute `click_to_start/ai_digital_signage_mac`.
+
+However, the executable is typically recognized as a document when copying to a new Mac. In this case, please open a terminal in `click_to_start` and execute the following command in the terminal:
+
  ```bash
 chmod +x ai_digital_signage_mac
  ```
-This command will extract it as a executable file, then users can execute it by clicking  or using the commands below in the terminal:
+This command will inform MacOS `ai_digital_signage_mac` as a executable file, then users can execute it by clicking or using the commands below in the terminal:
  ```bash
 /dist/ai_digital_signage_mac; exit;
  ```
-If a security warning is triggered and you are unable to open the file, please go to the settings and trust the file under "Privacy \& Security" . 
+If a security warning is triggered and you are unable to open the file or camera permissions denied, please go to the system settings and trust the file under "Privacy \& Security" in the pop up window and run it again. 
+
+Then, you will see the same prompt as for Windows users.
+
 ##### 3. To run the source code
-Before get started, you may need to install PyTorch on your device:https://pytorch.org/.    
+Before get started, you may need to install PyTorch on your device: https://pytorch.org/.    
 Upgrade pip with:   
+
  ```bash
 pip install --upgrade pip
 pip install --upgrade setuptools
@@ -51,7 +64,10 @@ You may need to install the required dependencies, execute the following command
 ```bash
 pip install -r requirements.txt
 ```
+If you fail to handle the conflict of environment dependency on your local PC, user are reconmended to use `conda` to create a virtual environment or contact us: scyyl30@nottingham.edu.cn.
+
 Now you could run the program with:
+
 ```bash
 python state.py
 ```
@@ -66,7 +82,7 @@ cpu
 Start up. Today's date is: 2025-03-24
 Input camera index: 
 ```
-It will open a port to display the frontend components of the project automatically. In order to get a better using experience, we strongly recommand you to use full screen mode.
+It will open flask app to display the digital signage screen of the project automatically. In order to get a better using experience, we strongly recommand you to use full screen mode in your browser.
 
 The system acquires access to the camera resource, it will immediately initiate face detection and retrieve facial and emotional data.
 ```bash
@@ -78,9 +94,9 @@ Speed: 16.6ms preprocess, 303.1ms inference, 22.1ms postprocess per image at sha
 ```
 Three browser windows will show up as below: 
 
-- Main screen will display advertisements and show to the users.
-- Secondary screen shows the demographic data, emotion data and user's image.    
-- Dashboard is to show the watching data for the stakeholder. The watch time is recorded only when the user focuses on the main screen. You may click refresh button to update the newly arrived data on the dashboard.
+- **Digital signage screen** will display advertisements and show to the users.
+- **Backend screen** will display the analysis results.
+- **Dashboard** will display the watching data for the stakeholder. The watch time is accumulated only when **Digital signage screen** gains the focus in **Targeted AD Displaying** state, where the process is also informed in terminal output. You may click refresh button to update the newly arrived data on the dashboard.
 
 #### Main Screen
 - Ad rotating state: randomly display advertisements
@@ -104,6 +120,9 @@ Three browser windows will show up as below:
 <img src="./images/dashboard4.png" alt="project_sketch" style="zoom:75%;" />
 
 #### If you have any confusion about the project, please contact us:
+
+scyyl30@nottingham.edu.cn
+
 scyal8@nottingham.edu.cn
 
 
