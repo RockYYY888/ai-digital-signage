@@ -1,8 +1,11 @@
 # AI-Powered Digital Signage
+
 This repo is for [P2024‑08] AI‑Powered Digital Signage for Targeted and Personalized Advertisement.
 
 ## Introduction
 This project aims to develop an AI digital signage capable of collecting users' facial and emotional data via a camera, enabling the recommendation of personalized advertisements tailored to individual preferences, thereby enhancing the fluidity and comfort of the shopping experience for users.
+
+
 
 ## Start up the project
 #### We have provided multiple entrance for user to execute the project
@@ -12,17 +15,17 @@ Double click the ai_digital_signage_win.exe file and input your camera index(0 i
 Using device: cpu/cuda
 cpu/cuda
 Start up. Today's date is: <today's date>
-```
+ ```
 prompt shows up.  Please reserve at least 5GB of available space on your hard drive. When running for the first time, just after observing that the global tokenizer is loaded to 100\%, immediately enter 0 and press Enter and wait for the program to run.
 ##### 2. For Mac users:
 Mac users should download our ai_digital_signage_mac executable file; however, it is typically recognized as a document. In this case, please refrain from opening it. Instead, in the current directory, execute the following command in the terminal:
  ```bash
 chmod +x ai_digital_signage_mac
-```
+ ```
 This command will extract it as a executable file, then users can execute it by clicking  or using the commands below in the terminal:
  ```bash
 /dist/ai_digital_signage_mac; exit;
-```
+ ```
 If a security warning is triggered and you are unable to open the file, please go to the settings and trust the file under "Privacy \& Security" . 
 ##### 3. To run the source code
 Before get started, you may need to install PyTorch on your device:https://pytorch.org/.    
@@ -30,7 +33,7 @@ Upgrade pip with:
  ```bash
 pip install --upgrade pip
 pip install --upgrade setuptools
-```
+ ```
 Install transformer package with:
 ```bash
 pip install transformers
@@ -103,11 +106,54 @@ Three browser windows will show up as below:
 #### If you have any confusion about the project, please contact us:
 scyal8@nottingham.edu.cn
 
+
+
+## Quality Assurance
+
+The system contains four main Modules, they are:
+
+![4971743570879_.pic](images/4971743570879_.pic.jpg)
+
+The functional requirements are identified as:
+
+![4981743570907_.pic](images/4981743570907_.pic.jpg)
+
+- RID: Requirement ID
+- FR: Functional Requirement
+
+The non-functional requirements are identified as:
+
+![4991743570929_.pic](images/4991743570929_.pic.jpg)
+
+- RID: Requirement ID
+- NFR: Non-functional Requirement
+
+The team conducted Unit Tests, they are:
+
+![5091743571973_.pic](images/5091743571973_.pic.jpg)
+
+![5011743570978_.pic](images/5011743570978_.pic.jpg)
+
+![5021743571015_.pic](images/5021743571015_.pic.jpg)
+
+![5031743571027_.pic](images/5031743571027_.pic.jpg)
+
+The team conducted Integration and System Tests, they are:
+
+<img src="images/5041743571041_.pic.jpg" alt="5041743571041_.pic" style="zoom:50%;" />
+
+![5051743571054_.pic](images/5051743571054_.pic.jpg)
+
+Hence, the team ensured all requirements have been testified and satisfied.
+
+
+
 ## Appendix
-### Use Case Diagram For The Program
+
+### Use Case Diagram For The System 
+
 <img src="./images/us-c.png" alt="use case" style="zoom:75%;" />
 
-
-### License
+## License
 
 Click here to see [Licenses](LICENSE).
