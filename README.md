@@ -64,7 +64,7 @@ You may need to install the required dependencies, execute the following command
 ```bash
 pip install -r requirements.txt
 ```
-If you fail to handle the conflict of environment dependency on your local PC, user are reconmended to use `conda` to create a virtual environment or contact us: scyyl30@nottingham.edu.cn.
+If you fail to handle the conflict of environment dependency on your local PC, user are recommended to use `conda` to create a virtual environment or contact us: scyyl30@nottingham.edu.cn.
 
 Now you could run the program with:
 
